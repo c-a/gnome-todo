@@ -1,0 +1,37 @@
+jsdir = $(pkgdatadir)/js/
+dist_js_DATA = \
+    application.js \
+    error.js \
+    errorBox.js \
+    format.js \
+    global.js \
+    main.js \
+    mainToolbar.js \
+    mainWindow.js \
+    notifications.js \
+    windowMode.js \
+    path.js
+
+jsutildir = $(pkgdatadir)/js/util/
+dist_jsutil_DATA = \
+    util/tweener.js
+
+BUILT_SOURCES += \
+    path.js \
+    config.js
+
+path.js: Makefile path.js.in
+	$(AM_V_GEN) $(do_subst) $(srcdir)/path.js.in > $@
+config.js: Makefile config.js.in
+	$(AM_V_GEN) $(do_subst) $(srcdir)/config.js.in > $@
+
+nodist_js_DATA = \
+    path.js \
+    config.js
+
+CLEANFILES += \
+    $(BUILT_SOURCES)
+
+EXTRA_DIST += \
+    path.js.in \
+    config.js.in

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=To Do
+Comment=Access, manage and share documents
+Exec=gnome-todo %U
+Icon=gnome-todo
+Terminal=false
+Type=Application
+StartupNotify=true
+OnlyShowIn=GNOME;
+Categories=GNOME;GTK;Utility;Core;
+Keywords=Docs;PDF;Document;
