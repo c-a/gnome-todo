@@ -8,17 +8,15 @@ gdprivate_cflags = \
     $(TODO_CFLAGS)
 
 gdprivate_source_h = \
-    lib/gd-gdata-goa-authorizer.h \
     lib/gd-utils.h \
-    lib/gd-main-toolbar.h \
     lib/gd-notification.h \
+    lib/gd-toggle-pixbuf-renderer.h \
     $(NULL)
 
 gdprivate_source_c = \
-    lib/gd-gdata-goa-authorizer.c \
     lib/gd-utils.c \
-    lib/gd-main-toolbar.c \
     lib/gd-notification.c \
+    lib/gd-toggle-pixbuf-renderer.c \
     $(NULL)
 
 pkglib_LTLIBRARIES += libgdprivate-1.0.la

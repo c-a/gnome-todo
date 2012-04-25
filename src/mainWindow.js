@@ -30,6 +30,7 @@ const Mainloop = imports.mainloop;
 
 const Config = imports.config;
 const Global = imports.global;
+const ListsIconView = imports.listsIconView;
 const MainToolbar = imports.mainToolbar;
 const WindowMode = imports.windowMode;
 
@@ -103,6 +104,11 @@ const MainWindow = Lang.Class({
         this._clutterBox.add_child(toolbarActor);
         this._clutterBoxLayout.set_fill(toolbarActor, true, false);
         
+        let view = new ListsIconView.ListsIconView();
+        let viewActor = new GtkClutter.Actor({ 'contents': view });
+        this._clutterBox.add_child(viewActor);
+        this._clutterBoxLayout.set_fill(viewActor, true, false);
+
         stage.add_actor(this._clutterBox);
     },
 
