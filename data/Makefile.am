@@ -17,6 +17,9 @@ iconsdir = $(pkgdatadir)/icons
 dist_icons_DATA = \
     thumbnail-frame.png
 
+uidir = $(pkgdatadir)/ui
+dist_ui_DATA = ui/main_toolbar.glade
+
 @INTLTOOL_XML_NOMERGE_RULE@
 @GSETTINGS_RULES@
 
@@ -26,7 +29,6 @@ EXTRA_DIST= \
     $(desktop_in_files) \
     $(searchprovider_in_files) \
     $(gsettingsschema_in_files)
-
 CLEANFILES = \
     $(desktop_DATA) \
     $(gsettings_SCHEMAS)

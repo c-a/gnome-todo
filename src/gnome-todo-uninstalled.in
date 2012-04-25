@@ -25,6 +25,8 @@ else
     export GSETTINGS_SCHEMA_DIR=@abs_top_builddir@/data:$GSETTINGS_SCHEMA_DIR
 fi
 
+export GNOME_TODO_UIDIR=@abs_top_srcdir@/data/ui
+
 if test x"$GJS_DEBUG_OUTPUT" = x ; then
     export GJS_DEBUG_OUTPUT=stderr
 fi

@@ -9,8 +9,9 @@ dist_js_DATA = \
     mainToolbar.js \
     mainWindow.js \
     notifications.js \
-    windowMode.js \
-    path.js
+    path.js \
+    utils.js \
+    windowMode.js 
 
 jsutildir = $(pkgdatadir)/js/util/
 dist_jsutil_DATA = \

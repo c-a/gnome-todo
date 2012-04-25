@@ -44,31 +44,18 @@ const Path = imports.path;
 const Tweener = imports.util.tweener;
 const WindowMode = imports.windowMode;
 
-function Application() {
-    this._init();
-}
+const Application = new Lang.Class({
+    Name: 'Application',
+    Extends: Gtk.Application,
 
-Application.prototype = {
     _init: function() {
+        this.parent({ application_id: 'org.gnome.Todo' });
+
         Gettext.bindtextdomain('gnome-todo', Path.LOCALE_DIR);
         Gettext.textdomain('gnome-todo');
         GLib.set_prgname('gnome-todo');
 
         Global.settings = new Gio.Settings({ schema: 'org.gnome.todo' });
-
-        // TODO: subclass Gtk.Application once we support GObject inheritance,
-        //       see https://bugzilla.gnome.org/show_bug.cgi?id=663492
-        this.application = new Gtk.Application({
-            application_id: 'org.gnome.Todo',
-            flags: Gio.ApplicationFlags.HANDLES_COMMAND_LINE
-        });
-
-        this.application.connect('startup', Lang.bind(this, this._onStartup));
-        this.application.connect('command-line', Lang.bind(this, this._commandLine));
-        this.application.connect('activate', Lang.bind(this,
-            function() {
-                this._mainWindow.window.present();
-            }));
     },
 
     _initMenus: function() {
@@ -77,14 +64,14 @@ Application.prototype = {
                 function() {
                     this._mainWindow.window.destroy();
 	        }));
-	    this.application.add_action(quitAction);
+	    this.add_action(quitAction);
 
         let aboutAction = new Gio.SimpleAction({ name: 'about' });
         aboutAction.connect('activate', Lang.bind(this,
             function() {
                 this._mainWindow.showAbout();
             }));
-        this.application.add_action(aboutAction);
+        this.add_action(aboutAction);
 
         let fsAction = new Gio.SimpleAction({ name: 'fullscreen' });
         fsAction.connect('activate', Lang.bind(this,
@@ -96,7 +83,7 @@ Application.prototype = {
                 let canFullscreen = Global.modeController.getCanFullscreen();
                 fsAction.set_enabled(canFullscreen);
             }));
-        this.application.add_action(fsAction);
+        this.add_action(fsAction);
 
         let menu = new Gio.Menu();
 
@@ -107,10 +94,12 @@ Application.prototype = {
         menu.append(_("About To Do"), 'app.about');
         menu.append(_("Quit"), 'app.quit');
 
-        this.application.set_app_menu(menu);
+        this.set_app_menu(menu);
     },
 
-    _onStartup: function() {
+    vfunc_startup: function() {
+        this.parent();
+
         String.prototype.format = Format.format;
 
         GtkClutter.init(null, null);
@@ -131,19 +120,11 @@ Application.prototype = {
         Global.notificationManager = new Notifications.NotificationManager();
 
         this._initMenus();
-        this._mainWindow = new MainWindow.MainWindow(this.application);
+        this._mainWindow = new MainWindow.MainWindow(this);
     },
 
-    _commandLine: function(app, commandLine) {
-        let args = commandLine.get_arguments();
-        if (args.length) {
-            // TODO: handle arguments
-        } else {
-            Global.modeController.setWindowMode(WindowMode.WindowMode.OVERVIEW);
-        }
-
-        app.activate();
-
-        return 0;
+    vfunc_activate: function() {
+        Global.modeController.setWindowMode(WindowMode.WindowMode.OVERVIEW);
+        this._mainWindow.window.show();
     }
-};
+});

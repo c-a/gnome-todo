@@ -30,6 +30,7 @@ const Mainloop = imports.mainloop;
 
 const Config = imports.config;
 const Global = imports.global;
+const MainToolbar = imports.mainToolbar;
 const WindowMode = imports.windowMode;
 
 const _ = imports.gettext.gettext;
@@ -95,6 +96,11 @@ MainWindow.prototype = {
             new Clutter.BindConstraint({ coordinate: Clutter.BindCoordinate.SIZE,
                                          source: stage }));
 
+        let toolbar = new MainToolbar.MainToolbar();
+        let toolbarActor = new GtkClutter.Actor({ 'contents': toolbar });
+        this._clutterBox.add_child(toolbarActor);
+        this._clutterBoxLayout.set_fill(toolbarActor, true, false);
+        
         stage.add_actor(this._clutterBox);
     },
 
