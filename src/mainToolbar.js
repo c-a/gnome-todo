@@ -37,6 +37,8 @@ const Tweener = imports.util.tweener;
 const Utils = imports.utils;
 const WindowMode = imports.windowMode;
 
+const _MAIN_PAGE = 0;
+const _SELECTION_PAGE = 1;
 
 const MainToolbar = new Lang.Class({
     Name: 'MainToolbar',
@@ -51,12 +53,32 @@ const MainToolbar = new Lang.Class({
         this.add(item);
 
         let builder = Utils.loadBuilder('main_toolbar.glade', ['main_grid']);
-        let main_grid = builder.get_object('main_grid');
-        main_grid.reparent(item);
+        this._notebook = builder.get_object('notebook');
+        item.add(this._notebook);
 
-        let option_button = builder.get_object('option_button');
-        option_button.setSymbolic('emblem-default-symbolic');
+        // Selection button
+        let selectButton = builder.get_object('select_button');
+        selectButton.setSymbolic('emblem-default-symbolic');
+        selectButton.connect('clicked',
+            Lang.bind(this, this._selectButtonClicked));
         
+        // Cancel selection button
+        let cancelButton = builder.get_object('cancel_button');
+        cancelButton.connect('clicked',
+            Lang.bind(this, this._cancelButtonClicked));
+
+        this._listsButton = builder.get_object('lists_button');
+        this._listsButton.connect('toggled',
+            Lang.bind(this, this._listsButtonToggled));
+
+        this._todayButton = builder.get_object('today_button');
+        this._todayButton.connect('toggled',
+            Lang.bind(this, this._todayButtonToggled));
+
+        this._scheduledButton = builder.get_object('scheduled_button');
+        this._scheduledButton.connect('toggled',
+            Lang.bind(this, this._scheduledButtonToggled));
+
         this.show_all();
     },
 
@@ -69,5 +91,28 @@ const MainToolbar = new Lang.Class({
         size.add_widget(dummy);
         return size;
     },
+
+    _selectButtonClicked: function(selectButton) {
+        this._notebook.set_current_page(_SELECTION_PAGE);
+    },
+
+    _cancelButtonClicked: function(cancelButton) {
+        this._notebook.set_current_page(_MAIN_PAGE);
+    },
+
+    _listsButtonToggled: function(listsButton) {
+        if (!listsButton.get_active())
+            return;
+    },
+
+    _todayButtonToggled: function(listsButton) {
+        if (!listsButton.get_active())
+            return;
+    },
+
+    _scheduledButtonToggled: function(listsButton) {
+        if (!listsButton.get_active())
+            return;
+    }
 });
 
