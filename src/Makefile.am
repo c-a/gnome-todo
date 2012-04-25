@@ -25,6 +25,8 @@ libexec_SCRIPTS =
 # files (scripts, service files, etc.)
 do_subst = sed -e 's|@abs_top_srcdir[@]|$(abs_top_srcdir)|g' \
                -e 's|@abs_top_builddir[@]|$(abs_top_builddir)|g' \
+               -e 's|@srcdir[@]|$(srcdir)|g' \
+               -e 's|@abs_builddir[@]|$(abs_builddir)|g' \
                -e 's|@localedir[@]|$(localedir)|g' \
                -e 's|@bindir[@]|$(bindir)|g' \
                -e 's|@libdir[@]|$(libdir)|g' \
@@ -46,9 +48,12 @@ typelib_DATA += $(gir_DATA:.gir=.typelib)
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 
 bin_SCRIPTS = gnome-todo
-noinst_SCRIPTS = gnome-todo-debug
+noinst_SCRIPTS = gnome-todo-uninstalled gnome-todo-debug
 
 gnome-todo: gnome-todo.in
+	$(AM_V_GEN) $(do_subst) $< > $@
+	chmod +x $@
+gnome-todo-uninstalled: gnome-todo-uninstalled.in
 	$(AM_V_GEN) $(do_subst) $< > $@
 	chmod +x $@
 gnome-todo-debug: gnome-todo-debug.in
@@ -57,7 +62,9 @@ gnome-todo-debug: gnome-todo-debug.in
 
 CLEANFILES += \
     gnome-todo \
+    gnome-todo-uninstalled.in \
     gnome-todo-debug
 EXTRA_DIST += \
     gnome-todo.in \
+    gnome-todo-uninstalled.in \
     gnome-todo-debug.in
