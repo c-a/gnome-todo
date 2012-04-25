@@ -125,6 +125,6 @@ const Application = new Lang.Class({
 
     vfunc_activate: function() {
         Global.modeController.setWindowMode(WindowMode.WindowMode.OVERVIEW);
-        this._mainWindow.window.show();
+        this._mainWindow.show();
     }
 });

@@ -37,20 +37,22 @@ const _ = imports.gettext.gettext;
 
 const _CONFIGURE_ID_TIMEOUT = 100; // msecs
 
-function MainWindow(app) {
-    this._init(app);
-}
+const MainWindow = Lang.Class({
+    Name: 'MainWindow',
+    Extends: Gtk.ApplicationWindow,
 
-MainWindow.prototype = {
     _init: function(app) {
+        this.parent({
+            application: app,
+            window_position: Gtk.WindowPosition.CENTER,
+            hide_titlebar_when_maximized: true,
+            title: _('To Do')
+        });
+
         this._configureId = 0;
 
-        this.window = new Gtk.ApplicationWindow({ application: app,
-						  window_position: Gtk.WindowPosition.CENTER,
-                                                  hide_titlebar_when_maximized: true,
-						  title: _("To Do") });
         this._clutterEmbed = new GtkClutter.Embed();
-        this.window.add(this._clutterEmbed);
+        this.add(this._clutterEmbed);
         this._clutterEmbed.show();
 
         let stage = this._clutterEmbed.get_stage();
@@ -61,8 +63,8 @@ MainWindow.prototype = {
             let width = size.get_child_value(0);
             let height = size.get_child_value(1);
 
-            this.window.set_default_size(width.get_int32(),
-                                         height.get_int32());
+            this.set_default_size(width.get_int32(),
+                                  height.get_int32());
         }
 
         let position = Global.settings.get_value('window-position');
@@ -70,20 +72,20 @@ MainWindow.prototype = {
             let x = position.get_child_value(0);
             let y = position.get_child_value(1);
 
-            this.window.move(x.get_int32(),
+            this.move(x.get_int32(),
                              y.get_int32());
         }
 
         if (Global.settings.get_boolean('window-maximized'))
-            this.window.maximize();
+            this.maximize();
 
-        this.window.connect('delete-event',
+        this.connect('delete-event',
                             Lang.bind(this, this._quit));
-        this.window.connect('key-press-event',
+        this.connect('key-press-event',
                             Lang.bind(this, this._onKeyPressEvent));
-        this.window.connect('configure-event',
+        this.connect('configure-event',
                             Lang.bind(this, this._onConfigureEvent));
-        this.window.connect('window-state-event',
+        this.connect('window-state-event',
                             Lang.bind(this, this._onWindowStateEvent));
 
         Global.modeController.connect('fullscreen-changed',
@@ -105,18 +107,18 @@ MainWindow.prototype = {
     },
 
     _saveWindowGeometry: function() {
-        let window = this.window.get_window();
+        let window = this.get_window();
         let state = window.get_state();
 
         if (state & Gdk.WindowState.MAXIMIZED)
             return;
 
         // GLib.Variant.new() can handle arrays just fine
-        let size = this.window.get_size();
+        let size = this.get_size();
         let variant = GLib.Variant.new ('ai', size);
         Global.settings.set_value('window-size', variant);
 
-        let position = this.window.get_position();
+        let position = this.get_position();
         variant = GLib.Variant.new ('ai', position);
         Global.settings.set_value('window-position', variant);
     },
@@ -150,9 +152,9 @@ MainWindow.prototype = {
 
     _onFullscreenChanged: function(controller, fullscreen) {
         if (fullscreen)
-            this.window.fullscreen();
+            this.fullscreen();
         else
-            this.window.unfullscreen();
+            this.unfullscreen();
     },
 
     _onKeyPressEvent: function(widget, event) {
@@ -161,7 +163,7 @@ MainWindow.prototype = {
 
         if ((keyval == Gdk.KEY_q) &&
             ((state & Gdk.ModifierType.CONTROL_MASK) != 0)) {
-            this.window.destroy();
+            this.destroy();
             return true;
         }
 
@@ -206,11 +208,11 @@ MainWindow.prototype = {
         aboutDialog.wrap_license = true;
 
         aboutDialog.modal = true;
-        aboutDialog.transient_for = this.window;
+        aboutDialog.transient_for = this;
 
         aboutDialog.show();
         aboutDialog.connect('response', function() {
             aboutDialog.destroy();
         });
     }
-};
+});
