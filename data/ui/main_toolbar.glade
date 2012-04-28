@@ -20,6 +20,8 @@
             <property name="receives_default">True</property>
             <property name="halign">start</property>
             <property name="use_action_appearance">False</property>
+            <property name="xalign">0.5</property>
+            <property name="yalign">0.5</property>
           </object>
           <packing>
             <property name="left_attach">0</property>
@@ -35,6 +37,9 @@
             <property name="halign">center</property>
             <property name="hexpand">True</property>
             <property name="layout_style">start</property>
+            <style>
+              <class name="linked"/>
+            </style>
             <child>
               <object class="GtkRadioButton" id="lists_button">
                 <property name="label" translatable="yes">Lists</property>
@@ -43,9 +48,10 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
                 <property name="use_action_appearance">False</property>
+                <property name="xalign">0.5</property>
+                <property name="yalign">0.5</property>
                 <property name="active">True</property>
                 <property name="draw_indicator">False</property>
-                <property name="xalign">0.5</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -61,9 +67,10 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
                 <property name="use_action_appearance">False</property>
+                <property name="xalign">0.5</property>
+                <property name="yalign">0.5</property>
                 <property name="draw_indicator">False</property>
                 <property name="group">lists_button</property>
-                <property name="xalign">0.5</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -79,9 +86,10 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
                 <property name="use_action_appearance">False</property>
+                <property name="xalign">0.5</property>
+                <property name="yalign">0.5</property>
                 <property name="draw_indicator">False</property>
                 <property name="group">lists_button</property>
-                <property name="xalign">0.5</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -104,6 +112,8 @@
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
             <property name="use_action_appearance">False</property>
+            <property name="xalign">0.5</property>
+            <property name="yalign">0.5</property>
             <child>
               <placeholder/>
             </child>
@@ -136,6 +146,8 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
+                <property name="xalign">0.5</property>
+                <property name="yalign">0.5</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
