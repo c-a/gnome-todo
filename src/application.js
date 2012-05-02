@@ -107,14 +107,7 @@ const Application = new Lang.Class({
 
         Global.application = this;
 
-        // Connect to goa
-        try {
-            Global.goaClient = Goa.Client.new_sync(null);
-        } catch (e) {
-            log('Unable to create the GOA client: ' + e.toString());
-            return;
-        }
-
+        //Global.sources = new Sources.SourceManager();
         Global.errorHandler = new Error.ErrorHandler();
         Global.modeController = new WindowMode.ModeController();
         Global.notificationManager = new Notifications.NotificationManager();

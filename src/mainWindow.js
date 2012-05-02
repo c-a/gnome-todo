@@ -28,9 +28,9 @@ const GtkClutter = imports.gi.GtkClutter;
 const Lang = imports.lang;
 const Mainloop = imports.mainloop;
 
+const ContentView = imports.contentView;
 const Config = imports.config;
 const Global = imports.global;
-const ListsIconView = imports.listsIconView;
 const MainToolbar = imports.mainToolbar;
 const WindowMode = imports.windowMode;
 
@@ -93,23 +93,23 @@ const MainWindow = Lang.Class({
                                       Lang.bind(this, this._onFullscreenChanged));
 
         // the base layout is a vertical ClutterBox
-        this._clutterBoxLayout = new Clutter.BoxLayout({ vertical: true });
-        this._clutterBox = new Clutter.Box({ layout_manager: this._clutterBoxLayout });
-        this._clutterBox.add_constraint(
+        this._layout = new Clutter.BoxLayout({ vertical: true });
+        this._box = new Clutter.Box({ layout_manager: this._layout });
+        this._box.add_constraint(
             new Clutter.BindConstraint({ coordinate: Clutter.BindCoordinate.SIZE,
                                          source: stage }));
 
         let toolbar = new MainToolbar.MainToolbar();
         let toolbarActor = new GtkClutter.Actor({ 'contents': toolbar });
-        this._clutterBox.add_child(toolbarActor);
-        this._clutterBoxLayout.set_fill(toolbarActor, true, false);
-        
-        let view = new ListsIconView.ListsIconView();
-        let viewActor = new GtkClutter.Actor({ 'contents': view });
-        this._clutterBox.add_child(viewActor);
-        this._clutterBoxLayout.set_fill(viewActor, true, false);
+        this._box.add_child(toolbarActor);
+        this._layout.set_fill(toolbarActor, true, false);
 
-        stage.add_actor(this._clutterBox);
+        let contentView = new ContentView.ContentView();
+        this._box.add_child(contentView);
+        this._layout.set_expand(contentView, true);
+        this._layout.set_fill(contentView, true, true);
+
+        stage.add_actor(this._box);
     },
 
     _saveWindowGeometry: function() {
