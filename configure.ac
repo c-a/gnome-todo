@@ -53,9 +53,9 @@ EVINCE_MIN_VERSION=3.3.0
 GLIB_MIN_VERSION=2.31.6
 GTK_MIN_VERSION=3.3.6
 GOBJECT_INTROSPECTION_MIN_VERSION=1.31.6
-GDATA_MIN_VERSION=0.11.0
 GOA_MIN_VERSION=3.2.0
 CLUTTER_GTK_MIN_VERSION=1.0.2
+REST_MIN_VERSION=0.7.13
 
 PKG_CHECK_MODULES(TODO,
                   clutter-gtk-1.0 >= $CLUTTER_GTK_MIN_VERSION
@@ -65,8 +65,8 @@ PKG_CHECK_MODULES(TODO,
                   gtk+-3.0 >= $GTK_MIN_VERSION
                   gnome-desktop-3.0
                   goa-1.0 >= $GOA_MIN_VERSION
-                  libgdata >= $GDATA_MIN_VERSION
-                  oauth)
+                  oauth
+                  rest-0.7 >= $REST_MIN_VERSION)
 
 GJS_CONSOLE=`$PKG_CONFIG --variable=gjs_console gjs-1.0`
 AC_SUBST(GJS_CONSOLE)
