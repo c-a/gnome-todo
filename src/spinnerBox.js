@@ -39,7 +39,9 @@ const SpinnerBox = Lang.Class({
 
         this._delayedMoveId = 0;
 
-        let builder = Utils.loadBuilder('spinner_box.glade', ['grid']);
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/spinner_box.glade');
+
         this._grid = builder.get_object('grid');
         this.contents = this._grid;
 

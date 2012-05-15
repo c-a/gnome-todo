@@ -4,21 +4,22 @@ gdprivate_cflags = \
     -DLIBDIR=\"$(libdir)\" \
     -DG_LOG_DOMAIN=\"Gdprivate\" \
     -DG_DISABLE_DEPRECATED \
-    -DGOA_API_IS_SUBJECT_TO_CHANGE \
     $(TODO_CFLAGS)
 
 gdprivate_source_h = \
     lib/gd-utils.h \
     lib/gd-notification.h \
     lib/gd-toggle-pixbuf-renderer.h \
-    lib/gd-gtasks-service.h \ 
+    lib/gd-gtasks-service.h \
+    lib/gd-task-lists-icon-view.h \
     $(NULL)
 
 gdprivate_source_c = \
     lib/gd-utils.c \
     lib/gd-notification.c \
     lib/gd-toggle-pixbuf-renderer.c \
-    lib/gd-gtasks-service.c \  
+    lib/gd-gtasks-service.c \
+    lib/gd-task-lists-icon-view.c \
     $(NULL)
 
 pkglib_LTLIBRARIES += libgdprivate-1.0.la
@@ -47,7 +48,9 @@ Gd_1_0_gir_CFLAGS = $(AM_CPPFLAGS) $(gdprivate_cflags)
 Gd_1_0_gir_SCANNERFLAGS = --warn-all --symbol-prefix=gd --identifier-prefix=Gd
 Gd_1_0_gir_INCLUDES = \
    Goa-1.0 \
-   Gtk-3.0
+   Gtk-3.0 \
+   Gdk-3.0 \
+   GdkPixbuf-2.0
 
 Gd_1_0_gir_FILES = \
     $(addprefix $(srcdir)/,$(gdprivate_source_h)) \

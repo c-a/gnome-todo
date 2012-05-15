@@ -52,7 +52,8 @@ const MainToolbar = new Lang.Class({
         item.set_expand(true);
         this.add(item);
 
-        let builder = Utils.loadBuilder('main_toolbar.glade', ['main_grid']);
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/main_toolbar.glade');
         this._notebook = builder.get_object('notebook');
         item.add(this._notebook);
 

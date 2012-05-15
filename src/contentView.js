@@ -19,6 +19,7 @@
  *
  */
 
+const Gd = imports.gi.Gd;
 const Clutter = imports.gi.Clutter;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
@@ -30,7 +31,6 @@ const Mainloop = imports.mainloop;
 
 const Config = imports.config;
 const Global = imports.global;
-const ListsIconView = imports.listsIconView;
 const SpinnerBox = imports.spinnerBox;
 
 const ContentView = Lang.Class({
@@ -41,9 +41,9 @@ const ContentView = Lang.Class({
         this._layout = new Clutter.BinLayout();
         this.parent({ layout_manager: this._layout });
 
-        /* Add ListsIconView */
-        let view = new ListsIconView.ListsIconView();
-        let viewActor = new GtkClutter.Actor({ contents: view });
+        /* Add taskListsView */
+        this.taskListsView = new Gd.TaskListsIconView();
+        let viewActor = new GtkClutter.Actor({ contents: this.taskListsView });
         this._layout.add(viewActor, Clutter.BinAlignment.FILL,
             Clutter.BinAlignment.FILL);
 
@@ -56,8 +56,9 @@ const ContentView = Lang.Class({
         this._layout.add(this._spinnerBox, Clutter.BinAlignment.FILL,
             Clutter.BinAlignment.FILL);
         this._spinnerBox.lower_bottom();
+    },
 
-        /* XXX: test */
-        this._spinnerBox.moveInDelayed(1000);
+    showSpinner: function() {
+        this._spinnerBox.moveIn();
     }
 });

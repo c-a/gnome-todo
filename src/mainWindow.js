@@ -24,6 +24,7 @@ const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 const GtkClutter = imports.gi.GtkClutter;
+const Gd = imports.gi.Gd;
 
 const Lang = imports.lang;
 const Mainloop = imports.mainloop;
@@ -33,6 +34,7 @@ const Config = imports.config;
 const Global = imports.global;
 const MainToolbar = imports.mainToolbar;
 const WindowMode = imports.windowMode;
+const Utils = imports.utils;
 
 const _ = imports.gettext.gettext;
 
@@ -51,6 +53,11 @@ const MainWindow = Lang.Class({
         });
 
         this._configureId = 0;
+
+        /* Add our custom css */
+        this.get_style_context().add_provider(
+            Gd.load_css_provider_from_resource('/org/gnome/todo/gnome-todo.css'),
+            Gtk.StyleProvider.PRIORITY_USER);
 
         this._clutterEmbed = new GtkClutter.Embed();
         this.add(this._clutterEmbed);
@@ -99,15 +106,15 @@ const MainWindow = Lang.Class({
             new Clutter.BindConstraint({ coordinate: Clutter.BindCoordinate.SIZE,
                                          source: stage }));
 
-        let toolbar = new MainToolbar.MainToolbar();
-        let toolbarActor = new GtkClutter.Actor({ 'contents': toolbar });
+        this.toolbar = new MainToolbar.MainToolbar();
+        let toolbarActor = new GtkClutter.Actor({ 'contents': this.toolbar });
         this._box.add_child(toolbarActor);
         this._layout.set_fill(toolbarActor, true, false);
 
-        let contentView = new ContentView.ContentView();
-        this._box.add_child(contentView);
-        this._layout.set_expand(contentView, true);
-        this._layout.set_fill(contentView, true, true);
+        this.contentView = new ContentView.ContentView();
+        this._box.add_child(this.contentView);
+        this._layout.set_expand(this.contentView, true);
+        this._layout.set_fill(this.contentView, true, true);
 
         stage.add_actor(this._box);
     },

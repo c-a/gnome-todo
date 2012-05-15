@@ -1,16 +1,34 @@
 const GLib = imports.gi.GLib;
+const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
 
-function loadBuilder(filename, objects)
+function loadResource()
 {
-    let uidir = GLib.getenv('GNOME_TODO_UIDIR');
-    if (!uidir)
-        uidir = GLib.get_user_data_dir();
+    let datadirs = GLib.get_system_data_dirs();
+    let datadir = GLib.getenv('GNOME_TODO_DATADIR');
 
-    let builder = new Gtk.Builder();
-    builder.add_from_file(GLib.build_filenamev([uidir, filename]), objects);
+    let i = 0;
+    if (!datadir)
+        datadir = datadirs[i++];
 
-    return builder;
+    while (datadir != null) {
+            let resource = Gio.resource_load(GLib.build_filenamev([datadir, 'gnome-todo.gresource']));
+            resource._register();
+            return;
+        datadir = datadirs[i++];
+    }
+
+    throw('Couldn\'t load resource file');
+}
+
+function loadCssProviderFromResource(path)
+{
+    let bytes = Gio.resources_lookup_data(path, 0);
+    
+    let provider = new Gtk.CssProvider();
+    provider.load_from_data(bytes);
+    
+    return provider;
 }
 
 Gtk.Button.prototype.setSymbolic = function(icon_name) {

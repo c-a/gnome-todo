@@ -22,9 +22,8 @@
 const Gd = imports.gi.Gd;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
+const GObject = imports.gi.GObject;
 const Gtk = imports.gi.Gtk;
-const GtkClutter = imports.gi.GtkClutter;
-const Pango = imports.gi.Pango;
 
 const Gettext = imports.gettext;
 const _ = imports.gettext.gettext;
@@ -34,34 +33,44 @@ const Mainloop = imports.mainloop;
 
 const Global = imports.global;
 const Utils = imports.utils;
-const WindowMode = imports.windowMode;
 
-const _VIEW_ITEM_WIDTH = 140
-const _VIEW_ITEM_WRAP_WIDTH = 128
-const _VIEW_COLUMN_SPACING = 20
-const _VIEW_MARGIN = 16
+const COLUMN_NAME      = 0;
+const COLUMN_PIXBUF    = 1;
+const COLUMN_SOURCE_ID = 2;
 
-const ListsIconView = Lang.Class({
-    Name: 'ListsIconView',
-    Extends: Gtk.IconView,
+const TaskListsModel = Lang.Class({
+    Name: 'TaskListsModel',
+    Extends: Gtk.ListStore,
 
     _init: function() {
-        this.parent({
-            column_spacing: _VIEW_COLUMN_SPACING,
-            margin: _VIEW_MARGIN,
-            expand: true,
-            selection_mode: Gtk.SelectionMode.NONE
-        });
+        this.parent();
 
-        this._pixbuf_cell =
-            new Gd.TogglePixbufRenderer({ xalign: 0.5, yalign: 0.5 });
-        this.pack_start(this._pixbuf_cell, false);
+        this.set_column_types([GObject.TYPE_STRING, GObject.TYPE_OBJECT, GObject.TYPE_STRING]);
     },
 
-    set_selection_mode: function(selection_mode) {
-        this._selection_mode = selection_mode;
+    add: function(name, pixbuf, sourceID)
+    {
+        let iter = this.append();
+        this.set_value(iter, COLUMN_NAME, name);
 
-        this._pixbuf_cell.toggle_visible = selection_mode;
-        this.queue_draw();
-    }
+        this.set_value(iter, COLUMN_PIXBUF, pixbuf);
+
+        this.set_value(iter, COLUMN_SOURCE_ID, sourceID);
+    },
+
+    removeByID: function(sourceID)
+    {
+        let [res, iter] = this.get_iter_first();
+        if (!res)
+            return;
+    
+        while (true) {
+            if (sourceID == this.get_value(iter, COLUMN_SOURCE_ID) &&
+                !this.remove(iter))
+                break;
+
+            else if (!this.iter_next(iter))
+                break;
+        }    
+    },
 });

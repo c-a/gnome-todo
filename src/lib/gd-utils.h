@@ -24,43 +24,7 @@
 
 #include <gtk/gtk.h>
 
-GtkListStore* gd_create_list_store (void);
-void gd_store_set (GtkListStore *store,
-                   GtkTreeIter *iter,
-                   const gchar *urn,
-                   const gchar *uri,
-                   const gchar *title,
-                   const gchar *author,
-                   GdkPixbuf *icon,
-                   glong mtime);
-
-GtkListStore* gd_create_item_store (void);
-void gd_item_store_set (GtkListStore *store,
-                        GtkTreeIter *iter,
-                        const gchar *id,
-                        const gchar *name,
-                        const gchar *heading_text);
-
-GtkListStore* gd_create_organize_store (void);
-void gd_organize_store_set (GtkListStore *store,
-                            GtkTreeIter *iter,
-                            const gchar *id,
-                            const gchar *name,
-                            gint state);
-
-void gd_queue_thumbnail_job_for_file_async (GFile *file,
-                                            GAsyncReadyCallback callback,
-                                            gpointer user_data);
-
-gboolean gd_queue_thumbnail_job_for_file_finish (GAsyncResult *res);
-
-void gd_gtk_tree_view_set_activate_on_single_click (GtkTreeView *tree_view,
-                                                    gboolean should_activate);
-
-GdkPixbuf *gd_embed_image_in_frame (GdkPixbuf *source_image,
-                                    const gchar *frame_image_path,
-                                    GtkBorder *slice_width,
-                                    GtkBorder *border_width);
+GtkCssProvider *gd_load_css_provider_from_resource (const char *path, GError **error);
 
 char *gd_filename_strip_extension (const char * filename_with_extension);
 

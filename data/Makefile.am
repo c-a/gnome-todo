@@ -17,8 +17,11 @@ iconsdir = $(pkgdatadir)/icons
 dist_icons_DATA = \
     thumbnail-frame.png
 
-uidir = $(pkgdatadir)/ui
-dist_ui_DATA = ui/main_toolbar.glade
+gnome-todo.gresource: gnome-todo.gresource.xml $(shell glib-compile-resources --sourcedir=$(top_srcdir)/data --generate-dependencies $(top_srcdir)/data/gnome-todo.gresource.xml)
+	$(AM_V_GEN) glib-compile-resources --target=$@ --sourcedir=$(top_srcdir)/data $(top_srcdir)/data/gnome-todo.gresource.xml
+
+resourcedir = $(pkgdatadir)
+dist_resource_DATA = gnome-todo.gresource
 
 @INTLTOOL_XML_NOMERGE_RULE@
 @GSETTINGS_RULES@
@@ -30,5 +33,6 @@ EXTRA_DIST= \
     $(searchprovider_in_files) \
     $(gsettingsschema_in_files)
 CLEANFILES = \
+    gnome-todo.gresource \  
     $(desktop_DATA) \
     $(gsettings_SCHEMAS)

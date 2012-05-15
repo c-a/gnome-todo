@@ -26,21 +26,21 @@ const Gettext = imports.gettext;
 const _ = imports.gettext.gettext;
 
 const GtkClutter = imports.gi.GtkClutter;
-const EvDoc = imports.gi.EvinceDocument;
 const Gdk = imports.gi.Gdk;
 const Gio = imports.gi.Gio;
-const Goa = imports.gi.Goa;
 const Gtk = imports.gi.Gtk;
 const GLib = imports.gi.GLib;
-const Tracker = imports.gi.Tracker;
 
 const Error = imports.error;
 const Format = imports.format;
 const Global = imports.global;
 const Main = imports.main;
+const MainController = imports.mainController;
 const MainWindow = imports.mainWindow;
 const Notifications = imports.notifications;
 const Path = imports.path;
+const Sources = imports.sources;
+const Utils = imports.utils;
 const Tweener = imports.util.tweener;
 const WindowMode = imports.windowMode;
 
@@ -56,6 +56,8 @@ const Application = new Lang.Class({
         GLib.set_prgname('gnome-todo');
 
         Global.settings = new Gio.Settings({ schema: 'org.gnome.todo' });
+
+        Utils.loadResource();
     },
 
     _initMenus: function() {
@@ -107,13 +109,15 @@ const Application = new Lang.Class({
 
         Global.application = this;
 
-        //Global.sources = new Sources.SourceManager();
+        Global.sourceManager = new Sources.SourceManager();
         Global.errorHandler = new Error.ErrorHandler();
         Global.modeController = new WindowMode.ModeController();
         Global.notificationManager = new Notifications.NotificationManager();
 
         this._initMenus();
+
         this._mainWindow = new MainWindow.MainWindow(this);
+        this._mainController = new MainController.MainController(this._mainWindow);
     },
 
     vfunc_activate: function() {

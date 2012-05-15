@@ -21,331 +21,38 @@
 
 #include "gd-utils.h"
 
-#include <gdk-pixbuf/gdk-pixbuf.h>
 #include <string.h>
 #include <math.h>
 
-#define GNOME_DESKTOP_USE_UNSTABLE_API
-#include <libgnome-desktop/gnome-desktop-thumbnail.h>
 
-/* FIXME: this is here only because gjs doesn't 
- * support GType handling/arrays yet.
- */
+
 /**
- * gd_create_list_store:
+ * gd_load_css_provider_from_resource:
  * 
  * Returns: (transfer full):
  */
-GtkListStore *
-gd_create_list_store (void)
+GtkCssProvider *
+gd_load_css_provider_from_resource (const char *path, GError **error)
 {
-  return gtk_list_store_new (7,
-                             G_TYPE_STRING, // URN
-                             G_TYPE_STRING, // URI
-                             G_TYPE_STRING, // TITLE
-                             G_TYPE_STRING, // AUTHOR
-                             GDK_TYPE_PIXBUF, // ICON
-                             G_TYPE_LONG, // MTIME
-                             G_TYPE_BOOLEAN); // SELECTED
-}
-
-void
-gd_store_set (GtkListStore *store,
-              GtkTreeIter *iter,
-              const gchar *urn,
-              const gchar *uri,
-              const gchar *title,
-              const gchar *author,
-              GdkPixbuf *icon,
-              glong mtime)
-{
-  gtk_list_store_set (store, iter,
-                      0, urn,
-                      1, uri,
-                      2, title,
-                      3, author,
-                      4, icon,
-                      5, mtime,
-                      -1);
-}
-
-/**
- * gd_create_item_store:
- * 
- * Returns: (transfer full):
- */
-GtkListStore *
-gd_create_item_store (void)
-{
-  return gtk_list_store_new (3,
-                             G_TYPE_STRING, // ID
-                             G_TYPE_STRING, // NAME
-                             G_TYPE_STRING); // HEADING_TEXT
-}
-
-void
-gd_item_store_set (GtkListStore *store,
-                   GtkTreeIter *iter,
-                   const gchar *id,
-                   const gchar *name,
-                   const gchar *heading_text)
-{
-  gtk_list_store_set (store, iter,
-                      0, id,
-                      1, name,
-                      2, heading_text,
-                      -1);
-}
-
-/**
- * gd_create_organize_store:
- * 
- * Returns: (transfer full):
- */
-GtkListStore *
-gd_create_organize_store (void)
-{
-  return gtk_list_store_new (3,
-                             G_TYPE_STRING, // ID
-                             G_TYPE_STRING, // NAME
-                             G_TYPE_INT); // STATE
-}
-
-void
-gd_organize_store_set (GtkListStore *store,
-                       GtkTreeIter *iter,
-                       const gchar *id,
-                       const gchar *name,
-                       gint state)
-{
-  gtk_list_store_set (store, iter,
-                      0, id,
-                      1, name,
-                      2, state,
-                      -1);
-}
-
-#define ATTRIBUTES_FOR_THUMBNAIL \
-  G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE"," \
-  G_FILE_ATTRIBUTE_TIME_MODIFIED
-
-static gboolean
-create_thumbnail (GIOSchedulerJob *job,
-                  GCancellable *cancellable,
-                  gpointer user_data)
-{
-  GSimpleAsyncResult *result = user_data;
-  GFile *file = G_FILE (g_async_result_get_source_object (G_ASYNC_RESULT (result)));
-  GnomeDesktopThumbnailFactory *factory;
-  GFileInfo *info;
-  gchar *uri;
-  GdkPixbuf *pixbuf;
-  guint64 mtime;
-
-  uri = g_file_get_uri (file);
-  info = g_file_query_info (file, ATTRIBUTES_FOR_THUMBNAIL,
-                            G_FILE_QUERY_INFO_NONE,
-                            NULL, NULL);
-
-  /* we don't care about reporting errors here, just fail the
-   * thumbnail.
-   */
-  if (info == NULL)
-    {
-      g_simple_async_result_set_op_res_gboolean (result, FALSE);
-      goto out;
-    }
-
-  mtime = g_file_info_get_attribute_uint64 (info, G_FILE_ATTRIBUTE_TIME_MODIFIED);
-
-  factory = gnome_desktop_thumbnail_factory_new (GNOME_DESKTOP_THUMBNAIL_SIZE_NORMAL);
-  pixbuf = gnome_desktop_thumbnail_factory_generate_thumbnail
-    (factory, 
-     uri, g_file_info_get_content_type (info));
-
-  if (pixbuf != NULL)
-    {
-      gnome_desktop_thumbnail_factory_save_thumbnail (factory, pixbuf,
-                                                      uri, (time_t) mtime);
-      g_simple_async_result_set_op_res_gboolean (result, TRUE);
-    }
-  else
-    {
-      g_simple_async_result_set_op_res_gboolean (result, FALSE);
-    }
-
-  g_object_unref (info);
-  g_object_unref (file);
-  g_object_unref (factory);
-  g_clear_object (&pixbuf);
-
- out:
-  g_simple_async_result_complete_in_idle (result);
-  g_object_unref (result);
-
-  return FALSE;
-}
-
-void
-gd_queue_thumbnail_job_for_file_async (GFile *file,
-                                       GAsyncReadyCallback callback,
-                                       gpointer user_data)
-{
-  GSimpleAsyncResult *result;
-
-  result = g_simple_async_result_new (G_OBJECT (file),
-                                      callback, user_data, 
-                                      gd_queue_thumbnail_job_for_file_async);
-
-  g_io_scheduler_push_job (create_thumbnail,
-                           result, NULL,
-                           G_PRIORITY_DEFAULT, NULL);
-}
-
-gboolean
-gd_queue_thumbnail_job_for_file_finish (GAsyncResult *res)
-{
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-
-  return g_simple_async_result_get_op_res_gboolean (simple);
-}
-
-/* taken from eel/eel-gtk-extensions.c */
-static gboolean 
-tree_view_button_press_callback (GtkWidget *tree_view,
-				 GdkEventButton *event,
-				 gpointer data)
-{
-	GtkTreePath *path;
-	GtkTreeViewColumn *column;
-
-	if (event->button == 1 && event->type == GDK_BUTTON_PRESS) {
-		if (gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (tree_view),
-						   event->x, event->y,
-						   &path,
-						   &column,
-						   NULL, 
-						   NULL)) {
-			gtk_tree_view_row_activated
-				(GTK_TREE_VIEW (tree_view), path, column);
-		}
-	}
-
-	return FALSE;
-}
-
-void
-gd_gtk_tree_view_set_activate_on_single_click (GtkTreeView *tree_view,
-                                               gboolean should_activate)
-{
-	guint button_press_id;
-
-	button_press_id = GPOINTER_TO_UINT 
-		(g_object_get_data (G_OBJECT (tree_view), 
-				    "gd-tree-view-activate"));
-
-	if (button_press_id && !should_activate) {
-		g_signal_handler_disconnect (tree_view, button_press_id);
-		g_object_set_data (G_OBJECT (tree_view), 
-				   "gd-tree-view-activate", 
-				   NULL);
-	} else if (!button_press_id && should_activate) {
-		button_press_id = g_signal_connect 
-			(tree_view,
-			 "button_press_event",
-			 G_CALLBACK  (tree_view_button_press_callback),
-			 NULL);
-		g_object_set_data (G_OBJECT (tree_view), 
-				   "gd-tree-view-activate", 
-				   GUINT_TO_POINTER (button_press_id));
-	}
-}
-
-/**
- * gd_embed_image_in_frame: 
- * @source_image:
- * @frame_image_path:
- * @slice_width:
- * @border_width:
- *
- * Returns: (transfer full):
- */
-GdkPixbuf *
-gd_embed_image_in_frame (GdkPixbuf *source_image,
-                         const gchar *frame_image_path,
-                         GtkBorder *slice_width,
-                         GtkBorder *border_width)
-{
-  cairo_surface_t *surface;
-  cairo_t *cr;
-  int source_width, source_height;
-  int dest_width, dest_height;
-  gchar *css_str;
+  GBytes *bytes;
   GtkCssProvider *provider;
-  GtkStyleContext *context;
-  GError *error = NULL;
-  GdkPixbuf *retval;
-  GtkWidgetPath *path;
- 
-  source_width = gdk_pixbuf_get_width (source_image);
-  source_height = gdk_pixbuf_get_height (source_image);
 
-  dest_width = source_width +  border_width->left + border_width->right;
-  dest_height = source_height + border_width->top + border_width->bottom;
+  bytes = g_resources_lookup_data (path, 0, error);
+  if (!bytes)
+    return NULL;
 
-  css_str = g_strdup_printf (".embedded-image { border-image: url(\"%s\") %d %d %d %d / %d %d %d %d }",
-                             frame_image_path, 
-                             slice_width->top, slice_width->right, slice_width->bottom, slice_width->left,
-                             border_width->top, border_width->right, border_width->bottom, border_width->left);
   provider = gtk_css_provider_new ();
-  gtk_css_provider_load_from_data (provider, css_str, -1, &error);
+  if (!gtk_css_provider_load_from_data (provider,
+                                        g_bytes_get_data (bytes, NULL),
+                                        g_bytes_get_size (bytes),
+                                        error))
+    g_clear_object (provider);
 
-  if (error != NULL) 
-    {
-      g_warning ("Unable to create the thumbnail frame image: %s", error->message);
-      g_error_free (error);
-      g_free (css_str);
-
-      return g_object_ref (source_image);
-    }
-
-  surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, dest_width, dest_height);
-  cr = cairo_create (surface);
-
-  context = gtk_style_context_new ();
-  path = gtk_widget_path_new ();
-  gtk_widget_path_append_type (path, GTK_TYPE_ICON_VIEW);
-
-  gtk_style_context_set_path (context, path);
-  gtk_style_context_add_provider (context, GTK_STYLE_PROVIDER (provider), 600);
-
-  gtk_style_context_save (context);
-  gtk_style_context_add_class (context, "embedded-image");
-
-  gtk_render_frame (context, cr,
-                    0, 0,
-                    dest_width, dest_height);
-
-  gtk_style_context_restore (context);
-
-  gtk_render_icon (context, cr,
-                   source_image,
-                   border_width->left, border_width->top);
-
-  retval = gdk_pixbuf_get_from_surface (surface,
-                                        0, 0, dest_width, dest_height);
-
-  cairo_surface_destroy (surface);
-  cairo_destroy (cr);
-
-  gtk_widget_path_unref (path);
-  g_object_unref (provider);
-  g_object_unref (context);
-  g_free (css_str);
-
-  return retval;
+  g_bytes_unref (bytes);
+  return provider;
 }
-
+    
+      
 static char *
 gd_filename_get_extension_offset (const char *filename)
 {
