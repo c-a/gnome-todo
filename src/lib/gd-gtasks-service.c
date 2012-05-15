@@ -98,9 +98,17 @@ invoke_async_cb (GObject *source_object,
     goto done;
   }
 
-  if (rest_proxy_call_get_status_code (call) != 500)
+  if (rest_proxy_call_get_status_code (call) != 200)
   {
-    g_simple_async_result_set_error (simple, G_IO_ERROR, G_IO_ERROR_FAILED,
+    gint error_code;
+
+    
+    if (rest_proxy_call_get_status_code (call) == 401)
+      error_code = G_IO_ERROR_PERMISSION_DENIED;
+    else
+      error_code = G_IO_ERROR_FAILED;
+    
+    g_simple_async_result_set_error (simple, G_IO_ERROR, error_code,
                                      "%s", rest_proxy_call_get_status_message (call));
     goto done;
   }
@@ -123,8 +131,8 @@ gd_gtasks_service_call (GdGTasksService *service,
                         const char *method,
                         const char *function,
                         GPtrArray *parameters,
-                        GAsyncReadyCallback callback,
                         GCancellable *cancellable,
+                        GAsyncReadyCallback callback,
                         gpointer user_data)
 {
   GSimpleAsyncResult *simple;
@@ -139,12 +147,15 @@ gd_gtasks_service_call (GdGTasksService *service,
   rest_proxy_call_set_method (call, method);
   rest_proxy_call_set_function (call, function);
 
-  for (i = 0; i < parameters->len; i++)
+  if (parameters)
   {
-    GdGTasksServiceParameter *param = g_ptr_array_index (parameters, i);
-    rest_proxy_call_add_param (call, param->name, param->value);
+    for (i = 0; i < parameters->len; i++)
+    {
+      GdGTasksServiceParameter *param = g_ptr_array_index (parameters, i);
+      rest_proxy_call_add_param (call, param->name, param->value);
+    }
   }
-
+    
   rest_proxy_call_invoke_async (call, cancellable, invoke_async_cb, simple);
 }
 

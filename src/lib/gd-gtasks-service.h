@@ -67,8 +67,8 @@ void    gd_gtasks_service_call         (GdGTasksService *service,
                                         const char *method,
                                         const char *function,
                                         GPtrArray *parameters,
-                                        GAsyncReadyCallback callback,
                                         GCancellable *cancellable,
+                                        GAsyncReadyCallback callback,
                                         gpointer user_data);
 
 gboolean gd_gtasks_service_call_finish (GdGTasksService *service,
