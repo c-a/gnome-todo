@@ -65,7 +65,6 @@ PKG_CHECK_MODULES(TODO,
                   gtk+-3.0 >= $GTK_MIN_VERSION
                   gnome-desktop-3.0
                   goa-1.0 >= $GOA_MIN_VERSION
-                  oauth
                   rest-0.7 >= $REST_MIN_VERSION)
 
 GJS_CONSOLE=`$PKG_CONFIG --variable=gjs_console gjs-1.0`

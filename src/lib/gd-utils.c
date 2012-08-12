@@ -46,7 +46,7 @@ gd_load_css_provider_from_resource (const char *path, GError **error)
                                         g_bytes_get_data (bytes, NULL),
                                         g_bytes_get_size (bytes),
                                         error))
-    g_clear_object (provider);
+    g_clear_object (&provider);
 
   g_bytes_unref (bytes);
   return provider;

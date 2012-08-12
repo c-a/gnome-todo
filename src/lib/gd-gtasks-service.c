@@ -124,7 +124,7 @@ done:
 
 /**
  * gd_gtasks_service_call:
- * @parameters: (element-type Gt.GtasksServiceParameter)
+ * @parameters: (element-type Gd.GtasksServiceParameter)
  */
 void
 gd_gtasks_service_call (GdGTasksService *service,

@@ -62,7 +62,7 @@ gnome-todo-debug: gnome-todo-debug.in
 
 CLEANFILES += \
     gnome-todo \
-    gnome-todo-uninstalled.in \
+    gnome-todo-uninstalled \
     gnome-todo-debug
 EXTRA_DIST += \
     gnome-todo.in \
