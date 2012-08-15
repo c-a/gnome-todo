@@ -54,11 +54,6 @@ const MainWindow = Lang.Class({
 
         this._configureId = 0;
 
-        /* Add our custom css */
-        this.get_style_context().add_provider(
-            Gd.load_css_provider_from_resource('/org/gnome/todo/gnome-todo.css'),
-            Gtk.StyleProvider.PRIORITY_USER);
-
         this._clutterEmbed = new GtkClutter.Embed();
         this.add(this._clutterEmbed);
         this._clutterEmbed.show();
@@ -91,6 +86,8 @@ const MainWindow = Lang.Class({
                             Lang.bind(this, this._quit));
         this.connect('key-press-event',
                             Lang.bind(this, this._onKeyPressEvent));
+        this.connect('map-event',
+                            Lang.bind(this, this._onMapEvent));
         this.connect('configure-event',
                             Lang.bind(this, this._onConfigureEvent));
         this.connect('window-state-event',
@@ -117,6 +114,13 @@ const MainWindow = Lang.Class({
         this._layout.set_fill(this.contentView, true, true);
 
         stage.add_actor(this._box);
+    },
+
+    _onMapEvent: function(widget, event) {
+        /* Add our custom css */
+        Gtk.StyleContext.add_provider_for_screen(this.get_screen(),
+            Gd.load_css_provider_from_resource('/org/gnome/todo/gnome-todo.css'),
+            Gtk.StyleProvider.PRIORITY_APPLICATION);
     },
 
     _saveWindowGeometry: function() {

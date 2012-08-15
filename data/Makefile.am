@@ -1,8 +1,8 @@
 SUBDIRS = icons
 
+desktop_in_files = gnome-todo.desktop.in
 desktopdir = $(datadir)/applications
 desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
-desktop_in_files = gnome-todo.desktop.in
 
 @INTLTOOL_DESKTOP_RULE@
 
@@ -33,6 +33,7 @@ EXTRA_DIST= \
     $(searchprovider_in_files) \
     $(gsettingsschema_in_files)
 CLEANFILES = \
-    gnome-todo.gresource \  
+    gnome-todo.gresource \
+    gschemas.compiled \  
     $(desktop_DATA) \
     $(gsettings_SCHEMAS)

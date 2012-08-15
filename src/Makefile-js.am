@@ -1,15 +1,20 @@
 jsdir = $(pkgdatadir)/js/
 dist_js_DATA = \
     application.js \
+    contentView.js \
     error.js \
     errorBox.js \
     format.js \
     global.js \
     main.js \
+    mainController.js \
     mainToolbar.js \
     mainWindow.js \
     notifications.js \
     path.js \
+    sources.js \
+    spinnerBox.js \
+    taskListsModel.js \
     utils.js \
     windowMode.js 
 

@@ -4,18 +4,27 @@ const Gtk = imports.gi.Gtk;
 
 function loadResource()
 {
-    let datadirs = GLib.get_system_data_dirs();
     let datadir = GLib.getenv('GNOME_TODO_DATADIR');
+    try {
+        let resource = Gio.resource_load(GLib.build_filenamev(
+            [datadir, 'gnome-todo.gresource']));
+          
+        resource._register();
+        return;
+    } catch(e) {}
+
+    let datadirs = GLib.get_system_data_dirs();
 
     let i = 0;
-    if (!datadir)
-        datadir = datadirs[i++];
-
-    while (datadir != null) {
-            let resource = Gio.resource_load(GLib.build_filenamev([datadir, 'gnome-todo.gresource']));
-            resource._register();
-            return;
-        datadir = datadirs[i++];
+    while (datadirs[i] != null) {
+        try {
+          let resource = Gio.resource_load(GLib.build_filenamev(
+              [datadirs[i], 'gnome-todo', 'gnome-todo.gresource']));
+          
+          resource._register();
+          return;
+        } catch(e) {}
+        i++;
     }
 
     throw('Couldn\'t load resource file');
