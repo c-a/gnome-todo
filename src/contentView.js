@@ -19,7 +19,6 @@
  *
  */
 
-const Gd = imports.gi.Gd;
 const Clutter = imports.gi.Clutter;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
@@ -32,6 +31,7 @@ const Mainloop = imports.mainloop;
 const Config = imports.config;
 const Global = imports.global;
 const SpinnerBox = imports.spinnerBox;
+const MainView = imports.mainView;
 
 const ContentView = Lang.Class({
     Name: 'ContentView',
@@ -41,9 +41,9 @@ const ContentView = Lang.Class({
         this._layout = new Clutter.BinLayout();
         this.parent({ layout_manager: this._layout });
 
-        /* Add taskListsView */
-        this.taskListsView = new Gd.TaskListsIconView();
-        let viewActor = new GtkClutter.Actor({ contents: this.taskListsView });
+        this.mainView = new MainView.MainView();
+        this.mainView.show_all();
+        let viewActor = new GtkClutter.Actor({ contents: this.mainView });
         this._layout.add(viewActor, Clutter.BinAlignment.FILL,
             Clutter.BinAlignment.FILL);
 

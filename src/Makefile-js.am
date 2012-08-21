@@ -9,6 +9,7 @@ dist_js_DATA = \
     main.js \
     mainController.js \
     mainToolbar.js \
+    mainView.js \
     mainWindow.js \
     notifications.js \
     path.js \

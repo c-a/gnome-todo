@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Red Hat, Inc.
+ * Copyright (c) 2012 Carl-Anton Ingmarsson
  *
  * Gnome Documents is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by the
@@ -15,7 +15,7 @@
  * with Gnome Documents; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * Author: Cosimo Cecchi <cosimoc@redhat.com>
+ * Author: Carl-Anton Ingmarsson <carlantoni@gnome.org>
  *
  */
 
@@ -95,10 +95,16 @@ const MainToolbar = new Lang.Class({
 
     _selectButtonClicked: function(selectButton) {
         this._notebook.set_current_page(_SELECTION_PAGE);
+
+        this.get_style_context().add_class('selection-mode');
+        this.reset_style();  
     },
 
     _cancelButtonClicked: function(cancelButton) {
         this._notebook.set_current_page(_MAIN_PAGE);
+
+        this.get_style_context().remove_class('selection-mode');
+        this.reset_style();
     },
 
     _listsButtonToggled: function(listsButton) {

@@ -121,6 +121,9 @@ const MainWindow = Lang.Class({
         Gtk.StyleContext.add_provider_for_screen(this.get_screen(),
             Gd.load_css_provider_from_resource('/org/gnome/todo/gnome-todo.css'),
             Gtk.StyleProvider.PRIORITY_APPLICATION);
+
+        this.reset_style();
+        this.contentView.mainView.reset_style();
     },
 
     _saveWindowGeometry: function() {

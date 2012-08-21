@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012 Carl-Anton Ingmarsson
  *
- * Gnome Documents is free software; you can redistribute it and/or modify
+ * Gnome Todo is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by the
  * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
@@ -16,7 +16,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Author: Carl-Anton Ingmarsson <carlantoni@gnome.org>
- *
  */
 
 const Lang = imports.lang;
@@ -34,9 +33,9 @@ MainController.prototype = {
     _init: function(mainWindow) {
         this.window = mainWindow;
 
-        this._taskListsView = mainWindow.contentView.taskListsView;
+        this._mainView = this.window.contentView.mainView;
         this._taskListsModel = new TaskListsModel.TaskListsModel();
-        this._taskListsView.set_model(this._taskListsModel);
+        this._mainView.setModel(this._taskListsModel);
 
         for (let sourceID in Global.sourceManager.sources) {
             this._sourceAdded(Global.sourceManager.sources[sourceID]);
@@ -55,13 +54,7 @@ MainController.prototype = {
             {
                 let list = taskLists[i];
 
-                let text = '';
-                for (let i = 0; i < list.items.length; i++) {
-                    text += list.items[i] + '\n'; 
-                }
-
-                this._taskListsModel.add(list.name,
-                    this._taskListsView.draw_pixbuf(text), source.id);
+                this._taskListsModel.add(list.name, list.items, source.id);
             }
         }));
     },

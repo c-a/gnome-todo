@@ -50,8 +50,6 @@ struct _GdTaskListsIconView
 
 GType gd_task_lists_icon_view_get_type (void) G_GNUC_CONST;
 
-GdkPixbuf *gd_task_lists_icon_view_draw_pixbuf (GdTaskListsIconView *view, const char *text);
-
 G_END_DECLS
 
 #endif /* _GD_TASK_LISTS_ICON_VIEW_H_ */

@@ -44,5 +44,8 @@ xmldocs.make
 *.patch
 *.sw?
 .emacs.desktop*
+.anjuta*
+gnome-todo.anjuta
 
-build/*
+Build/*
+Debug/*
