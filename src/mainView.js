@@ -20,7 +20,7 @@
 
 const Lang = imports.lang;
 
-const Gd = imports.gi.Gd;
+const GdPrivate = imports.gi.GdPrivate;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 
@@ -35,7 +35,7 @@ const MainView = Lang.Class({
         this.parent();
 
          /* Add taskListsView */
-        this._taskListsView = new Gd.TaskListsIconView();
+        this._taskListsView = new GdPrivate.TaskListsIconView();
 
         this.currentView = this._taskListsView;
         

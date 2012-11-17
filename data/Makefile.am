@@ -34,6 +34,6 @@ EXTRA_DIST= \
     $(gsettingsschema_in_files)
 CLEANFILES = \
     gnome-todo.gresource \
-    gschemas.compiled \  
+    gschemas.compiled \
     $(desktop_DATA) \
     $(gsettings_SCHEMAS)

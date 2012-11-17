@@ -1,6 +1,6 @@
 /* -*- mode: js2; js2-basic-offset: 4; indent-tabs-mode: nil -*- */
 
-const Gd = imports.gi.Gd;
+const GdPrivate = imports.gi.GdPrivate;
 
 /*
  * This function is intended to extend the String object and provide

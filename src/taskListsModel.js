@@ -18,7 +18,6 @@
  * Author: Carl-Anton Ingmarsson <carlantoni@gnome.org>
  */
 
-const Gd = imports.gi.Gd;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const GObject = imports.gi.GObject;

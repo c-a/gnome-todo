@@ -8,8 +8,6 @@ gdprivate_cflags = \
 
 gdprivate_source_h = \
     lib/gd-utils.h \
-    lib/gd-notification.h \
-    lib/gd-toggle-pixbuf-renderer.h \
     lib/gd-gtasks-service.h \
     lib/gd-task-lists-icon-view.h \
     lib/gd-task-list-renderer.h \
@@ -17,8 +15,6 @@ gdprivate_source_h = \
 
 gdprivate_source_c = \
     lib/gd-utils.c \
-    lib/gd-notification.c \
-    lib/gd-toggle-pixbuf-renderer.c \
     lib/gd-gtasks-service.c \
     lib/gd-task-lists-icon-view.c \
     lib/gd-task-list-renderer.c \
@@ -40,20 +36,20 @@ libgdprivate_1_0_la_SOURCES = \
     $(gdprivate_source_h) \
     $(gdprivate_source_c)
 
-INTROSPECTION_GIRS += Gd-1.0.gir
+INTROSPECTION_GIRS += GdPrivate-1.0.gir
 
-Gd-1.0.gir: libgdprivate-1.0.la Makefile
-Gd_1_0_gir_NAMESPACE = Gd
-Gd_1_0_gir_VERSION = 1.0
-Gd_1_0_gir_LIBS = libgdprivate-1.0.la
-Gd_1_0_gir_CFLAGS = $(AM_CPPFLAGS) $(gdprivate_cflags)
-Gd_1_0_gir_SCANNERFLAGS = --warn-all --symbol-prefix=gd --identifier-prefix=Gd
-Gd_1_0_gir_INCLUDES = \
+GdPrivate-1.0.gir: libgdprivate-1.0.la Makefile
+GdPrivate_1_0_gir_NAMESPACE = GdPrivate
+GdPrivate_1_0_gir_VERSION = 1.0
+GdPrivate_1_0_gir_LIBS = libgdprivate-1.0.la
+GdPrivate_1_0_gir_CFLAGS = $(AM_CPPFLAGS) $(gdprivate_cflags)
+GdPrivate_1_0_gir_SCANNERFLAGS = --warn-all --symbol-prefix=gd --identifier-prefix=Gd
+GdPrivate_1_0_gir_INCLUDES = \
    Goa-1.0 \
    Gtk-3.0 \
    Gdk-3.0 \
    GdkPixbuf-2.0
 
-Gd_1_0_gir_FILES = \
+GdPrivate_1_0_gir_FILES = \
     $(addprefix $(srcdir)/,$(gdprivate_source_h)) \
     $(addprefix $(srcdir)/,$(gdprivate_source_c))

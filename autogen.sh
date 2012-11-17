@@ -5,6 +5,7 @@ srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 
 PKG_NAME="gnome-todo"
+ACLOCAL_FLAGS="-I libgd $ACLOCAL_FLAGS"
 
 (test -f $srcdir/src/main.js) || {
     echo -n "**Error**: Directory "\`$srcdir\'" does not look like the"
@@ -16,6 +17,8 @@ which gnome-autogen.sh || {
     echo "You need to install gnome-common from the GNOME git"
     exit 1
 }
+
+git submodule update --init --recursive
 
 REQUIRED_AUTOCONF_VERSION=2.59
 REQUIRED_AUTOMAKE_VERSION=1.9

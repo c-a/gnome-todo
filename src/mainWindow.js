@@ -24,7 +24,7 @@ const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 const GtkClutter = imports.gi.GtkClutter;
-const Gd = imports.gi.Gd;
+const GdPrivate = imports.gi.GdPrivate;
 
 const Lang = imports.lang;
 const Mainloop = imports.mainloop;
@@ -119,7 +119,7 @@ const MainWindow = Lang.Class({
     _onMapEvent: function(widget, event) {
         /* Add our custom css */
         Gtk.StyleContext.add_provider_for_screen(this.get_screen(),
-            Gd.load_css_provider_from_resource('/org/gnome/todo/gnome-todo.css'),
+            GdPrivate.load_css_provider_from_resource('/org/gnome/todo/gnome-todo.css'),
             Gtk.StyleProvider.PRIORITY_APPLICATION);
 
         this.reset_style();

@@ -67,16 +67,25 @@ PKG_CHECK_MODULES(TODO,
                   goa-1.0 >= $GOA_MIN_VERSION
                   rest-0.7 >= $REST_MIN_VERSION)
 
+LIBGD_INIT([
+    gtk-hacks
+    gir
+    main-icon-view
+    main-toolbar
+    notification
+])
+
 GJS_CONSOLE=`$PKG_CONFIG --variable=gjs_console gjs-1.0`
 AC_SUBST(GJS_CONSOLE)
 
 AC_CONFIG_FILES([
-Makefile
-src/Makefile
-data/Makefile
-data/icons/Makefile
-data/gnome-todo.desktop.in
-po/Makefile.in
+    Makefile
+    libgd/Makefile
+    src/Makefile
+    data/Makefile
+    data/icons/Makefile
+    data/gnome-todo.desktop.in
+    po/Makefile.in
 ])
 
 AC_OUTPUT

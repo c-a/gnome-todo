@@ -7,15 +7,15 @@ else
 fi
 
 if test x"$GI_TYPELIB_PATH" = x ; then
-    export GI_TYPELIB_PATH=@abs_builddir@
+    export GI_TYPELIB_PATH=@abs_builddir@:@abs_top_builddir@/libgd
 else
-    export GI_TYPELIB_PATH=@abs_builddir@:$GI_TYPELIB_PATH
+    export GI_TYPELIB_PATH=@abs_builddir@:@abs_top_builddir@/libgd:$GI_TYPELIB_PATH
 fi
 
 if test x"$LD_LIBRARY_PATH" = x ; then
-    export LD_LIBRARY_PATH=@abs_builddir@/.libs
+    export LD_LIBRARY_PATH=@abs_builddir@/.libs:@abs_top_builddir@/libgd/.libs
 else
-    export LD_LIBRARY_PATH=@abs_builddir@/.libs:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=@abs_builddir@/.libs:@abs_top_builddir@/libgd/.libs:$LD_LIBRARY_PATH
 fi
 
 glib-compile-schemas @abs_top_builddir@/data
