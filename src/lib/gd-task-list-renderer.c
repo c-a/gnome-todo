@@ -142,8 +142,11 @@ gd_task_list_renderer_get_preferred_width (GtkCellRenderer *cell,
     GtkRequisition min_req, nat_req;
 
     gd_task_list_renderer_get_preferred_size (cell, widget, &min_req, &nat_req);
-    *minimum_size = min_req.width;
-    *natural_size = nat_req.width;
+
+    if (minimum_size)
+        *minimum_size = min_req.width;
+    if (natural_size)
+        *natural_size = nat_req.width;
 }
 
 static void
@@ -155,8 +158,11 @@ gd_task_list_renderer_get_preferred_height (GtkCellRenderer *cell,
     GtkRequisition min_req, nat_req;
 
     gd_task_list_renderer_get_preferred_size(cell, widget, &min_req, &nat_req);
-    *minimum_size = min_req.height;
-    *natural_size = nat_req.height;
+
+    if (minimum_size)
+        *minimum_size = min_req.height;
+    if (natural_size)
+        *natural_size = nat_req.height;
 }
 
 static void
