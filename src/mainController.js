@@ -43,8 +43,8 @@ MainController.prototype = {
         Global.sourceManager.connect('source-added',
             Lang.bind(this, this._sourceAdded));
 
-        this.window.toolbar.connect('selection-mode-enabled',
-            Lang.bind(this, this._selectionModeEnabled));
+        this.window.toolbar.connect('selection-mode-toggled',
+            Lang.bind(this, this._selectionModeToggled));
     },
 
     _sourceAdded: function(source) {
@@ -67,7 +67,7 @@ MainController.prototype = {
         model.removeByID(source.id);
     },
 
-    _selectionModeEnabled: function() {
-        this._mainView.set_selection_mode(true);
+    _selectionModeToggled: function(active) {
+        this._mainView.set_selection_mode(active);
     }
 }

@@ -96,7 +96,7 @@ const MainToolbar = new Lang.Class({
         this.get_style_context().add_class('selection-mode');
         this.reset_style();
 
-        this.emit('selection-mode-enabled');
+        this.emit('selection-mode-toggled', true);
     },
 
     _cancelButtonClicked: function(cancelButton) {
@@ -104,6 +104,8 @@ const MainToolbar = new Lang.Class({
 
         this.get_style_context().remove_class('selection-mode');
         this.reset_style();
+
+        this.emit('selection-mode-toggled', false);
     },
 
     _listsButtonToggled: function(listsButton) {
