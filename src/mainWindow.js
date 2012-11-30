@@ -33,7 +33,6 @@ const ContentView = imports.contentView;
 const Config = imports.config;
 const Global = imports.global;
 const MainToolbar = imports.mainToolbar;
-const WindowMode = imports.windowMode;
 const Utils = imports.utils;
 
 const _ = imports.gettext.gettext;
@@ -93,9 +92,6 @@ const MainWindow = Lang.Class({
         this.connect('window-state-event',
                             Lang.bind(this, this._onWindowStateEvent));
 
-        Global.modeController.connect('fullscreen-changed',
-                                      Lang.bind(this, this._onFullscreenChanged));
-
         // the base layout is a vertical ClutterBox
         this._layout = new Clutter.BoxLayout({ vertical: true });
         this._box = new Clutter.Box({ layout_manager: this._layout });
@@ -144,9 +140,6 @@ const MainWindow = Lang.Class({
     },
 
     _onConfigureEvent: function(widget, event) {
-        if (Global.modeController.getFullscreen())
-            return;
-
         if (this._configureId != 0) {
             Mainloop.source_remove(this._configureId);
             this._configureId = 0;
@@ -186,15 +179,6 @@ const MainWindow = Lang.Class({
             this.destroy();
             return true;
         }
-
-        return this._handleKeyOverview(event);
-    },
-
-    _handleKeyOverview: function(event) {
-        let keyval = event.get_keyval()[1];
-
-        // TODO: handle keys
-
         return false;
     },
 
@@ -215,12 +199,14 @@ const MainWindow = Lang.Class({
         let aboutDialog = new Gtk.AboutDialog();
 
         aboutDialog.artists = [ 'Jakub Steiner <jimmac@gmail.com>' ];
-        aboutDialog.authors = [ 'Cosimo Cecchi <cosimoc@gnome.org>',
-                                'Carl-Anton Ingmarsson <carlantoni@gnome.org>' ];
+        aboutDialog.authors = [ 'Carl-Anton Ingmarsson <carlantoni@gnome.org>', 
+            'Cosimo Cecchi <cosimoc@gnome.org>' ];
         aboutDialog.translator_credits = _("translator-credits");
         aboutDialog.program_name = _("GNOME To Do");
         aboutDialog.comments = _("A to do list application");
-        aboutDialog.copyright = 'Copyright ' + String.fromCharCode(0x00A9) + ' 2011' + String.fromCharCode(0x2013) + '2012 Red Hat, Inc.';
+        aboutDialog.copyright = 'Copyright ' +
+            String.fromCharCode(0x00A9) + ' 2012' + String.fromCharCode(0x2013) + '2012 Carl-Anton Ingmarsson\n' +
+            String.fromCharCode(0x00A9) + ' 2011' + String.fromCharCode(0x2013) + '2012 Red Hat, Inc.';
         aboutDialog.license_type = Gtk.License.GPL_2_0;
         aboutDialog.logo_icon_name = 'gnome-todo';
         aboutDialog.version = Config.PACKAGE_VERSION;

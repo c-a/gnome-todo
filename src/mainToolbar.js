@@ -32,9 +32,7 @@ const Lang = imports.lang;
 const Mainloop = imports.mainloop;
 
 const Global = imports.global;
-const Tweener = imports.util.tweener;
-const Utils = imports.utils;
-const WindowMode = imports.windowMode;
+const Signals = imports.signals;
 
 const _MAIN_PAGE = 0;
 const _SELECTION_PAGE = 1;
@@ -96,7 +94,9 @@ const MainToolbar = new Lang.Class({
         this._notebook.set_current_page(_SELECTION_PAGE);
 
         this.get_style_context().add_class('selection-mode');
-        this.reset_style();  
+        this.reset_style();
+
+        this.emit('selection-mode-enabled');
     },
 
     _cancelButtonClicked: function(cancelButton) {
@@ -122,3 +122,4 @@ const MainToolbar = new Lang.Class({
     }
 });
 
+Signals.addSignalMethods(MainToolbar.prototype);

@@ -9,15 +9,13 @@ dist_js_DATA = \
     main.js \
     mainController.js \
     mainToolbar.js \
-    mainView.js \
     mainWindow.js \
     notifications.js \
     path.js \
     sources.js \
     spinnerBox.js \
     taskListsModel.js \
-    utils.js \
-    windowMode.js 
+    utils.js
 
 jsutildir = $(pkgdatadir)/js/util/
 dist_jsutil_DATA = \

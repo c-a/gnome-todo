@@ -35,13 +35,16 @@ MainController.prototype = {
 
         this._mainView = this.window.contentView.mainView;
         this._taskListsModel = new TaskListsModel.TaskListsModel();
-        this._mainView.setModel(this._taskListsModel);
+        this._mainView.set_model(this._taskListsModel);
 
         for (let sourceID in Global.sourceManager.sources) {
             this._sourceAdded(Global.sourceManager.sources[sourceID]);
         }
         Global.sourceManager.connect('source-added',
-            Lang.bind(this, this._sourceAdded));        
+            Lang.bind(this, this._sourceAdded));
+
+        this.window.toolbar.connect('selection-mode-enabled',
+            Lang.bind(this, this._selectionModeEnabled));
     },
 
     _sourceAdded: function(source) {
@@ -63,4 +66,8 @@ MainController.prototype = {
         let model = this._taskListsModel;
         model.removeByID(source.id);
     },
+
+    _selectionModeEnabled: function() {
+        this._mainView.set_selection_mode(true);
+    }
 }

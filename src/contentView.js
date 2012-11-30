@@ -20,6 +20,7 @@
  */
 
 const Clutter = imports.gi.Clutter;
+const Gd = imports.gi.Gd;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
@@ -31,7 +32,6 @@ const Mainloop = imports.mainloop;
 const Config = imports.config;
 const Global = imports.global;
 const SpinnerBox = imports.spinnerBox;
-const MainView = imports.mainView;
 
 const ContentView = Lang.Class({
     Name: 'ContentView',
@@ -41,7 +41,7 @@ const ContentView = Lang.Class({
         this._layout = new Clutter.BinLayout();
         this.parent({ layout_manager: this._layout });
 
-        this.mainView = new MainView.MainView();
+        this.mainView = new Gd.MainIconView();
         this.mainView.show_all();
         let viewActor = new GtkClutter.Actor({ contents: this.mainView });
         this._layout.add(viewActor, Clutter.BinAlignment.FILL,

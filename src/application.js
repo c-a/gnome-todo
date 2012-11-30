@@ -42,7 +42,6 @@ const Path = imports.path;
 const Sources = imports.sources;
 const Utils = imports.utils;
 const Tweener = imports.util.tweener;
-const WindowMode = imports.windowMode;
 
 const Application = new Lang.Class({
     Name: 'Application',
@@ -75,23 +74,7 @@ const Application = new Lang.Class({
             }));
         this.add_action(aboutAction);
 
-        let fsAction = new Gio.SimpleAction({ name: 'fullscreen' });
-        fsAction.connect('activate', Lang.bind(this,
-            function() {
-                Global.modeController.toggleFullscreen();
-            }));
-        Global.modeController.connect('can-fullscreen-changed', Lang.bind(this,
-            function() {
-                let canFullscreen = Global.modeController.getCanFullscreen();
-                fsAction.set_enabled(canFullscreen);
-            }));
-        this.add_action(fsAction);
-
         let menu = new Gio.Menu();
-
-        let docActions = new Gio.Menu();
-        docActions.append(_("Fullscreen"), 'app.fullscreen');
-        menu.append_section(null, docActions);
 
         menu.append(_("About To Do"), 'app.about');
         menu.append(_("Quit"), 'app.quit');
@@ -111,7 +94,6 @@ const Application = new Lang.Class({
 
         Global.sourceManager = new Sources.SourceManager();
         Global.errorHandler = new Error.ErrorHandler();
-        Global.modeController = new WindowMode.ModeController();
         Global.notificationManager = new Notifications.NotificationManager();
 
         this._initMenus();
@@ -121,7 +103,6 @@ const Application = new Lang.Class({
     },
 
     vfunc_activate: function() {
-        Global.modeController.setWindowMode(WindowMode.WindowMode.OVERVIEW);
         this._mainWindow.show();
     }
 });
