@@ -21,6 +21,8 @@
 
 #include "gd-utils.h"
 
+#include <libgd/gd.h>
+
 #include <string.h>
 #include <math.h>
 
@@ -408,4 +410,64 @@ gchar *
 gd_format_int_alternative_output (gint intval)
 {
   return g_strdup_printf ("%Id", intval);
+}
+
+/**
+ * gd_draw_task_list:
+ * @items: (element-type utf8) (transfer none)
+ *
+ * Returns: (transfer full);
+ */
+GdkPixbuf*
+gd_draw_task_list (GPtrArray* items)
+{
+    const gint PIXBUF_HEIGHT = 180;
+    const gint PIXBUF_WIDTH = 140;
+
+    GtkCssProvider* provider;
+    GError* err = NULL;
+    GtkStyleContext* context;
+    GtkWidgetPath* path;
+
+    GtkBorder border, padding;
+    gint width, height;
+    gint content_width, content_height;
+    cairo_surface_t* surface;
+    cairo_t* cr;
+
+    provider = gd_load_css_provider_from_resource ("/org/gnome/todo/gnome-todo.css", &err);
+    if (!provider)
+    {
+        g_error("Failed to load style resource (%s)", err->message);
+        g_error_free (err);
+        return NULL;
+    }
+
+    context = gtk_style_context_new ();
+    path = gtk_widget_path_new ();
+    gtk_widget_path_append_type (path, GD_TYPE_MAIN_ICON_VIEW);
+    gtk_style_context_set_path (context, path);
+    gtk_widget_path_unref (path);
+
+    gtk_style_context_add_provider (context, GTK_STYLE_PROVIDER (provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref (provider);
+    gtk_style_context_add_class (context, "todo-task-list-renderer");
+
+    gtk_style_context_get_border (context, GTK_STATE_FLAG_NORMAL, &border);
+    gtk_style_context_get_padding (context, GTK_STATE_FLAG_NORMAL, &padding);
+
+    width = PIXBUF_WIDTH + padding.left + padding.right + border.left + border.right;
+    height = PIXBUF_HEIGHT + padding.top + padding.bottom + border.top + border.bottom;
+
+    content_width = PIXBUF_WIDTH + border.left + border.right;
+    content_height = PIXBUF_HEIGHT + border.top + border.bottom;
+
+    surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
+    cr = cairo_create (surface);
+
+    gtk_render_background (context, cr, padding.left, padding.top,
+        content_width, content_height);
+
+    return gdk_pixbuf_get_from_surface (surface, 0, 0, width, height);
 }

@@ -58,8 +58,8 @@ const TaskListsModel = Lang.Class({
         this.set_value(iter, Gd.MainColumns.ID, sourceID);
         this.set_value(iter, Gd.MainColumns.PRIMARY_TEXT, name);
 
-        //let pixbuf = this._drawPixbuf(items);
-        //this.set_value(iter, Gd.MainColumns.ICON, pixbuf);
+        let pixbuf = GdPrivate.draw_task_list(items);
+        this.set_value(iter, Gd.MainColumns.ICON, pixbuf);
     },
 
     removeByID: function(sourceID)
@@ -84,7 +84,7 @@ const TaskListsModel = Lang.Class({
 
         let style_context = new Gtk.StyleContext();
         let path = new Gtk.WidgetPath();
-        path.append_type(Gtk.Window);
+        path.append_type(Gd.MainIconView);
         style_context.set_path(path);
         style_context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         style_context.add_class('todo-task-list-renderer');
