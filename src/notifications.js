@@ -26,35 +26,37 @@ const GtkClutter = imports.gi.GtkClutter;
 const _ = imports.gettext.gettext;
 
 const Global = imports.global;
+const Utils = imports.utils;
 
 const Lang = imports.lang;
 
 const NotificationManager = Lang.Class({
     Name: 'NotificationManager',
-    Extends: Gd.Notification,
+    Extends: GtkClutter.Actor,
 
     _init: function() {
-        this.parent({ timeout: -1, show_close_button: false });
+        this.parent();
 
-        this.get_style_context().add_class('osd');
-        this.reset_style();
+        this._notification = new Gd.Notification({ timeout: -1,
+            show_close_button: true });
 
         this._grid = new Gtk.Grid({ orientation: Gtk.Orientation.VERTICAL,
-                                    row_spacing: 6 });
-        this.add(this._grid);
-        this._grid.show();
+            row_spacing: 6 });
+        this._notification.add(this._grid);
+        this._notification.show_all();
+
+        this.contents = this._notification;
+        Utils.alphaGtkWidget(this.get_widget());
     },
 
     addNotification: function(notification) {
-        this._activeNotification = notification;
         this._grid.add(notification);
 
         notification.show_all();
-        this.show();
-        this.actor.opacity = 255;
-
         notification.connect('destroy',
             Lang.bind(this, this._onWidgetDestroy));
+
+        this.show();
     },
 
     _onWidgetDestroy: function() {

@@ -48,8 +48,8 @@ const ContentView = Lang.Class({
             Clutter.BinAlignment.FILL);
 
         /* Add NotificationManager */
-        let notificationManagerActor =
-            new GtkClutter.Actor({ contents: Global.notificationManager });
+        this._layout.add(Global.notificationManager, Clutter.BinAlignment.FILL,
+            Clutter.BinAlignment.FILL);
 
         /* Add SpinnerBox */
         this._spinnerBox = new SpinnerBox.SpinnerBox();
