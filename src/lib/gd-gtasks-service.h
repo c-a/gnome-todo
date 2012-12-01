@@ -63,18 +63,18 @@ GType gd_gtasks_service_get_type (void) G_GNUC_CONST;
 GdGTasksService *gd_gtasks_service_new (const char *consumer_key,
                                         const char *consumer_secret);
 
-void    gd_gtasks_service_call         (GdGTasksService *service,
-                                        const char *method,
-                                        const char *function,
-                                        GPtrArray *parameters,
-                                        GCancellable *cancellable,
-                                        GAsyncReadyCallback callback,
-                                        gpointer user_data);
+void    gd_gtasks_service_call_function (GdGTasksService *service,
+                                         const char *method,
+                                         const char *function,
+                                         GPtrArray *parameters,
+                                         GCancellable *cancellable,
+                                         GAsyncReadyCallback callback,
+                                         gpointer user_data);
 
-gboolean gd_gtasks_service_call_finish (GdGTasksService *service,
-                                        GAsyncResult *result,
-                                        GBytes **body,
-                                        GError **error);
+gboolean gd_gtasks_service_call_function_finish (GdGTasksService *service,
+                                                 GAsyncResult *result,
+                                                 GBytes **body,
+                                                 GError **error);
 G_END_DECLS
 
 #endif /* _GD_GTASKS_SERVICE_H_ */

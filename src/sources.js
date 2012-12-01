@@ -111,17 +111,31 @@ GTasksSource.prototype = {
                 if (!authenticated)
                     return;
 
-                let lists = [];
-
-                lists.push({ name: 'GTask List 1',
-                    items: ['Item 1', 'Item 2'] });
-
-                lists.push({ name: 'GTask List 2',
-                    items: ['Item 3', 'Item 4'] });
-
-                callback(null, lists);
+                this._listTaskListsCallback = callback;
+                this._gTasksService.call_function('GET',
+                    'https://www.googleapis.com/tasks/v1/users/@me/lists', null,
+                    null, Lang.bind(this, this._getListsCallCb));
             }));
     },
+
+    _getListsCallCb: function(service, res) {
+        try {
+            let body = service.call_function_finish(res);
+        } catch (e) {
+            let notification = new Gtk.Label({ label: e.message });
+            Global.notificationManager.addNotification(notification);
+        }
+
+        let lists = [];
+
+        lists.push({ name: 'GTask List 1',
+            items: ['Item 1', 'Item 2'] });
+
+        lists.push({ name: 'GTask List 2',
+            items: ['Item 3', 'Item 4'] });
+
+        this._listTaskListsCallback(null, lists);
+    }
 
 }
 

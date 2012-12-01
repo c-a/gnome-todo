@@ -116,17 +116,23 @@ invoke_async_cb (GObject *source_object,
         rest_proxy_call_get_payload_length (call));
     g_simple_async_result_set_op_res_gpointer (simple, body, (GDestroyNotify)g_bytes_unref);
 
-    done:
-        g_simple_async_result_complete (simple);
-        g_object_unref (simple);
+done:
+    g_simple_async_result_complete (simple);
+    g_object_unref (simple);
+    g_object_unref (call);
 }
 
 /**
- * gd_gtasks_service_call:
- * @parameters: (element-type Gd.GtasksServiceParameter)
+ * gd_gtasks_service_call_function:
+ * @method:
+ * @function:
+ * @parameters: (element-type GdGTasksServiceParameter) (allow-none)
+ * @cancellable: (allow-none)
+ * @callback: (scope async)
+ * @user_data: (closure)
  */
 void
-gd_gtasks_service_call (GdGTasksService *service,
+gd_gtasks_service_call_function (GdGTasksService *service,
                         const char *method,
                         const char *function,
                         GPtrArray *parameters,
@@ -139,7 +145,7 @@ gd_gtasks_service_call (GdGTasksService *service,
     int i;
 
     simple = g_simple_async_result_new (G_OBJECT (service), callback, user_data,
-        gd_gtasks_service_call);
+        gd_gtasks_service_call_function);
 
     call = rest_proxy_new_call (service->priv->proxy);
 
@@ -158,8 +164,17 @@ gd_gtasks_service_call (GdGTasksService *service,
     rest_proxy_call_invoke_async (call, cancellable, invoke_async_cb, simple);
 }
 
+/**
+ * gd_gtasks_service_call_function_finish:
+ * @service: a #GdGTasksService
+ * @result: the result from the #GAsyncReadyCallback
+ * @body: (out) (allow-none)
+ * @error: a #GError, or %NULL
+ *
+ * Returns: %TRUE if the function succeeded, %FALSE otherwise.
+ */
 gboolean
-gd_gtasks_service_call_finish (GdGTasksService *service,
+gd_gtasks_service_call_function_finish (GdGTasksService *service,
                                GAsyncResult *result,
                                GBytes **body,
                                GError **error)
@@ -168,7 +183,7 @@ gd_gtasks_service_call_finish (GdGTasksService *service,
 
     g_return_val_if_fail (g_simple_async_result_is_valid (result,
         G_OBJECT (service),
-        gd_gtasks_service_call),
+        gd_gtasks_service_call_function),
         FALSE);
 
     simple = (GSimpleAsyncResult *)result;

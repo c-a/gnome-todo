@@ -66,9 +66,6 @@ const NotificationManager = Lang.Class({
 
         if (children.length == 0)
             this.hide();
-    },
-
-    _onNotificationDismissed: function() {
     }
 });
 
