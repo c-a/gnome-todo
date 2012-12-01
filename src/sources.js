@@ -23,6 +23,7 @@ const GdPrivate = imports.gi.GdPrivate;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Goa = imports.gi.Goa;
+const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
 const Mainloop = imports.mainloop;
@@ -78,40 +79,48 @@ GTasksSource.prototype = {
         let oauth2Based = object.oauth2_based;
 
         this._gTasksService = new GdPrivate.GTasksService(
-            { client_id: oauth2Based.client_id,
-              client_secret: oauth2Based.client_secret });
+            { client_id: oauth2Based.client_id });
     },
 
     _authenticate: function(callback) {
-        let oauthBased = this.object.get_oauth_based();
 
-        ouathBased.call_get_access_token(null, function(object, res) {
-            try {
-                let ret = oauthBased.call_get_access_token_finish(res);
+        if (this._authenticated)
+            callback(this._authenticated);
 
-                this._gTasksService.token = ret[1];
-                this._gTasksService.token_secret = ret[2];
+        let oauth2Based = this._object.oauth2_based;
+        oauth2Based.call_get_access_token(null,
+            Lang.bind(this, function(object, res) {
+                try {
+                    let [access_token, expires_in] = oauth2Based.call_get_access_token_finish(res);
 
-                this._authenticated = true;
-                
-            } catch (e) {
-                /* TODO: Real notification */
-                let notification = new Gtk.Label({ label: 'Failure' });
-                Global.notificationManager.addNotification(notification);
-            }
-        });
+                    this._gTasksService.token = access_token;
+                    this._authenticated = true;
+                } catch (e) {
+                    /* TODO: Add button for reauthentication. */
+                    let notification = new Gtk.Label({ label: e.message });
+                    Global.notificationManager.addNotification(notification);
+                }
+
+                callback(this._authenticated);
+            }));
     },
 
     listTaskLists: function(callback) {
-        let lists = [];
+        this._authenticate(
+            Lang.bind(this, function(authenticated) {
+                if (!authenticated)
+                    return;
 
-        lists.push({ name: 'GTask List 1',
-            items: ['Item 1', 'Item 2'] });
+                let lists = [];
 
-        lists.push({ name: 'GTask List 2',
-            items: ['Item 3', 'Item 4'] });
+                lists.push({ name: 'GTask List 1',
+                    items: ['Item 1', 'Item 2'] });
 
-        callback(null, lists);
+                lists.push({ name: 'GTask List 2',
+                    items: ['Item 3', 'Item 4'] });
+
+                callback(null, lists);
+            }));
     },
 
 }

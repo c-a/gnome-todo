@@ -47,6 +47,8 @@ const NotificationManager = Lang.Class({
 
         this.contents = this._notification;
         Utils.alphaGtkWidget(this.get_widget());
+
+        this.hide();
     },
 
     addNotification: function(notification) {
