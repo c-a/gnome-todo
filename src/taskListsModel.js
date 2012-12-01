@@ -65,16 +65,11 @@ const TaskListsModel = Lang.Class({
     removeByID: function(sourceID)
     {
         let [res, iter] = this.get_iter_first();
-        if (!res)
-            return;
-
-        while (true) {
-            if (sourceID == this.get_value(iter, COLUMN_SOURCE_ID) &&
-                !this.remove(iter))
-                break;
-
-            else if (!this.iter_next(iter))
-                break;
+        while (res) {
+            if (sourceID == this.get_value(iter, Gd.MainColumns.ID))
+                res = this.remove(iter);
+            else
+                res = this.iter_next(iter);
         }
     },
 

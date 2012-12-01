@@ -38,16 +38,18 @@ MainController.prototype = {
         this._mainView.set_model(this._taskListsModel);
 
         for (let sourceID in Global.sourceManager.sources) {
-            this._sourceAdded(Global.sourceManager.sources[sourceID]);
+            this._sourceAdded(null, Global.sourceManager.sources[sourceID]);
         }
         Global.sourceManager.connect('source-added',
             Lang.bind(this, this._sourceAdded));
+        Global.sourceManager.connect('source-removed',
+            Lang.bind(this, this._sourceRemoved));
 
         this.window.toolbar.connect('selection-mode-toggled',
             Lang.bind(this, this._selectionModeToggled));
     },
 
-    _sourceAdded: function(source) {
+    _sourceAdded: function(manager, source) {
         source.listTaskLists(Lang.bind(this, function(error, taskLists) {
             /*TODO: show error */
             if (error)
@@ -62,12 +64,12 @@ MainController.prototype = {
         }));
     },
 
-    _sourceRemovedCb: function(source) {
+    _sourceRemoved: function(manager, source) {
         let model = this._taskListsModel;
         model.removeByID(source.id);
     },
 
-    _selectionModeToggled: function(active) {
+    _selectionModeToggled: function(toolbar, active) {
         this._mainView.set_selection_mode(active);
     }
 }

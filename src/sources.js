@@ -19,6 +19,7 @@
  *
  */
 
+const GdPrivate = imports.gi.GdPrivate;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Goa = imports.gi.Goa;
@@ -69,16 +70,16 @@ GTasksSource.prototype = {
 
         this._authenticated = false;
 
-        let account = object.get_account();
-        this.id = account.get_id();
+        let account = object.account;
+        this.id = account.id;
         this.name = account.provider_name;
         this.icon = Gio.icon_new_for_string(account.provider_icon);
 
-        let oauthBased = object.get_oauth_based();
- 
-        this._gTasksService = new Gd.GTasksService(
-            { consumer_key: oauthBased.get_consumer_key(),
-              consumer_secret: oauthBased.get_consumer_secret() });
+        let oauth2Based = object.oauth2_based;
+
+        this._gTasksService = new GdPrivate.GTasksService(
+            { client_id: oauth2Based.client_id,
+              client_secret: oauth2Based.client_secret });
     },
 
     _authenticate: function(callback) {
@@ -90,6 +91,8 @@ GTasksSource.prototype = {
 
                 this._gTasksService.token = ret[1];
                 this._gTasksService.token_secret = ret[2];
+
+                this._authenticated = true;
                 
             } catch (e) {
                 /* TODO: Real notification */
@@ -100,7 +103,17 @@ GTasksSource.prototype = {
     },
 
     listTaskLists: function(callback) {
-    }
+        let lists = [];
+
+        lists.push({ name: 'GTask List 1',
+            items: ['Item 1', 'Item 2'] });
+
+        lists.push({ name: 'GTask List 2',
+            items: ['Item 3', 'Item 4'] });
+
+        callback(null, lists);
+    },
+
 }
 
 
@@ -127,15 +140,15 @@ SourceManager.prototype = {
             if (!this._validObject(object))
                 continue;
 
-            let source = new Source(object);
-            this.sources[source.id] = source;
-            this.emit('source-added', source);
+            this._addGTasksSource(object);
         }
 
         this._goaClient.connect('account-added',
             Lang.bind(this, this._accountAddedCb));
         this._goaClient.connect('account-removed',
             Lang.bind(this, this._accountRemovedCb));
+        this._goaClient.connect('account-changed',
+            Lang.bind(this, this._accountChangedCb));
 
         /*XXX: Add mock source */
         let mockSource = new MockSource();
@@ -143,32 +156,56 @@ SourceManager.prototype = {
         this.emit('source-added', mockSource);
     },
 
-    _validObject: function(object) {
-        let account = object.get_account();
-        return ((object.tasks != null) &&
-                (account.provider_type == 'google') &&
-                (object.oauth_based != null));          
-    },
-
-    _accountAddedCb: function(goaClient, object) {
-        if (!this._validAccount(account))
-            return;
-
-        let source = new Source(object);
+    _addGTasksSource: function(object) {
+        let source = new GTasksSource(object);
         this.sources[source.id] = source;
         this.emit('source-added', source);
     },
 
+    _removeGTasksSource: function(object) {
+        let source = this.sources[object.account.id];
+        delete this.sources[object.account.id];
+        this.emit('source-removed', source);
+    },
+
+    _validObject: function(object) {
+        let account = object.get_account();
+
+        return ((object.tasks != null) &&
+                (account.provider_type == 'google') &&
+                (object.oauth2_based != null));
+    },
+
+    _accountAddedCb: function(goaClient, object) {
+        if (!this._validObject(object))
+            return;
+
+        this._addGTasksSource(object);
+    },
+
     _accountRemovedCb: function(goaClient, object) {
 
-        let account = object.get_account();
+        let account = object.account;
         if (!account)
             return;
 
-        if (this.accounts.hasOwnProperty(account.get_id)) {
-            let source = this.accounts[account.id];
-            this.sources[account.id] = undefined; 
-            this.emit('source-removed', source);
+        if (this.sources.hasOwnProperty(account.id))
+            this._removeGTasksSource(object);
+    },
+
+    _accountChangedCb: function(goaClient, object) {
+
+        let account = object.account;
+        if (!account)
+            return;
+
+        if (this.sources.hasOwnProperty(account.id)) {
+            if (!this._validObject(object))
+                this._removeGTasksSource(object);
+        }
+        else {
+            if (this._validObject(object))
+                this._addGTasksSource(object);
         }
     }
 }
