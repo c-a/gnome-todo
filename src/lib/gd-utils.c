@@ -412,6 +412,43 @@ gd_format_int_alternative_output (gint intval)
   return g_strdup_printf ("%Id", intval);
 }
 
+static const gint PIXBUF_HEIGHT = 180;
+static const gint PIXBUF_WIDTH = 140;
+
+static void
+gd_draw_task_items (GtkStyleContext* context, cairo_t* cr, GPtrArray* items)
+{
+    PangoContext* pango_context;
+    gint i;
+    GString* string;
+    char* text;
+    PangoLayout* layout;
+
+    pango_context = gdk_pango_context_get_for_screen (gdk_screen_get_default ());
+
+    string = g_string_new (NULL);
+    for (i = 0; i < items->len; i++)
+    {
+        const char* item = g_ptr_array_index (items, i);
+        if (i != 0)
+            g_string_append (string, "\n");
+
+        g_string_append (string, item);
+    }
+    text = g_string_free (string, FALSE);
+
+    layout = pango_layout_new (pango_context);
+    pango_layout_set_text (layout, text, -1);
+    pango_layout_set_width (layout, PANGO_SCALE * PIXBUF_WIDTH);
+    pango_layout_set_height (layout, PANGO_SCALE * PIXBUF_HEIGHT);
+
+    gtk_render_layout (context, cr, 0, 0, layout);
+
+    g_object_unref (pango_context);
+    g_object_unref (layout);
+    g_free (text);
+}
+
 /**
  * gd_draw_task_list:
  * @items: (element-type utf8) (transfer none)
@@ -421,9 +458,6 @@ gd_format_int_alternative_output (gint intval)
 GdkPixbuf*
 gd_draw_task_list (GPtrArray* items)
 {
-    const gint PIXBUF_HEIGHT = 180;
-    const gint PIXBUF_WIDTH = 140;
-
     GtkCssProvider* provider;
     GError* err = NULL;
     GtkStyleContext* context;
@@ -434,6 +468,7 @@ gd_draw_task_list (GPtrArray* items)
     gint content_width, content_height;
     cairo_surface_t* surface;
     cairo_t* cr;
+
 
     provider = gd_load_css_provider_from_resource ("/org/gnome/todo/gnome-todo.css", &err);
     if (!provider)
@@ -457,17 +492,22 @@ gd_draw_task_list (GPtrArray* items)
     gtk_style_context_get_border (context, GTK_STATE_FLAG_NORMAL, &border);
     gtk_style_context_get_padding (context, GTK_STATE_FLAG_NORMAL, &padding);
 
-    width = PIXBUF_WIDTH + padding.left + padding.right + border.left + border.right;
-    height = PIXBUF_HEIGHT + padding.top + padding.bottom + border.top + border.bottom;
+    width = PIXBUF_WIDTH + border.left + border.right  + padding.left + padding.right;
+    height = PIXBUF_HEIGHT + border.top + border.bottom + padding.top + padding.bottom;
 
-    content_width = PIXBUF_WIDTH + border.left + border.right;
-    content_height = PIXBUF_HEIGHT + border.top + border.bottom;
+    content_width = PIXBUF_WIDTH + padding.left + padding.right;
+    content_height = PIXBUF_HEIGHT + padding.top + padding.bottom;
 
     surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
     cr = cairo_create (surface);
 
-    gtk_render_background (context, cr, padding.left, padding.top,
+    gtk_render_background (context, cr, border.left, border.top,
         content_width, content_height);
+
+    cairo_save (cr);
+    cairo_translate (cr, border.left + padding.left, border.top + padding.top);
+    gd_draw_task_items (context, cr, items);
+    cairo_restore (cr);
 
     return gdk_pixbuf_get_from_surface (surface, 0, 0, width, height);
 }
