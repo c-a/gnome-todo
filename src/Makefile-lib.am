@@ -10,15 +10,11 @@ gdprivate_cflags = \
 gdprivate_source_h = \
     lib/gd-utils.h \
     lib/gd-gtasks-service.h \
-    lib/gd-task-lists-icon-view.h \
-    lib/gd-task-list-renderer.h \
     $(NULL)
 
 gdprivate_source_c = \
     lib/gd-utils.c \
     lib/gd-gtasks-service.c \
-    lib/gd-task-lists-icon-view.c \
-    lib/gd-task-list-renderer.c \
     $(NULL)
 
 pkglib_LTLIBRARIES += libgdprivate-1.0.la
