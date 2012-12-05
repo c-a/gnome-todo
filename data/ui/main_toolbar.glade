@@ -14,14 +14,12 @@
         <child>
           <object class="GtkButton" id="new_button">
             <property name="label" translatable="yes">New</property>
-            <property name="use_action_appearance">False</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="halign">start</property>
-            <property name="use_action_appearance">False</property>
-            <property name="xalign">0.5</property>
-            <property name="yalign">0.5</property>
+            <style>
+              <class name="suggested-action"/>
+            </style>
           </object>
           <packing>
             <property name="left_attach">0</property>
@@ -43,13 +41,10 @@
             <child>
               <object class="GtkRadioButton" id="lists_button">
                 <property name="label" translatable="yes">Lists</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
-                <property name="use_action_appearance">False</property>
                 <property name="xalign">0.5</property>
-                <property name="yalign">0.5</property>
                 <property name="active">True</property>
                 <property name="draw_indicator">False</property>
               </object>
@@ -62,13 +57,10 @@
             <child>
               <object class="GtkRadioButton" id="today_button">
                 <property name="label" translatable="yes">Today</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
-                <property name="use_action_appearance">False</property>
                 <property name="xalign">0.5</property>
-                <property name="yalign">0.5</property>
                 <property name="draw_indicator">False</property>
                 <property name="group">lists_button</property>
               </object>
@@ -81,13 +73,10 @@
             <child>
               <object class="GtkRadioButton" id="scheduled_button">
                 <property name="label" translatable="yes">Scheduled</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
-                <property name="use_action_appearance">False</property>
                 <property name="xalign">0.5</property>
-                <property name="yalign">0.5</property>
                 <property name="draw_indicator">False</property>
                 <property name="group">lists_button</property>
               </object>
@@ -107,13 +96,9 @@
         </child>
         <child>
           <object class="GtkButton" id="select_button">
-            <property name="use_action_appearance">False</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="use_action_appearance">False</property>
-            <property name="xalign">0.5</property>
-            <property name="yalign">0.5</property>
             <child>
               <placeholder/>
             </child>
@@ -141,13 +126,9 @@
             <child>
               <object class="GtkButton" id="cancel_button">
                 <property name="label" translatable="yes">Cancel</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
-                <property name="xalign">0.5</property>
-                <property name="yalign">0.5</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -239,6 +220,7 @@
     </child>
   </object>
   <object class="GtkSizeGroup" id="sizegroup1">
+    <property name="mode">both</property>
     <widgets>
       <widget name="new_button"/>
       <widget name="select_button"/>
