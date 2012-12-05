@@ -48,7 +48,7 @@ typelib_DATA += $(gir_DATA:.gir=.typelib)
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 
 bin_SCRIPTS = gnome-todo
-noinst_SCRIPTS = gnome-todo-uninstalled gnome-todo-debug
+noinst_SCRIPTS = gnome-todo-uninstalled
 
 gnome-todo: gnome-todo.in
 	$(AM_V_GEN) $(do_subst) $< > $@
@@ -56,15 +56,10 @@ gnome-todo: gnome-todo.in
 gnome-todo-uninstalled: gnome-todo-uninstalled.in
 	$(AM_V_GEN) $(do_subst) $< > $@
 	chmod +x $@
-gnome-todo-debug: gnome-todo-debug.in
-	$(AM_V_GEN) $(do_subst) $< > $@
-	chmod +x $@
 
 CLEANFILES += \
     gnome-todo \
-    gnome-todo-uninstalled \
-    gnome-todo-debug
+    gnome-todo-uninstalled
 EXTRA_DIST += \
     gnome-todo.in \
-    gnome-todo-uninstalled.in \
-    gnome-todo-debug.in
+    gnome-todo-uninstalled.in

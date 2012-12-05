@@ -1,31 +1,13 @@
 #!/bin/bash
 
-if test x"$GJS_PATH" = x ; then
-    export GJS_PATH=@abs_builddir@
-else
-    export GJS_PATH=@abs_builddir@:$GJS_PATH
-fi
-
-if test x"$GI_TYPELIB_PATH" = x ; then
-    export GI_TYPELIB_PATH=@abs_builddir@:@abs_top_builddir@/libgd
-else
-    export GI_TYPELIB_PATH=@abs_builddir@:@abs_top_builddir@/libgd:$GI_TYPELIB_PATH
-fi
-
-if test x"$LD_LIBRARY_PATH" = x ; then
-    export LD_LIBRARY_PATH=@abs_builddir@/.libs:@abs_top_builddir@/libgd/.libs
-else
-    export LD_LIBRARY_PATH=@abs_builddir@/.libs:@abs_top_builddir@/libgd/.libs:$LD_LIBRARY_PATH
-fi
+export GJS_PATH="@abs_builddir@${GJS_PATH:+:GJS_PATH}"
+export GI_TYPELIB_PATH="@abs_builddir@:@abs_top_builddir@/libgd${GI_TYPELIB_PATH:+:GI_TYPELIB_PATH}"
+export LD_LIBRARY_PATH="@abs_builddir@/.libs:@abs_top_builddir@/libgd/.libs${LD_LIBRARY_PATH:+:LD_LIBRARY_PATH}"
 
 glib-compile-schemas @abs_top_builddir@/data
-if test x"$GSETTINGS_SCHEMA_DIR" = x ; then
-    export GSETTINGS_SCHEMA_DIR=@abs_top_builddir@/data
-else
-    export GSETTINGS_SCHEMA_DIR=@abs_top_builddir@/data:$GSETTINGS_SCHEMA_DIR
-fi
+export GSETTINGS_SCHEMA_DIR="@abs_top_builddir@/data${GSETTINGS_SCHEMA_DIR:+:GSETTINGS_SCHEMA_DIR}"
 
-export GNOME_TODO_DATADIR=@abs_top_builddir@/data
+export GNOME_TODO_DATADIR="@abs_top_builddir@/data${GNOME_TODO_DATADIR:+:GNOME_TODO_DATADIR}"
 
 if test x"$GJS_DEBUG_OUTPUT" = x ; then
     export GJS_DEBUG_OUTPUT=stderr
@@ -35,4 +17,4 @@ if test x"$GJS_DEBUG_TOPICS" = x ; then
     export GJS_DEBUG_TOPICS="JS ERROR;JS LOG"
 fi
 
-gdb --args @GJS_CONSOLE@ -I @abs_top_srcdir@/src -c "const Main = imports.main; Main.start();" "$@"
+exec gdb --args @GJS_CONSOLE@ -I @abs_top_srcdir@/src -c "const Main = imports.main; Main.start();" "$@"
