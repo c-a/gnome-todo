@@ -42,21 +42,22 @@ function MockSource()
 MockSource.prototype = {
   _init: function()
   {
-    this.id = 'mock##';
-    this.name ='MockSource';
-    this.icon = Gio.icon_new_for_string('system');
+      this.id = 'mock##';
+      this.name ='MockSource';
+      this.icon = Gio.icon_new_for_string('system');
+      this.onlineSource = false;
   },
 
   listTaskLists: function(callback) {
-    let lists = [];
+      let lists = [];
 
-    lists.push({ name: 'Test List 1',
-                 items: ['Item 1', 'Item 2'] });
+      lists.push({ name: 'Test List 1',
+          items: ['Item 1', 'Item 2'] });
 
-    lists.push({ name: 'Test List 2',
-                 items: ['Item 3', 'Item 4'] });
+      lists.push({ name: 'Test List 2',
+          items: ['Item 3', 'Item 4'] });
 
-    callback(null, lists);
+      callback(null, lists);
   }
 }
 
@@ -75,6 +76,7 @@ GTasksSource.prototype = {
         this.id = account.id;
         this.name = account.provider_name;
         this.icon = Gio.icon_new_for_string(account.provider_icon);
+        this.onlineSource = true;
 
         let oauth2Based = object.oauth2_based;
 
@@ -95,21 +97,20 @@ GTasksSource.prototype = {
 
                     this._gTasksService.token = access_token;
                     this._authenticated = true;
-                } catch (e) {
-                    /* TODO: Add button for reauthentication. */
-                    let notification = new Gtk.Label({ label: e.message });
-                    Global.notificationManager.addNotification(notification);
+                    callback(null);
+                } catch (err) {
+                    callback(err);
                 }
 
-                callback(this._authenticated);
+                
             }));
     },
 
     listTaskLists: function(callback) {
         this._authenticate(
-            Lang.bind(this, function(authenticated) {
-                if (!authenticated)
-                    return;
+            Lang.bind(this, function(error) {
+                if (error)
+                    callback(error);
 
                 this._listTaskListsCallback = callback;
                 this._gTasksService.call_function('GET',
@@ -121,19 +122,11 @@ GTasksSource.prototype = {
     _getListsCallCb: function(service, res) {
         try {
             let body = service.call_function_finish(res);
-        } catch (e) {
-            let notification = new Gtk.Label({ label: e.message });
-            Global.notificationManager.addNotification(notification);
+        } catch (err) {
+            this._listTaskListsCallback(err);
         }
 
         let lists = [];
-
-        lists.push({ name: 'GTask List 1',
-            items: ['Item 1', 'Item 2'] });
-
-        lists.push({ name: 'GTask List 2',
-            items: ['Item 3', 'Item 4'] });
-
         this._listTaskListsCallback(null, lists);
     }
 
@@ -155,6 +148,7 @@ SourceManager.prototype = {
         }
 
         this.sources = {};
+        this.nSources = 0;
 
         let accounts = this._goaClient.get_accounts();
         for (let i = 0; i < accounts.length; i++)
@@ -174,21 +168,31 @@ SourceManager.prototype = {
             Lang.bind(this, this._accountChangedCb));
 
         /*XXX: Add mock source */
-        let mockSource = new MockSource();
-        this.sources[mockSource.id] = mockSource;
-        this.emit('source-added', mockSource);
+        //let mockSource = new MockSource();
+        //this._addSource(mockSource);
+    },
+
+    _addSource: function(source)
+    {
+        this.sources[source.id] = source;
+        this.nSources++;
+        this.emit('source-added', source);
+    },
+
+    _removeSource: function(id)
+    {
+        if (this.sources.hasOwnProperty(id))
+        {
+            let source = this.sources[id];
+            delete this.sources[id];
+            this.nSources--;
+            this.emit('source-removed', source);
+        }
     },
 
     _addGTasksSource: function(object) {
         let source = new GTasksSource(object);
-        this.sources[source.id] = source;
-        this.emit('source-added', source);
-    },
-
-    _removeGTasksSource: function(object) {
-        let source = this.sources[object.account.id];
-        delete this.sources[object.account.id];
-        this.emit('source-removed', source);
+        this._addSource(source);
     },
 
     _validObject: function(object) {
@@ -212,8 +216,7 @@ SourceManager.prototype = {
         if (!account)
             return;
 
-        if (this.sources.hasOwnProperty(account.id))
-            this._removeGTasksSource(object);
+        this._removeSource(account.id);
     },
 
     _accountChangedCb: function(goaClient, object) {
@@ -224,7 +227,7 @@ SourceManager.prototype = {
 
         if (this.sources.hasOwnProperty(account.id)) {
             if (!this._validObject(object))
-                this._removeGTasksSource(object);
+                this._removeSource(account.id);
         }
         else {
             if (this._validObject(object))

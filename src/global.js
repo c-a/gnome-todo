@@ -21,7 +21,6 @@
 
 let application = null;
 let errorHandler = null;
-let modeController = null;
 let notificationManager = null;
 let settings = null;
 let sourceManager = null;

@@ -37,9 +37,13 @@ MainController.prototype = {
         this._taskListsModel = new TaskListsModel.TaskListsModel();
         this._mainView.set_model(this._taskListsModel);
 
+        this._outstandingLoads = 0;
         for (let sourceID in Global.sourceManager.sources) {
             this._sourceAdded(null, Global.sourceManager.sources[sourceID]);
         }
+
+        this._updateContentView();
+
         Global.sourceManager.connect('source-added',
             Lang.bind(this, this._sourceAdded));
         Global.sourceManager.connect('source-removed',
@@ -50,26 +54,47 @@ MainController.prototype = {
     },
 
     _sourceAdded: function(manager, source) {
+
+        if (this._outstandingLoads++ == 0)
+            this.window.contentView.showMainView(true);
+
         source.listTaskLists(Lang.bind(this, function(error, taskLists) {
-            /*TODO: show error */
-            if (error)
-                return;
-
-            for (let i = 0; i < taskLists.length; i++)
-            {
-                let list = taskLists[i];
-
-                this._taskListsModel.add(list.name, list.items, source.id);
+            if (error) {
+                let notification = new Gtk.Label({ label: e.message });
+                Global.notificationManager.addNotification(notification);
             }
+            else {
+                for (let i = 0; i < taskLists.length; i++)
+                {
+                    let list = taskLists[i];
+                    this._taskListsModel.add(list.name, list.items, source.id);
+                }
+            }
+
+            this._outstandingLoads--;
+            this._updateContentView();
         }));
     },
 
     _sourceRemoved: function(manager, source) {
         let model = this._taskListsModel;
         model.removeByID(source.id);
+        this._updateContentView();
     },
 
     _selectionModeToggled: function(toolbar, active) {
         this._mainView.set_selection_mode(active);
+    },
+
+    _updateContentView: function() {
+        if (this._outstandingLoads != 0)
+            return;
+
+        if (Global.sourceManager.nSources == 0)
+            this.window.contentView.showNoResults(true);
+        else if (this._taskListsModel.nItems() == 0)
+            this.window.contentView.showNoResults(false);
+        else
+            this.window.contentView.showMainView(false);
     }
 }

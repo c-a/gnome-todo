@@ -65,12 +65,21 @@ const TaskListsModel = Lang.Class({
     removeByID: function(sourceID)
     {
         let [res, iter] = this.get_iter_first();
-        while (res) {
+        while(res) {
             if (sourceID == this.get_value(iter, Gd.MainColumns.ID))
                 res = this.remove(iter);
             else
                 res = this.iter_next(iter);
         }
+    },
+
+    nItems: function()
+    {
+        let nItems = 0;
+        for(let [res, iter] = this.get_iter_first(); res; res = this.iter_next(iter))
+            nItems++;
+
+        return nItems;
     },
 
     _drawPixbuf: function(items)
