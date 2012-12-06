@@ -177,33 +177,28 @@ gd_gtasks_service_call_function (GdGTasksService *service,
  * gd_gtasks_service_call_function_finish:
  * @service: a #GdGTasksService
  * @result: the result from the #GAsyncReadyCallback
- * @body: (out) (allow-none)
  * @error: a #GError, or %NULL
  *
- * Returns: %TRUE if the function succeeded, %FALSE otherwise.
+ * Returns: (transfer full): The body of the response or %NULL.
  */
-gboolean
+GBytes*
 gd_gtasks_service_call_function_finish (GdGTasksService *service,
-                               GAsyncResult *result,
-                               GBytes **body,
-                               GError **error)
+                                        GAsyncResult *result,
+                                        GError **error)
 {
     GSimpleAsyncResult *simple;
 
     g_return_val_if_fail (g_simple_async_result_is_valid (result,
         G_OBJECT (service),
         gd_gtasks_service_call_function),
-        FALSE);
+        NULL);
 
     simple = (GSimpleAsyncResult *)result;
 
     if (g_simple_async_result_propagate_error (simple, error))
-        return FALSE;
+        return NULL;
 
-    if (body)
-        *body = g_bytes_ref ((GBytes *)g_simple_async_result_get_op_res_gpointer (simple));
-
-    return TRUE;
+    return g_bytes_ref ((GBytes *)g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 GdGTasksService *

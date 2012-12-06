@@ -51,10 +51,10 @@ MockSource.prototype = {
   listTaskLists: function(callback) {
       let lists = [];
 
-      lists.push({ name: 'Test List 1',
+      lists.push({ title: 'Test List 1',
           items: ['Item 1', 'Item 2'] });
 
-      lists.push({ name: 'Test List 2',
+      lists.push({ title: 'Test List 2',
           items: ['Item 3', 'Item 4'] });
 
       callback(null, lists);
@@ -122,10 +122,32 @@ GTasksSource.prototype = {
     _getListsCallCb: function(service, res) {
         try {
             let body = service.call_function_finish(res);
-            log ('body' + body);
 
+            let response = JSON.parse(body.toArray());
             let lists = [];
-            this._listTaskListsCallback(null, lists);
+            let outstandingRequests = 0;
+            for (let i = 0; i < response.items.length; ++i) {
+                let item = response.items[i];
+
+                outstandingRequests++;
+                this._gTasksService.call_function('GET',
+                    'lists/' + item.id + '/tasks', null, null,
+                    Lang.bind(this, function(service, res) {
+
+                        let listbody = service.call_function_finish(res);
+                        let listresponse = JSON.parse(listbody.toArray());
+
+                        let list = { id: item.id, title: item.title, items: [] };
+                        for (let j = 0; j < listresponse.items.length; j++) {
+                            let taskitem = listresponse.items[j];
+                            list.items.push(taskitem.title);
+                        }
+                        lists.push(list);
+
+                        if (--outstandingRequests == 0)
+                            this._listTaskListsCallback(null, lists);
+                    }));
+            }
         } catch (err) {
             this._listTaskListsCallback(err);
         }

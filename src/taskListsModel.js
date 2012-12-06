@@ -52,11 +52,11 @@ const TaskListsModel = Lang.Class({
                                GObject.TYPE_BOOLEAN]);
     },
 
-    add: function(name, items, sourceID)
+    add: function(title, items, sourceID)
     {
         let iter = this.append();
         this.set_value(iter, Gd.MainColumns.ID, sourceID);
-        this.set_value(iter, Gd.MainColumns.PRIMARY_TEXT, name);
+        this.set_value(iter, Gd.MainColumns.PRIMARY_TEXT, title);
 
         let pixbuf = GdPrivate.draw_task_list(items);
         this.set_value(iter, Gd.MainColumns.ICON, pixbuf);

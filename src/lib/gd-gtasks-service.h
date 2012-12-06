@@ -71,10 +71,9 @@ void    gd_gtasks_service_call_function (GdGTasksService *service,
                                          GAsyncReadyCallback callback,
                                          gpointer user_data);
 
-gboolean gd_gtasks_service_call_function_finish (GdGTasksService *service,
-                                                 GAsyncResult *result,
-                                                 GBytes **body,
-                                                 GError **error);
+GBytes* gd_gtasks_service_call_function_finish (GdGTasksService *service,
+                                                GAsyncResult *result,
+                                                GError **error);
 G_END_DECLS
 
 #endif /* _GD_GTASKS_SERVICE_H_ */
