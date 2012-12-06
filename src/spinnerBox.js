@@ -35,7 +35,7 @@ const SpinnerBox = Lang.Class({
     Extends: GtkClutter.Actor,
 
     _init: function() {
-        this.parent({ opacity: 255 });
+        this.parent({ opacity: 255, x_expand: true, y_expand: true });
 
         this._delayedMoveId = 0;
 

@@ -127,21 +127,19 @@ const ContentView = Lang.Class({
         this._layout = new Clutter.BinLayout();
         this.parent({ layout_manager: this._layout });
 
+        /* Add NotificationManager at the top.*/
+        this.add_child(Global.notificationManager);
+
+        /* Then add the MainView. */
         this.mainView = new Gd.MainIconView();
         this.mainView.show_all();
-        let viewActor = new GtkClutter.Actor({ contents: this.mainView });
-        this._layout.add(viewActor, Clutter.BinAlignment.FILL,
-            Clutter.BinAlignment.FILL);
-
-        /* Add NotificationManager */
-        this._layout.add(Global.notificationManager, Clutter.BinAlignment.FILL,
-            Clutter.BinAlignment.FILL);
+        let viewActor = new GtkClutter.Actor({ contents: this.mainView,
+            x_expand: true, y_expand: true });
+        this.insert_child_below(viewActor, Global.notificationManager);
 
         /* Add SpinnerBox */
         this._spinnerBox = new SpinnerBox.SpinnerBox();
-        this._layout.add(this._spinnerBox, Clutter.BinAlignment.FILL,
-            Clutter.BinAlignment.FILL);
-        this._spinnerBox.lower_bottom();
+        this.insert_child_below(this._spinnerBox, viewActor);
     },
 
     _removeNoResults: function() {
@@ -165,11 +163,13 @@ const ContentView = Lang.Class({
     
     showNoResults: function(noAccounts) {
         if (this._noResultsActor)
-            this.noResultsActor.destroy();
+            this._noResultsActor.destroy();
+
+        this._spinnerBox.moveOut();
 
         this._noResults = new EmptyResultsBox(noAccounts);
-        this._noResultsActor = new GtkClutter.Actor({ contents: this._noResults });
-        this._layout.add(this._noResultsActor, Clutter.BinAlignment.FILL,
-            Clutter.BinAlignment.FILL);
+        this._noResultsActor = new GtkClutter.Actor({ contents: this._noResults,
+            x_expand: true, y_expand: true });
+        this.insert_child_below(this._noResultsActor, Global.notificationManager);
     }
 });

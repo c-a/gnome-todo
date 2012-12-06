@@ -18,6 +18,8 @@
  * Author: Carl-Anton Ingmarsson <carlantoni@gnome.org>
  */
 
+const Gtk = imports.gi.Gtk;
+
 const Lang = imports.lang;
 
 const Config = imports.config;
@@ -60,7 +62,7 @@ MainController.prototype = {
 
         source.listTaskLists(Lang.bind(this, function(error, taskLists) {
             if (error) {
-                let notification = new Gtk.Label({ label: e.message });
+                let notification = new Gtk.Label({ label: error.message });
                 Global.notificationManager.addNotification(notification);
             }
             else {

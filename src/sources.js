@@ -91,11 +91,11 @@ GTasksSource.prototype = {
 
         let oauth2Based = this._object.oauth2_based;
         oauth2Based.call_get_access_token(null,
-            Lang.bind(this, function(object, res) {
+            Lang.bind(this, function(object, result) {
                 try {
-                    let [access_token, expires_in] = oauth2Based.call_get_access_token_finish(res);
+                    let [res, access_token, expires_in] = oauth2Based.call_get_access_token_finish(result);
 
-                    this._gTasksService.token = access_token;
+                    this._gTasksService.access_token = access_token;
                     this._authenticated = true;
                     callback(null);
                 } catch (err) {
@@ -114,7 +114,7 @@ GTasksSource.prototype = {
 
                 this._listTaskListsCallback = callback;
                 this._gTasksService.call_function('GET',
-                    'https://www.googleapis.com/tasks/v1/users/@me/lists', null,
+                    'users/@me/lists', null,
                     null, Lang.bind(this, this._getListsCallCb));
             }));
     },
@@ -122,12 +122,13 @@ GTasksSource.prototype = {
     _getListsCallCb: function(service, res) {
         try {
             let body = service.call_function_finish(res);
+            log ('body' + body);
+
+            let lists = [];
+            this._listTaskListsCallback(null, lists);
         } catch (err) {
             this._listTaskListsCallback(err);
         }
-
-        let lists = [];
-        this._listTaskListsCallback(null, lists);
     }
 
 }

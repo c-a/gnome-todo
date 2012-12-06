@@ -35,7 +35,7 @@ const NotificationManager = Lang.Class({
     Extends: GtkClutter.Actor,
 
     _init: function() {
-        this.parent();
+        this.parent({ x_expand: true, y_expand: true });
 
         this._notification = new Gd.Notification({ timeout: -1,
             show_close_button: true });
