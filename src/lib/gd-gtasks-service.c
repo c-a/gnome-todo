@@ -49,6 +49,13 @@ G_DEFINE_BOXED_TYPE (GdGTasksServiceParameter, gd_gtasks_service_parameter,
     (GBoxedCopyFunc)gd_gtasks_service_parameter_ref,
     (GBoxedFreeFunc)gd_gtasks_service_parameter_unref);
 
+/**
+ * gd_gtasks_service_parameter_new:
+ * @name:
+ * @value:
+ *
+ * Returns: A new #GdGTasksServiceParameter.
+ */
 GdGTasksServiceParameter *
 gd_gtasks_service_parameter_new (const char *name, const char *value)
 {
