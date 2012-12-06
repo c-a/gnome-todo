@@ -63,6 +63,8 @@ gd_gtasks_service_parameter_new (const char *name, const char *value)
 
     parm->name = g_strdup (name);
     parm->value = g_strdup (value);
+
+    return parm;
 }
 
 
