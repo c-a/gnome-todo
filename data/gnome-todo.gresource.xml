@@ -3,6 +3,7 @@
   <gresource prefix="/org/gnome/todo">
     <file>ui/main_toolbar.glade</file>
     <file>ui/spinner_box.glade</file>
+    <file>ui/new_list_dialog.glade</file>
     <file>gnome-todo.css</file>
   </gresource>
 </gresources>

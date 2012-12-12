@@ -53,6 +53,8 @@ MainController.prototype = {
 
         this.window.toolbar.connect('selection-mode-toggled',
             Lang.bind(this, this._selectionModeToggled));
+        this.window.toolbar.connect('new-button-clicked',
+            Lang.bind(this, this._newButtonClicked));
     },
 
     _sourceAdded: function(manager, source) {
@@ -98,5 +100,18 @@ MainController.prototype = {
             this.window.contentView.showNoResults(false);
         else
             this.window.contentView.showMainView(false);
-    }
+    },
+
+    _newButtonClicked: function() {
+
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/new_list_dialog.glade');
+
+        let dialog = builder.get_object('new_list_dialog');
+        dialog.set_transient_for(this.window);
+        dialog.connect('response', function(dialog) {
+            dialog.destroy();
+        });
+        dialog.show();
+    },
 }

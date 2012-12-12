@@ -54,6 +54,10 @@ const MainToolbar = new Lang.Class({
         this._notebook = builder.get_object('notebook');
         item.add(this._notebook);
 
+        let newButton = builder.get_object('new_button');
+        newButton.connect('clicked',
+            Lang.bind(this, this._newButtonClicked));
+
         // Selection button
         let selectButton = builder.get_object('select_button');
         selectButton.setSymbolic('emblem-default-symbolic');
@@ -121,6 +125,10 @@ const MainToolbar = new Lang.Class({
     _scheduledButtonToggled: function(listsButton) {
         if (!listsButton.get_active())
             return;
+    },
+
+    _newButtonClicked: function(newButton) {
+        this.emit('new-button-clicked');
     }
 });
 
