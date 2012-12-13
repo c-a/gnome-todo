@@ -54,8 +54,8 @@ const MainToolbar = new Lang.Class({
         this._notebook = builder.get_object('notebook');
         item.add(this._notebook);
 
-        let newButton = builder.get_object('new_button');
-        newButton.connect('clicked',
+        this._newButton = builder.get_object('new_button');
+        this._newButton.connect('clicked',
             Lang.bind(this, this._newButtonClicked));
 
         // Selection button
@@ -129,6 +129,10 @@ const MainToolbar = new Lang.Class({
 
     _newButtonClicked: function(newButton) {
         this.emit('new-button-clicked');
+    },
+
+    setNewButtonSensitive: function(sensitive) {
+        this._newButton.sensitive = sensitive;
     }
 });
 

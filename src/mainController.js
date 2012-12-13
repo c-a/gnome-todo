@@ -94,12 +94,18 @@ MainController.prototype = {
         if (this._outstandingLoads != 0)
             return;
 
-        if (Global.sourceManager.nSources == 0)
+        if (Global.sourceManager.nSources == 0) {
+            this.window.toolbar.setNewButtonSensitive(false);
             this.window.contentView.showNoResults(true);
-        else if (this._taskListsModel.nItems() == 0)
-            this.window.contentView.showNoResults(false);
-        else
-            this.window.contentView.showMainView(false);
+        }
+        else {
+            this.window.toolbar.setNewButtonSensitive(true);
+
+            if (this._taskListsModel.nItems() == 0)
+                this.window.contentView.showNoResults(false);
+            else
+                this.window.contentView.showMainView(false);
+        }
     },
 
     _newButtonClicked: function() {
@@ -109,9 +115,37 @@ MainController.prototype = {
 
         let dialog = builder.get_object('new_list_dialog');
         dialog.set_transient_for(this.window);
-        dialog.connect('response', function(dialog) {
+
+        dialog.connect('response', function(dialog, response_id) {
+
+            if (response_id == Gtk.ResponseType.ACCEPT)
+            {
+                let source;
+                for (let sourceID in Global.sourceManager.sources) {
+                    source = Global.sourceManager.sources[sourceID];
+                    break;
+                }
+
+                let entry = builder.get_object('entry');
+                source.createTaskList(entry.text,
+                    Lang.bind(this, function(error) {
+                        if (error) {
+                            let notification = new Gtk.Label({ label: error.message });
+                            Global.notificationManager.addNotification(notification);
+                        }
+                    }));
+            }
+
             dialog.destroy();
         });
+
+        let entry = builder.get_object('entry');
+        entry.connect('changed',
+            Lang.bind(this, function(entry) {
+                let createButton = builder.get_object('create_button');
+                createButton.sensitive = !!entry.text;
+            }));
+
         dialog.show();
     },
 }

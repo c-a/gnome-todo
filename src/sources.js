@@ -87,7 +87,7 @@ GTasksSource.prototype = {
     _authenticate: function(callback) {
 
         if (this._authenticated)
-            callback(this._authenticated);
+            callback(null);
 
         let oauth2Based = this._object.oauth2_based;
         oauth2Based.call_get_access_token(null,
@@ -101,8 +101,6 @@ GTasksSource.prototype = {
                 } catch (err) {
                     callback(err);
                 }
-
-                
             }));
     },
 
@@ -138,9 +136,11 @@ GTasksSource.prototype = {
                         let listresponse = JSON.parse(listbody.toArray());
 
                         let list = { id: item.id, title: item.title, items: [] };
-                        for (let j = 0; j < listresponse.items.length; j++) {
-                            let taskitem = listresponse.items[j];
-                            list.items.push(taskitem.title);
+                        if (listresponse.items) {
+                            for (let j = 0; j < listresponse.items.length; j++) {
+                                let taskitem = listresponse.items[j];
+                                list.items.push(taskitem.title);
+                            }
                         }
                         lists.push(list);
 
@@ -151,8 +151,32 @@ GTasksSource.prototype = {
         } catch (err) {
             this._listTaskListsCallback(err);
         }
-    }
+    },
 
+    createTaskList: function(title, callback) {
+        this._authenticate(
+            Lang.bind(this, function(error) {
+                if (error)
+                    callback(error);
+
+                let newTaskList = { 'title': title };
+                let body = new GdPrivate.GTasksServiceParameter('',
+                    JSON.stringify(newTaskList));
+
+                this._createTaskListCallback = callback;
+                this._gTasksService.call_function('POST', 'users/@me/lists',
+                    [body], null, Lang.bind(this, this._createListCallCb));
+            }));
+    },
+
+    _createListCallCb: function(service, res) {
+        try {
+            service.call_function_finish(res);
+            this._createTaskListCallback(null);
+        } catch (err) {
+            this._createTaskListCallback(err);
+        }
+    }
 }
 
 

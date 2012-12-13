@@ -17,13 +17,15 @@
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="dialog-action_area1">
             <property name="can_focus">False</property>
+            <property name="homogeneous">True</property>
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="button1">
-                <property name="label" translatable="yes">Cancel</property>
+                <property name="label">gtk-cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -32,9 +34,10 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button2">
+              <object class="GtkButton" id="create_button">
                 <property name="label" translatable="yes">Create</property>
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <style>
@@ -76,7 +79,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entry1">
+              <object class="GtkEntry" id="entry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hexpand">True</property>
@@ -100,8 +103,8 @@
       </object>
     </child>
     <action-widgets>
-      <action-widget response="0">button1</action-widget>
-      <action-widget response="0">button2</action-widget>
+      <action-widget response="-6">button1</action-widget>
+      <action-widget response="-3">create_button</action-widget>
     </action-widgets>
   </object>
 </interface>
