@@ -66,7 +66,7 @@ GdGTasksService *gd_gtasks_service_new (const char *consumer_key,
 void    gd_gtasks_service_call_function (GdGTasksService *service,
                                          const char *method,
                                          const char *function,
-                                         GPtrArray *parameters,
+                                         const gchar* content,
                                          GCancellable *cancellable,
                                          GAsyncReadyCallback callback,
                                          gpointer user_data);

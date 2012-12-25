@@ -160,12 +160,11 @@ GTasksSource.prototype = {
                     callback(error);
 
                 let newTaskList = { 'title': title };
-                let body = new GdPrivate.GTasksServiceParameter('',
-                    JSON.stringify(newTaskList));
+                let body = JSON.stringify(newTaskList);
 
                 this._createTaskListCallback = callback;
                 this._gTasksService.call_function('POST', 'users/@me/lists',
-                    [body], null, Lang.bind(this, this._createListCallCb));
+                    body, null, Lang.bind(this, this._createListCallCb));
             }));
     },
 
