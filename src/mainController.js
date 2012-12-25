@@ -116,28 +116,31 @@ MainController.prototype = {
         let dialog = builder.get_object('new_list_dialog');
         dialog.set_transient_for(this.window);
 
-        dialog.connect('response', function(dialog, response_id) {
+        dialog.connect('response',
+            Lang.bind(this, function(dialog, response_id) {
 
-            if (response_id == Gtk.ResponseType.ACCEPT)
-            {
-                let source;
-                for (let sourceID in Global.sourceManager.sources) {
-                    source = Global.sourceManager.sources[sourceID];
-                    break;
+                if (response_id == Gtk.ResponseType.ACCEPT)
+                {
+                    let source;
+                    for (let sourceID in Global.sourceManager.sources) {
+                        source = Global.sourceManager.sources[sourceID];
+                        break;
+                    }
+
+                    let entry = builder.get_object('entry');
+                    source.createTaskList(entry.text,
+                        Lang.bind(this, function(error, list) {
+                            if (error) {
+                                let notification = new Gtk.Label({ label: error.message });
+                                Global.notificationManager.addNotification(notification);
+                            }
+                            else
+                                this._taskListsModel.add(list.title, list.items, source.id);
+                        }));
                 }
 
-                let entry = builder.get_object('entry');
-                source.createTaskList(entry.text,
-                    Lang.bind(this, function(error) {
-                        if (error) {
-                            let notification = new Gtk.Label({ label: error.message });
-                            Global.notificationManager.addNotification(notification);
-                        }
-                    }));
-            }
-
-            dialog.destroy();
-        });
+                dialog.destroy();
+            }));
 
         let entry = builder.get_object('entry');
         entry.connect('changed',

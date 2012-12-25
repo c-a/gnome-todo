@@ -125,17 +125,17 @@ GTasksSource.prototype = {
             let lists = [];
             let outstandingRequests = 0;
             for (let i = 0; i < response.items.length; ++i) {
-                let item = response.items[i];
+                let listObject = response.items[i];
 
                 outstandingRequests++;
                 this._gTasksService.call_function('GET',
-                    'lists/' + item.id + '/tasks', null, null,
+                    'lists/' + listObject.id + '/tasks', null, null,
                     Lang.bind(this, function(service, res) {
 
                         let listbody = service.call_function_finish(res);
                         let listresponse = JSON.parse(listbody.toArray());
 
-                        let list = { id: item.id, title: item.title, items: [] };
+                        let list = this._createList(listObject);
                         if (listresponse.items) {
                             for (let j = 0; j < listresponse.items.length; j++) {
                                 let taskitem = listresponse.items[j];
@@ -170,11 +170,18 @@ GTasksSource.prototype = {
 
     _createListCallCb: function(service, res) {
         try {
-            service.call_function_finish(res);
-            this._createTaskListCallback(null);
+            let response = service.call_function_finish(res);
+
+            let listObject = JSON.parse(response.toArray());
+            this._createTaskListCallback(null, this._createList(listObject));
         } catch (err) {
             this._createTaskListCallback(err);
         }
+    },
+
+    _createList: function(listObject) {
+        let list = { id: listObject.id, title: listObject.title, items: [] };
+        return list;
     }
 }
 
