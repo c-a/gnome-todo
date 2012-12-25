@@ -131,7 +131,8 @@ const ContentView = Lang.Class({
         this.add_child(Global.notificationManager);
 
         /* Then add the MainView. */
-        this.mainView = new Gd.MainIconView();
+        this.mainView = new Gd.MainView({'view-type': Gd.MainViewType.ICON });
+
         this.mainView.show_all();
         let viewActor = new GtkClutter.Actor({ contents: this.mainView,
             x_expand: true, y_expand: true });
