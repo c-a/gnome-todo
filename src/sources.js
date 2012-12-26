@@ -182,6 +182,27 @@ GTasksSource.prototype = {
     _createList: function(listObject) {
         let list = { id: listObject.id, title: listObject.title, items: [] };
         return list;
+    },
+
+    deleteTaskList: function(id, callback) {
+        this._authenticate(Lang.bind(this, function(error) {
+            if (error)
+                callback(error);
+
+            this._deleteTaskListCallback = callback;
+            this._gTasksService.call_function('DELETE',
+                'users/@me/lists/' + id, null, null,
+                Lang.bind(this, this._deleteListCallCb));
+        }));
+    },
+
+    _deleteListCallCb: function(service, res) {
+        try {
+            service.call_function_finish(res);
+            this._deleteTaskListCallback(null);
+        } catch (err) {
+            this._deleteTaskListCallback(err);
+        }
     }
 }
 

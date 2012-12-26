@@ -33,6 +33,7 @@ const Mainloop = imports.mainloop;
 
 const Config = imports.config;
 const Global = imports.global;
+const Selection = imports.selection;
 const SpinnerBox = imports.spinnerBox;
 
 const EmptyResultsBox = new Lang.Class({
@@ -137,6 +138,17 @@ const ContentView = Lang.Class({
         let viewActor = new GtkClutter.Actor({ contents: this.mainView,
             x_expand: true, y_expand: true });
         this.insert_child_below(viewActor, Global.notificationManager);
+
+        /* Add selectionToolbar. */
+        this.selectionToolbar = new Selection.SelectionToolbar();
+        this.selectionToolbar.add_constraint(
+            new Clutter.AlignConstraint({ align_axis: Clutter.AlignAxis.X_AXIS,
+                source: this, factor: 0.50 }));
+        this.selectionToolbar.add_constraint(
+            new Clutter.AlignConstraint({ align_axis: Clutter.AlignAxis.Y_AXIS,
+                source: this, factor: 0.95 }));
+        this.insert_child_above(this.selectionToolbar, viewActor);
+
 
         /* Add SpinnerBox */
         this._spinnerBox = new SpinnerBox.SpinnerBox();

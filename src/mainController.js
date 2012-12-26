@@ -24,6 +24,7 @@ const Lang = imports.lang;
 
 const Config = imports.config;
 const Global = imports.global;
+const Selection = imports.selection;
 const TaskListsModel = imports.taskListsModel;
 
 function MainController(mainWindow)
@@ -38,6 +39,9 @@ MainController.prototype = {
         this._mainView = this.window.contentView.mainView;
         this._taskListsModel = new TaskListsModel.TaskListsModel();
         this._mainView.set_model(this._taskListsModel);
+
+        // Create SelectionController handling selections
+        this._selectionController = new Selection.SelectionController(this.window.contentView);
 
         this._outstandingLoads = 0;
         for (let sourceID in Global.sourceManager.sources) {
@@ -87,7 +91,7 @@ MainController.prototype = {
     },
 
     _selectionModeToggled: function(toolbar, active) {
-        this._mainView.set_selection_mode(active);
+        this._selectionController.setActive(active);
     },
 
     _updateContentView: function() {
