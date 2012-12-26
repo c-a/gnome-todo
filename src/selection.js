@@ -25,9 +25,11 @@ const Gtk = imports.gi.Gtk;
 const GtkClutter = imports.gi.GtkClutter;
 
 const _ = imports.gettext.gettext;
+const Format = imports.format;
 const Lang = imports.lang;
 const Signals = imports.signals;
 
+const Global = imports.global;
 const Tweener = imports.util.tweener;
 const Utils = imports.utils;
 
@@ -36,8 +38,15 @@ const SelectionController = new Lang.Class({
 
     _init: function(contentView) {
         this._contentView = contentView;
+
+
         this._mainView = contentView.mainView;
+        this._mainView.connect('view-selection-changed',
+            Lang.bind(this, this._viewSelectionChanged));
+
         this._selectionToolbar = contentView.selectionToolbar;
+        this._selectionToolbar.connect('delete-button-clicked',
+            Lang.bind(this, this._deleteButtonClicked));
     },
 
     setActive: function(active) {
@@ -47,6 +56,38 @@ const SelectionController = new Lang.Class({
             this._selectionToolbar.fadeIn();
         else
             this._selectionToolbar.fadeOut();
+    },
+
+    _viewSelectionChanged: function(mainView) {
+        let selection = this._mainView.get_selection();
+        
+        let sensitive = (selection.length > 0) ? true : false;
+        this._selectionToolbar.deleteButton.set_sensitive(sensitive);
+    },
+
+    _deleteButtonClicked: function() {
+        let selection = this._mainView.get_selection();
+        for (let i = 0; i < selection.length; i++)
+        {
+            let path = selection[i];
+            let list = this._mainView.get_model().getListFromPath(path);
+            let source = Global.sourceManager.sources[list.sourceID];
+
+            source.deleteTaskList(list.id,
+                Lang.bind(this, function(error) {
+                    if (error)
+                    {
+                        let notification = new Gtk.Label({
+                            label: Format.format('Failed to delete list (%s)', error.message) });
+                        Global.notificationManager.addNotification(notification);
+                    }
+                    else
+                        this._mainView.get_model().deleteByPath(path);
+                }));
+        }
+
+        // No lists may still be selected so notify that the selection has changed
+        this._viewSelectionChanged(this._mainView);
     }
 });
 
@@ -61,12 +102,12 @@ const SelectionToolbar = new Lang.Class({
         builder.add_from_resource('/org/gnome/todo/ui/selection_toolbar.glade');
         this._toolbar = builder.get_object('toolbar');
 
-        this._renameButton = builder.get_object('rename_button');
-        this._renameButton.connect('clicked',
+        this.renameButton = builder.get_object('rename_button');
+        this.renameButton.connect('clicked',
             Lang.bind(this, function(button) { this.emit('rename-button-clicked'); }));
 
-        this._deleteButton = builder.get_object('delete_button');
-        this._deleteButton.connect('clicked',
+        this.deleteButton = builder.get_object('delete_button');
+        this.deleteButton.connect('clicked',
             Lang.bind(this, function(button) { this.emit('delete-button-clicked'); }));
 
         this.contents = this._toolbar;

@@ -156,8 +156,10 @@ GTasksSource.prototype = {
     createTaskList: function(title, callback) {
         this._authenticate(
             Lang.bind(this, function(error) {
-                if (error)
+                if (error) {
                     callback(error);
+                    return;
+                }
 
                 let newTaskList = { 'title': title };
                 let body = JSON.stringify(newTaskList);
@@ -180,14 +182,17 @@ GTasksSource.prototype = {
     },
 
     _createList: function(listObject) {
-        let list = { id: listObject.id, title: listObject.title, items: [] };
+        let list = { id: listObject.id, title: listObject.title, items: [],
+            sourceID: this.id };
         return list;
     },
 
     deleteTaskList: function(id, callback) {
         this._authenticate(Lang.bind(this, function(error) {
-            if (error)
+            if (error) {
                 callback(error);
+                return;
+            }
 
             this._deleteTaskListCallback = callback;
             this._gTasksService.call_function('DELETE',

@@ -75,7 +75,7 @@ MainController.prototype = {
                 for (let i = 0; i < taskLists.length; i++)
                 {
                     let list = taskLists[i];
-                    this._taskListsModel.add(list.title, list.items, source.id);
+                    this._taskListsModel.add(list);
                 }
             }
 
@@ -86,7 +86,7 @@ MainController.prototype = {
 
     _sourceRemoved: function(manager, source) {
         let model = this._taskListsModel;
-        model.removeByID(source.id);
+        model.removeBySourceID(source.id);
         this._updateContentView();
     },
 
@@ -139,7 +139,7 @@ MainController.prototype = {
                                 Global.notificationManager.addNotification(notification);
                             }
                             else
-                                this._taskListsModel.add(list.title, list.items, source.id);
+                                this._taskListsModel.add(list);
                         }));
                 }
 

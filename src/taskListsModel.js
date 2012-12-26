@@ -43,30 +43,38 @@ const TaskListsModel = Lang.Class({
     Name: 'TaskListsModel',
     Extends: Gtk.ListStore,
 
-    _init: function() {
+    _init: function()
+    {
         this.parent();
 
         this.set_column_types([GObject.TYPE_STRING, GObject.TYPE_STRING,
                                GObject.TYPE_STRING, GObject.TYPE_STRING,
                                GdkPixbuf.Pixbuf, GObject.TYPE_INT64,
                                GObject.TYPE_BOOLEAN]);
+
+        this._lists = {};
     },
 
-    add: function(title, items, sourceID)
+    add: function(list)
     {
         let iter = this.append();
-        this.set_value(iter, Gd.MainColumns.ID, sourceID);
-        this.set_value(iter, Gd.MainColumns.PRIMARY_TEXT, title);
+        this.set_value(iter, Gd.MainColumns.ID, list.id);
+        this.set_value(iter, Gd.MainColumns.PRIMARY_TEXT, list.title);
 
-        let pixbuf = GdPrivate.draw_task_list(items);
+        let pixbuf = GdPrivate.draw_task_list(list.items);
         this.set_value(iter, Gd.MainColumns.ICON, pixbuf);
+
+        this._lists[list.id] = list;
     },
 
-    removeByID: function(sourceID)
+    removeBySourceID: function(sourceID)
     {
         let [res, iter] = this.get_iter_first();
         while(res) {
-            if (sourceID == this.get_value(iter, Gd.MainColumns.ID))
+            let id = this.get_value(iter, Gd.MainColumns.ID);
+            let list = this._lists[id];
+
+            if (list.sourceID == sourceID)
                 res = this.remove(iter);
             else
                 res = this.iter_next(iter);
@@ -82,6 +90,23 @@ const TaskListsModel = Lang.Class({
         return nItems;
     },
 
+    getListFromPath: function(path)
+    {
+        let [res, iter] = this.get_iter(path);
+        let id = this.get_value(iter, Gd.MainColumns.ID);
+
+        return this._lists[id];
+    },
+
+    deleteByPath: function(path)
+    {
+        let [res, iter] = this.get_iter(path);
+        let id = this.get_value(iter, Gd.MainColumns.ID);
+        
+        this.remove(iter);
+        delete this._lists[id];
+    },
+    
     _drawPixbuf: function(items)
     {
         let provider = GdPrivate.load_css_provider_from_resource('/org/gnome/todo/gnome-todo.css');

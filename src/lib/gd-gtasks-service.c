@@ -176,7 +176,8 @@ invoke_async_cb (GObject *source_object,
         goto done;
     }
 
-    if (rest_proxy_call_get_status_code (call) != 200)
+    if (!(rest_proxy_call_get_status_code (call) >= 200 &&
+          rest_proxy_call_get_status_code (call) < 300))
     {
         gint error_code;
 
