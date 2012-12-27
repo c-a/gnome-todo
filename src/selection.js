@@ -53,21 +53,21 @@ const SelectionController = new Lang.Class({
 
     setActive: function(active) {
         this._mainView.set_selection_mode(active);
-
-        if (active)
-            this._selectionToolbar.fadeIn();
-        else
-            this._selectionToolbar.fadeOut();
     },
 
     _viewSelectionChanged: function(mainView) {
         let selection = this._mainView.get_selection();
-        
-        let deleteSensitive = (selection.length > 0) ? true : false;
-        this._selectionToolbar.deleteButton.set_sensitive(deleteSensitive);
 
-        let renameSensitive = (selection.length == 1) ? true : false;
-        this._selectionToolbar.renameButton.set_sensitive(renameSensitive);
+        if (selection.length > 0) {
+            this._selectionToolbar.fadeIn();
+
+            if (selection.length == 1)
+                this._selectionToolbar.renameButton.show();
+            else
+                this._selectionToolbar.renameButton.hide();
+        }
+        else
+            this._selectionToolbar.fadeOut();
     },
 
     _deleteButtonClicked: function() {

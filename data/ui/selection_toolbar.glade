@@ -91,4 +91,10 @@
       </packing>
     </child>
   </object>
+  <object class="GtkSizeGroup" id="sizegroup1">
+    <widgets>
+      <widget name="left_item"/>
+      <widget name="right_item"/>
+    </widgets>
+  </object>
 </interface>

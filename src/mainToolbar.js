@@ -64,10 +64,10 @@ const MainToolbar = new Lang.Class({
         selectButton.connect('clicked',
             Lang.bind(this, this._selectButtonClicked));
         
-        // Cancel selection button
-        let cancelButton = builder.get_object('cancel_button');
-        cancelButton.connect('clicked',
-            Lang.bind(this, this._cancelButtonClicked));
+        // Selection done button
+        let doneButton = builder.get_object('done_button');
+        doneButton.connect('clicked',
+            Lang.bind(this, this._doneButtonClicked));
 
         this._listsButton = builder.get_object('lists_button');
         this._listsButton.connect('toggled',
@@ -103,7 +103,7 @@ const MainToolbar = new Lang.Class({
         this.emit('selection-mode-toggled', true);
     },
 
-    _cancelButtonClicked: function(cancelButton) {
+    _doneButtonClicked: function(doneButton) {
         this._notebook.set_current_page(_MAIN_PAGE);
 
         this.get_style_context().remove_class('selection-mode');
