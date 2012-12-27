@@ -41,14 +41,6 @@ function loadCssProviderFromResource(path)
     return provider;
 }
 
-Gtk.Button.prototype.setSymbolic = function(icon_name) {
-    this.get_style_context().add_class('raised');
-
-    let w = new Gtk.Image({ icon_name: icon_name, icon_size: Gtk.IconSize.MENU });
-    w.show();
-    this.add(w);
-}
-
 function alphaGtkWidget(widget) {
     widget.override_background_color(0,
         new Gdk.RGBA({ red: 0, green: 0, blue: 0, alpha: 0 }));

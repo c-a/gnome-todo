@@ -60,7 +60,6 @@ const MainToolbar = new Lang.Class({
 
         // Selection button
         let selectButton = builder.get_object('select_button');
-        selectButton.setSymbolic('emblem-default-symbolic');
         selectButton.connect('clicked',
             Lang.bind(this, this._selectButtonClicked));
         
