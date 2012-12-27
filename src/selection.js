@@ -36,9 +36,9 @@ const Utils = imports.utils;
 const SelectionController = new Lang.Class({
     Name: 'SelectionController',
 
-    _init: function(contentView) {
+    _init: function(mainController, contentView) {
+        this._mainController = mainController;
         this._contentView = contentView;
-
 
         this._mainView = contentView.mainView;
         this._mainView.connect('view-selection-changed',
@@ -47,6 +47,8 @@ const SelectionController = new Lang.Class({
         this._selectionToolbar = contentView.selectionToolbar;
         this._selectionToolbar.connect('delete-button-clicked',
             Lang.bind(this, this._deleteButtonClicked));
+        this._selectionToolbar.connect('rename-button-clicked',
+            Lang.bind(this, this._renameButtonClicked));
     },
 
     setActive: function(active) {
@@ -61,8 +63,11 @@ const SelectionController = new Lang.Class({
     _viewSelectionChanged: function(mainView) {
         let selection = this._mainView.get_selection();
         
-        let sensitive = (selection.length > 0) ? true : false;
-        this._selectionToolbar.deleteButton.set_sensitive(sensitive);
+        let deleteSensitive = (selection.length > 0) ? true : false;
+        this._selectionToolbar.deleteButton.set_sensitive(deleteSensitive);
+
+        let renameSensitive = (selection.length == 1) ? true : false;
+        this._selectionToolbar.renameButton.set_sensitive(renameSensitive);
     },
 
     _deleteButtonClicked: function() {
@@ -88,7 +93,52 @@ const SelectionController = new Lang.Class({
 
         // No lists may still be selected so notify that the selection has changed
         this._viewSelectionChanged(this._mainView);
-    }
+    },
+
+    _renameButtonClicked: function() {
+
+        let selection = this._mainView.get_selection();
+        if (selection.length != 1)
+            return;
+
+        let list = this._mainView.get_model().getListFromPath(selection[0]);
+
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/rename_list_dialog.glade');
+
+        let dialog = builder.get_object('rename_list_dialog');
+        dialog.set_transient_for(this._mainController.window);
+
+        let entry = builder.get_object('entry');
+        entry.text = list.title;
+        entry.connect('changed',
+            Lang.bind(this, function(entry) {
+                let updateButton = builder.get_object('update_button');
+                updateButton.sensitive = (entry.text && entry.text != list.title);
+            }));
+
+        dialog.connect('response',
+            Lang.bind(this, function(dialog, response_id) {
+
+                if (response_id == Gtk.ResponseType.ACCEPT)
+                {
+                    let source = Global.sourceManager.sources[list.sourceID];
+                    source.renameTaskList(list.id, entry.text,
+                        Lang.bind(this, function(error, list) {
+                            if (error) {
+                                let notification = new Gtk.Label({ label: error.message });
+                                Global.notificationManager.addNotification(notification);
+                            }
+                            else
+                                this._mainView.get_model().update(list);
+                        }));
+                }
+
+                dialog.destroy();
+            }));
+
+        dialog.show();
+    },
 });
 
 const SelectionToolbar = new Lang.Class({

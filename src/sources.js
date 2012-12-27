@@ -86,8 +86,10 @@ GTasksSource.prototype = {
 
     _authenticate: function(callback) {
 
-        if (this._authenticated)
+        if (this._authenticated) {
             callback(null);
+            return;
+        }
 
         let oauth2Based = this._object.oauth2_based;
         oauth2Based.call_get_access_token(null,
@@ -207,6 +209,34 @@ GTasksSource.prototype = {
             this._deleteTaskListCallback(null);
         } catch (err) {
             this._deleteTaskListCallback(err);
+        }
+    },
+
+    renameTaskList: function(id, title, callback) {
+        this._authenticate(Lang.bind(this, function(error) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            let updatedTaskList = { 'title': title };
+            let body = JSON.stringify(updatedTaskList);
+
+            this._renameTaskListCallback = callback;
+            this._gTasksService.call_function('PATCH',
+                'users/@me/lists/' + id, body, null,
+                Lang.bind(this, this._updateListCallCb));
+        }));
+    },
+
+    _updateListCallCb: function(service, res) {
+        try {
+            let response = service.call_function_finish(res);
+
+            let listObject = JSON.parse(response.toArray());
+            this._renameTaskListCallback(null, this._createList(listObject));
+        } catch (err) {
+            this._renameTaskListCallback(err);
         }
     }
 }

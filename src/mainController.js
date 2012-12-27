@@ -41,7 +41,7 @@ MainController.prototype = {
         this._mainView.set_model(this._taskListsModel);
 
         // Create SelectionController handling selections
-        this._selectionController = new Selection.SelectionController(this.window.contentView);
+        this._selectionController = new Selection.SelectionController(this, this.window.contentView);
 
         this._outstandingLoads = 0;
         for (let sourceID in Global.sourceManager.sources) {

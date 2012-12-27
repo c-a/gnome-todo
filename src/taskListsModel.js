@@ -58,15 +58,35 @@ const TaskListsModel = Lang.Class({
     add: function(list)
     {
         let iter = this.append();
+        this._updateModel(list, iter);
+
+        this._lists[list.id] = list;
+    },
+
+    update: function(list)
+    {
+        let [res, iter] = this.get_iter_first();
+        for(;res; res = this.iter_next(iter)) {
+            let id = this.get_value(iter, Gd.MainColumns.ID);
+            if (id == list.id)
+                break;
+        }
+        if (!res)
+            return;
+
+        this._updateModel(list, iter);
+        this._lists[list.id] = list;
+    },
+
+    _updateModel: function(list, iter)
+    {
         this.set_value(iter, Gd.MainColumns.ID, list.id);
         this.set_value(iter, Gd.MainColumns.PRIMARY_TEXT, list.title);
 
         let pixbuf = GdPrivate.draw_task_list(list.items);
         this.set_value(iter, Gd.MainColumns.ICON, pixbuf);
-
-        this._lists[list.id] = list;
     },
-
+    
     removeBySourceID: function(sourceID)
     {
         let [res, iter] = this.get_iter_first();
