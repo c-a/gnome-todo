@@ -29,10 +29,10 @@ const GdPrivate = imports.gi.GdPrivate;
 const Lang = imports.lang;
 const Mainloop = imports.mainloop;
 
-const ContentView = imports.contentView;
 const Config = imports.config;
 const Global = imports.global;
 const MainToolbar = imports.mainToolbar;
+const SpinnerBox = imports.spinnerBox;
 const Utils = imports.utils;
 
 const _ = imports.gettext.gettext;
@@ -104,9 +104,8 @@ const MainWindow = Lang.Class({
         this._box.add_child(toolbarActor);
         this._layout.set_fill(toolbarActor, true, false);
 
-        this.contentView = new ContentView.ContentView();
+        this.contentView = new ContentView();
         this._box.add_child(this.contentView);
-        this._layout.set_expand(this.contentView, true);
         this._layout.set_fill(this.contentView, true, true);
 
         stage.add_actor(this._box);
@@ -119,7 +118,6 @@ const MainWindow = Lang.Class({
             Gtk.StyleProvider.PRIORITY_APPLICATION);
 
         this.reset_style();
-        this.contentView.mainView.reset_style();
     },
 
     _saveWindowGeometry: function() {
@@ -220,5 +218,41 @@ const MainWindow = Lang.Class({
         aboutDialog.connect('response', function() {
             aboutDialog.destroy();
         });
+    }
+});
+
+const ContentView = Lang.Class({
+    Name: 'ContentView',
+    Extends: Clutter.Box,
+
+    _init: function() {
+        this._layout = new Clutter.BinLayout();
+        this.parent({ layout_manager: this._layout, x_expand: true, y_expand: true });
+
+        /* Add NotificationManager at the top.*/
+        this.add_child(Global.notificationManager);
+
+        /* Add SpinnerBox */
+        this._spinnerBox = new SpinnerBox.SpinnerBox();
+        this.insert_child_below(this._spinnerBox, Global.notificationManager);
+    },
+
+    setView: function(view) {
+        if (this._view)
+            this._view.destroy();
+
+        this._view = view;
+        if (!view)
+            return;
+
+        // Add view below notificationManager
+        this.insert_child_below(view, this._spinnerBox);
+    },
+
+    setLoading: function(loading) {
+        if (loading)
+            this._spinnerBox.moveInDelayed();
+        else
+            this._spinnerBox.moveOut();
     }
 });

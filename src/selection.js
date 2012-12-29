@@ -36,15 +36,15 @@ const Utils = imports.utils;
 const SelectionController = new Lang.Class({
     Name: 'SelectionController',
 
-    _init: function(mainController, contentView) {
+    _init: function(mainController, listsView) {
         this._mainController = mainController;
-        this._contentView = contentView;
+        this._listsView = listsView;
 
-        this._mainView = contentView.mainView;
+        this._mainView = listsView.mainView;
         this._mainView.connect('view-selection-changed',
             Lang.bind(this, this._viewSelectionChanged));
 
-        this._selectionToolbar = contentView.selectionToolbar;
+        this._selectionToolbar = listsView.selectionToolbar;
         this._selectionToolbar.connect('delete-button-clicked',
             Lang.bind(this, this._deleteButtonClicked));
         this._selectionToolbar.connect('rename-button-clicked',

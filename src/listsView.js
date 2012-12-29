@@ -34,7 +34,6 @@ const Mainloop = imports.mainloop;
 const Config = imports.config;
 const Global = imports.global;
 const Selection = imports.selection;
-const SpinnerBox = imports.spinnerBox;
 
 const EmptyResultsBox = new Lang.Class({
     Name: 'EmptyResultsBox',
@@ -120,28 +119,23 @@ const EmptyResultsBox = new Lang.Class({
     }
 });
 
-const ContentView = Lang.Class({
-    Name: 'ContentView',
+const ListsView = Lang.Class({
+    Name: 'ListsView',
     Extends: Clutter.Box,
 
-    _init: function() {
+    _init: function(contentView) {
         this._layout = new Clutter.BinLayout();
-        this.parent({ layout_manager: this._layout });
+        this.parent({ layout_manager: this._layout, x_expand: true, y_expand: true });
 
-        /* Add NotificationManager at the top.*/
-        this.add_child(Global.notificationManager);
+        this._contentView = contentView;
 
-        /* Add SpinnerBox */
-        this._spinnerBox = new SpinnerBox.SpinnerBox();
-        this.insert_child_below(this._spinnerBox, Global.notificationManager);
-        
-        /* Then add the MainView. */
+        /* Add the MainView. */
         this.mainView = new Gd.MainView({'view-type': Gd.MainViewType.ICON });
 
         this.mainView.show_all();
         let viewActor = new GtkClutter.Actor({ contents: this.mainView,
             x_expand: true, y_expand: true });
-        this.insert_child_below(viewActor, this._spinnerBox);
+        this.add_child(viewActor);
 
         /* Add selectionToolbar. */
         this.selectionToolbar = new Selection.SelectionToolbar();
@@ -167,17 +161,14 @@ const ContentView = Lang.Class({
         if (this._noResults)
             this._removeNoResults();
 
-        if (loading)
-            this._spinnerBox.moveInDelayed();
-        else
-            this._spinnerBox.moveOut();
+        this._contentView.setLoading(loading);
     },
     
     showNoResults: function(noAccounts) {
         if (this._noResultsActor)
             this._noResultsActor.destroy();
 
-        this._spinnerBox.moveOut();
+        this._contentView.setLoading(false);
 
         this._noResults = new EmptyResultsBox(noAccounts);
         this._noResultsActor = new GtkClutter.Actor({ contents: this._noResults,

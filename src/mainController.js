@@ -24,6 +24,7 @@ const Lang = imports.lang;
 
 const Config = imports.config;
 const Global = imports.global;
+const ListsView = imports.listsView;
 const Selection = imports.selection;
 const TaskListsModel = imports.taskListsModel;
 
@@ -36,12 +37,14 @@ MainController.prototype = {
     _init: function(mainWindow) {
         this.window = mainWindow;
 
-        this._mainView = this.window.contentView.mainView;
+        this._listsView = new ListsView.ListsView(this.window.contentView);
+        this.window.contentView.setView(this._listsView);
+
         this._taskListsModel = new TaskListsModel.TaskListsModel();
-        this._mainView.set_model(this._taskListsModel);
+        this._listsView.mainView.set_model(this._taskListsModel);
 
         // Create SelectionController handling selections
-        this._selectionController = new Selection.SelectionController(this, this.window.contentView);
+        this._selectionController = new Selection.SelectionController(this, this._listsView);
 
         this._outstandingLoads = 0;
         for (let sourceID in Global.sourceManager.sources) {
@@ -64,7 +67,7 @@ MainController.prototype = {
     _sourceAdded: function(manager, source) {
 
         if (this._outstandingLoads++ == 0)
-            this.window.contentView.showMainView(true);
+            this._listsView.showMainView(true);
 
         source.listTaskLists(Lang.bind(this, function(error, taskLists) {
             if (error) {
@@ -100,15 +103,15 @@ MainController.prototype = {
 
         if (Global.sourceManager.nSources == 0) {
             this.window.toolbar.setNewButtonSensitive(false);
-            this.window.contentView.showNoResults(true);
+            this._listsView.showNoResults(true);
         }
         else {
             this.window.toolbar.setNewButtonSensitive(true);
 
             if (this._taskListsModel.nItems() == 0)
-                this.window.contentView.showNoResults(false);
+                this._listsView.showNoResults(false);
             else
-                this.window.contentView.showMainView(false);
+                this._listsView.showMainView(false);
         }
     },
 
