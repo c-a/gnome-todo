@@ -5,6 +5,7 @@ dist_js_DATA = \
     errorBox.js \
     format.js \
     global.js \
+    listsController.js \
     listsView.js \
     main.js \
     mainController.js \

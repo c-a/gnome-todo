@@ -24,9 +24,7 @@ const Lang = imports.lang;
 
 const Config = imports.config;
 const Global = imports.global;
-const ListsView = imports.listsView;
-const Selection = imports.selection;
-const TaskListsModel = imports.taskListsModel;
+const ListsController = imports.listsController;
 
 function MainController(mainWindow)
 {
@@ -35,127 +33,34 @@ function MainController(mainWindow)
 
 MainController.prototype = {
     _init: function(mainWindow) {
-        this.window = mainWindow;
+        this._mainWindow = mainWindow;
 
-        this._listsView = new ListsView.ListsView(this.window.contentView);
-        this.window.contentView.setView(this._listsView);
+        this._controllerStack = [];
+        this._currentController = null;
 
-        this._taskListsModel = new TaskListsModel.TaskListsModel();
-        this._listsView.mainView.set_model(this._taskListsModel);
+        // Add the initial controller
+        let listsController = new ListsController.ListsController(mainWindow);
+        this.pushController(listsController);
+    },
 
-        // Create SelectionController handling selections
-        this._selectionController = new Selection.SelectionController(this, this._listsView);
-
-        this._outstandingLoads = 0;
-        for (let sourceID in Global.sourceManager.sources) {
-            this._sourceAdded(null, Global.sourceManager.sources[sourceID]);
+    pushController: function(controller)
+    {
+        if (this._currentController) {
+            this._currentController.deactivate();
+            this._controllerStack.push(controller);
         }
 
-        this._updateContentView();
-
-        Global.sourceManager.connect('source-added',
-            Lang.bind(this, this._sourceAdded));
-        Global.sourceManager.connect('source-removed',
-            Lang.bind(this, this._sourceRemoved));
-
-        this.window.toolbar.connect('selection-mode-toggled',
-            Lang.bind(this, this._selectionModeToggled));
-        this.window.toolbar.connect('new-button-clicked',
-            Lang.bind(this, this._newButtonClicked));
+        this._currentController = controller;
+        controller.activate();
     },
 
-    _sourceAdded: function(manager, source) {
+    popController: function()
+    {
+        assert(this._controllerStack.length > 0);
 
-        if (this._outstandingLoads++ == 0)
-            this._listsView.showMainView(true);
+        this._currentController.deactivate();
 
-        source.listTaskLists(Lang.bind(this, function(error, taskLists) {
-            if (error) {
-                let notification = new Gtk.Label({ label: error.message });
-                Global.notificationManager.addNotification(notification);
-            }
-            else {
-                for (let i = 0; i < taskLists.length; i++)
-                {
-                    let list = taskLists[i];
-                    this._taskListsModel.add(list);
-                }
-            }
-
-            this._outstandingLoads--;
-            this._updateContentView();
-        }));
-    },
-
-    _sourceRemoved: function(manager, source) {
-        let model = this._taskListsModel;
-        model.removeBySourceID(source.id);
-        this._updateContentView();
-    },
-
-    _selectionModeToggled: function(toolbar, active) {
-        this._selectionController.setActive(active);
-    },
-
-    _updateContentView: function() {
-        if (this._outstandingLoads != 0)
-            return;
-
-        if (Global.sourceManager.nSources == 0) {
-            this.window.toolbar.setNewButtonSensitive(false);
-            this._listsView.showNoResults(true);
-        }
-        else {
-            this.window.toolbar.setNewButtonSensitive(true);
-
-            if (this._taskListsModel.nItems() == 0)
-                this._listsView.showNoResults(false);
-            else
-                this._listsView.showMainView(false);
-        }
-    },
-
-    _newButtonClicked: function() {
-
-        let builder = new Gtk.Builder();
-        builder.add_from_resource('/org/gnome/todo/ui/new_list_dialog.glade');
-
-        let dialog = builder.get_object('new_list_dialog');
-        dialog.set_transient_for(this.window);
-
-        dialog.connect('response',
-            Lang.bind(this, function(dialog, response_id) {
-
-                if (response_id == Gtk.ResponseType.ACCEPT)
-                {
-                    let source;
-                    for (let sourceID in Global.sourceManager.sources) {
-                        source = Global.sourceManager.sources[sourceID];
-                        break;
-                    }
-
-                    let entry = builder.get_object('entry');
-                    source.createTaskList(entry.text,
-                        Lang.bind(this, function(error, list) {
-                            if (error) {
-                                let notification = new Gtk.Label({ label: error.message });
-                                Global.notificationManager.addNotification(notification);
-                            }
-                            else
-                                this._taskListsModel.add(list);
-                        }));
-                }
-
-                dialog.destroy();
-            }));
-
-        let entry = builder.get_object('entry');
-        entry.connect('changed',
-            Lang.bind(this, function(entry) {
-                let createButton = builder.get_object('create_button');
-                createButton.sensitive = !!entry.text;
-            }));
-
-        dialog.show();
-    },
+        this._currentController = this._controllerStack.pop();
+        this._currentController.activate();
+    }
 }

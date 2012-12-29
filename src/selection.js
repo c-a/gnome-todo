@@ -36,8 +36,8 @@ const Utils = imports.utils;
 const SelectionController = new Lang.Class({
     Name: 'SelectionController',
 
-    _init: function(mainController, listsView) {
-        this._mainController = mainController;
+    _init: function(listsController, listsView) {
+        this._listsController = listsController;
         this._listsView = listsView;
 
         this._mainView = listsView.mainView;
@@ -107,7 +107,7 @@ const SelectionController = new Lang.Class({
         builder.add_from_resource('/org/gnome/todo/ui/rename_list_dialog.glade');
 
         let dialog = builder.get_object('rename_list_dialog');
-        dialog.set_transient_for(this._mainController.window);
+        dialog.set_transient_for(this._listsController.window);
 
         let entry = builder.get_object('entry');
         entry.text = list.title;
