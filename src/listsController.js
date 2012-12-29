@@ -25,6 +25,7 @@ const Lang = imports.lang;
 const Config = imports.config;
 const Global = imports.global;
 const ListsView = imports.listsView;
+const ListsToolbar = imports.listsToolbar;
 const Selection = imports.selection;
 const TaskListsModel = imports.taskListsModel;
 
@@ -37,6 +38,7 @@ ListsController.prototype = {
     _init: function(mainWindow) {
         this.window = mainWindow;
 
+        this._toolbar = new ListsToolbar.ListsToolbar();
         this._listsView = new ListsView.ListsView(this.window.contentView);
 
         this._taskListsModel = new TaskListsModel.TaskListsModel();
@@ -47,9 +49,9 @@ ListsController.prototype = {
 
         this._updateContentView();
 
-        this.window.toolbar.connect('selection-mode-toggled',
+        this._toolbar.connect('selection-mode-toggled',
             Lang.bind(this, this._selectionModeToggled));
-        this.window.toolbar.connect('new-button-clicked',
+        this._toolbar.connect('new-button-clicked',
             Lang.bind(this, this._newButtonClicked));
     },
 
@@ -59,7 +61,8 @@ ListsController.prototype = {
         Global.sourceManager.connect('source-removed',
             Lang.bind(this, this._sourceRemoved));
 
-        this.window.contentView.setView(this._listsView);
+        this.window.setToolbarWidget(this._toolbar);
+        this.window.setContentActor(this._listsView);
 
         this._refresh();
     },
@@ -112,11 +115,11 @@ ListsController.prototype = {
             return;
 
         if (Global.sourceManager.nSources == 0) {
-            this.window.toolbar.setNewButtonSensitive(false);
+            this._toolbar.setNewButtonSensitive(false);
             this._listsView.showNoResults(true);
         }
         else {
-            this.window.toolbar.setNewButtonSensitive(true);
+            this._toolbar.setNewButtonSensitive(true);
 
             if (this._taskListsModel.nItems() == 0)
                 this._listsView.showNoResults(false);

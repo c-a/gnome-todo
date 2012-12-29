@@ -37,22 +37,17 @@ const Signals = imports.signals;
 const _MAIN_PAGE = 0;
 const _SELECTION_PAGE = 1;
 
-const MainToolbar = new Lang.Class({
-    Name: 'MainToolbar',
-    Extends: Gtk.Toolbar,
+const ListsToolbar = new Lang.Class({
+    Name: 'ListsToolbar',
+    Extends: Gtk.Bin,
 
     _init: function(params) {
-        this.parent({ icon_size: Gtk.IconSize.MENU });
-        this.get_style_context().add_class(Gtk.STYLE_CLASS_MENUBAR);
-
-        let item = new Gtk.ToolItem({ expand: true });
-        item.set_expand(true);
-        this.add(item);
+        this.parent();
 
         let builder = new Gtk.Builder();
-        builder.add_from_resource('/org/gnome/todo/ui/main_toolbar.glade');
+        builder.add_from_resource('/org/gnome/todo/ui/lists_toolbar.glade');
         this._notebook = builder.get_object('notebook');
-        item.add(this._notebook);
+        this.add(this._notebook);
 
         this._newButton = builder.get_object('new_button');
         this._newButton.connect('clicked',
@@ -96,8 +91,10 @@ const MainToolbar = new Lang.Class({
     _selectButtonClicked: function(selectButton) {
         this._notebook.set_current_page(_SELECTION_PAGE);
 
-        this.get_style_context().add_class('selection-mode');
-        this.reset_style();
+        if (this._toolbar) {
+            this._toolbar.get_style_context().add_class('selection-mode');
+            this._toolbar.reset_style();
+        }
 
         this.emit('selection-mode-toggled', true);
     },
@@ -105,8 +102,10 @@ const MainToolbar = new Lang.Class({
     _doneButtonClicked: function(doneButton) {
         this._notebook.set_current_page(_MAIN_PAGE);
 
-        this.get_style_context().remove_class('selection-mode');
-        this.reset_style();
+        if (this._toolbar) {
+            this._toolbar.get_style_context().remove_class('selection-mode');
+            this._toolbar.reset_style();
+        }
 
         this.emit('selection-mode-toggled', false);
     },
@@ -130,9 +129,13 @@ const MainToolbar = new Lang.Class({
         this.emit('new-button-clicked');
     },
 
+    setToolbar: function(toolbar) {
+        this._toolbar = toolbar;
+    },
+    
     setNewButtonSensitive: function(sensitive) {
         this._newButton.sensitive = sensitive;
     }
 });
 
-Signals.addSignalMethods(MainToolbar.prototype);
+Signals.addSignalMethods(ListsToolbar.prototype);

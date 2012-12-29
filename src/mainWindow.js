@@ -31,7 +31,6 @@ const Mainloop = imports.mainloop;
 
 const Config = imports.config;
 const Global = imports.global;
-const MainToolbar = imports.mainToolbar;
 const SpinnerBox = imports.spinnerBox;
 const Utils = imports.utils;
 
@@ -99,8 +98,8 @@ const MainWindow = Lang.Class({
             new Clutter.BindConstraint({ coordinate: Clutter.BindCoordinate.SIZE,
                                          source: stage }));
 
-        this.toolbar = new MainToolbar.MainToolbar();
-        let toolbarActor = new GtkClutter.Actor({ 'contents': this.toolbar });
+        this._toolbar = new MainToolbar();
+        let toolbarActor = new GtkClutter.Actor({ 'contents': this._toolbar });
         this._box.add_child(toolbarActor);
         this._layout.set_fill(toolbarActor, true, false);
 
@@ -193,6 +192,14 @@ const MainWindow = Lang.Class({
         return false;
     },
 
+    setToolbarWidget: function(widget) {
+        this._toolbar.setWidget(widget);
+    },
+
+    setContentActor: function(actor) {
+        this.contentView.setView(actor);
+    },
+
     showAbout: function() {
         let aboutDialog = new Gtk.AboutDialog();
 
@@ -254,5 +261,35 @@ const ContentView = Lang.Class({
             this._spinnerBox.moveInDelayed();
         else
             this._spinnerBox.moveOut();
+    }
+});
+
+const MainToolbar = new Lang.Class({
+    Name: 'MainToolbar',
+    Extends: Gtk.Toolbar,
+
+    _init: function(params) {
+        this.parent({ icon_size: Gtk.IconSize.MENU });
+        this.get_style_context().add_class(Gtk.STYLE_CLASS_MENUBAR);
+
+        this._currentWidget = null;
+        this._item = new Gtk.ToolItem({ expand: true });
+        this._item.set_expand(true);
+        this.add(this._item);
+
+        this.show_all();
+    },
+
+    setWidget: function(widget) {
+        if (this._currentWidget) {
+            this._currentWidget.setToolbar(null);
+            this._item.remove(this._currentWidget);
+        }
+
+        this._currentWidget = widget;
+        if (widget) {
+            this._item.add(widget);
+            widget.setToolbar(this);
+        }
     }
 });

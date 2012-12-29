@@ -6,10 +6,10 @@ dist_js_DATA = \
     format.js \
     global.js \
     listsController.js \
+    listsToolbar.js \
     listsView.js \
     main.js \
     mainController.js \
-    mainToolbar.js \
     mainWindow.js \
     notifications.js \
     path.js \
