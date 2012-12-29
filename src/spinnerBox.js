@@ -35,7 +35,7 @@ const SpinnerBox = Lang.Class({
     Extends: GtkClutter.Actor,
 
     _init: function() {
-        this.parent({ opacity: 255, x_expand: true, y_expand: true });
+        this.parent({ opacity: 0, x_expand: true, y_expand: true });
 
         this._delayedMoveId = 0;
 
@@ -47,6 +47,8 @@ const SpinnerBox = Lang.Class({
 
         this._grid.connect('destroy', Lang.bind(this, this._clearDelayId));
         this._grid.show_all();
+
+        this.hide();
     },
 
     _clearDelayId: function() {
@@ -58,7 +60,7 @@ const SpinnerBox = Lang.Class({
 
     moveIn: function() {
         this._clearDelayId();
-        this.raise_top();
+        this.show();
 
         Tweener.addTween(this, { opacity: 255,
                                  time: 0.30,
@@ -72,7 +74,7 @@ const SpinnerBox = Lang.Class({
                                  time: 0.30,
                                  transition: 'easeOutQuad',
                                  onComplete: function () {
-                                    this.lower_bottom();
+                                    this.hide();
                                  },
                                  onCompleteScope: this });
     },

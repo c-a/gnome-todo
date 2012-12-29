@@ -131,13 +131,17 @@ const ContentView = Lang.Class({
         /* Add NotificationManager at the top.*/
         this.add_child(Global.notificationManager);
 
+        /* Add SpinnerBox */
+        this._spinnerBox = new SpinnerBox.SpinnerBox();
+        this.insert_child_below(this._spinnerBox, Global.notificationManager);
+        
         /* Then add the MainView. */
         this.mainView = new Gd.MainView({'view-type': Gd.MainViewType.ICON });
 
         this.mainView.show_all();
         let viewActor = new GtkClutter.Actor({ contents: this.mainView,
             x_expand: true, y_expand: true });
-        this.insert_child_below(viewActor, Global.notificationManager);
+        this.insert_child_below(viewActor, this._spinnerBox);
 
         /* Add selectionToolbar. */
         this.selectionToolbar = new Selection.SelectionToolbar();
@@ -148,11 +152,6 @@ const ContentView = Lang.Class({
             new Clutter.AlignConstraint({ align_axis: Clutter.AlignAxis.Y_AXIS,
                 source: this, factor: 0.95 }));
         this.insert_child_above(this.selectionToolbar, viewActor);
-
-
-        /* Add SpinnerBox */
-        this._spinnerBox = new SpinnerBox.SpinnerBox();
-        this.insert_child_below(this._spinnerBox, viewActor);
     },
 
     _removeNoResults: function() {
