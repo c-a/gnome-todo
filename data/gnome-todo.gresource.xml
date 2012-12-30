@@ -2,6 +2,8 @@
 <gresources>
   <gresource prefix="/org/gnome/todo">
     <file>ui/lists_toolbar.glade</file>
+    <file>ui/list_item.glade</file>
+    <file>ui/note_editor.glade</file>
     <file>ui/rename_list_dialog.glade</file>
     <file>ui/selection_toolbar.glade</file>
     <file>ui/spinner_box.glade</file>

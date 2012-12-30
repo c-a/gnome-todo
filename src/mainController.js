@@ -34,13 +34,13 @@ function MainController(mainWindow)
 
 MainController.prototype = {
     _init: function(mainWindow) {
-        this._mainWindow = mainWindow;
+        this.window = mainWindow;
 
         this._controllerStack = [];
         this._currentController = null;
 
         // Add the initial controller
-        let listsController = new ListsController.ListsController(mainWindow);
+        let listsController = new ListsController.ListsController(this);
         this.pushController(listsController);
 
         mainWindow.connect('key-release-event',
@@ -51,7 +51,7 @@ MainController.prototype = {
     {
         if (this._currentController) {
             this._currentController.deactivate();
-            this._controllerStack.push(controller);
+            this._controllerStack.push(this._currentController);
         }
 
         this._currentController = controller;
@@ -60,8 +60,6 @@ MainController.prototype = {
 
     popController: function()
     {
-        assert(this._controllerStack.length > 0);
-
         this._currentController.deactivate();
 
         this._currentController = this._controllerStack.pop();

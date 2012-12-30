@@ -246,7 +246,7 @@ const ContentView = Lang.Class({
 
     setView: function(view) {
         if (this._view)
-            this._view.destroy();
+            this.remove_child(this._view);
 
         this._view = view;
         if (!view)

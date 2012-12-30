@@ -138,12 +138,8 @@ GTasksSource.prototype = {
                         let listresponse = JSON.parse(listbody.toArray());
 
                         let list = this._createList(listObject);
-                        if (listresponse.items) {
-                            for (let j = 0; j < listresponse.items.length; j++) {
-                                let taskitem = listresponse.items[j];
-                                list.items.push(taskitem.title);
-                            }
-                        }
+                        if (listresponse.items)
+                            list.items = listresponse.items;
                         lists.push(list);
 
                         if (--outstandingRequests == 0)

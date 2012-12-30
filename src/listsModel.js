@@ -83,7 +83,11 @@ const ListsModel = Lang.Class({
         this.set_value(iter, Gd.MainColumns.ID, list.id);
         this.set_value(iter, Gd.MainColumns.PRIMARY_TEXT, list.title);
 
-        let pixbuf = GdPrivate.draw_task_list(list.items);
+        let titles = [];
+        for (let i = 0; i < list.items.length; i++)
+            titles.push(list.items[i].title);
+
+        let pixbuf = GdPrivate.draw_task_list(titles);
         this.set_value(iter, Gd.MainColumns.ICON, pixbuf);
     },
     

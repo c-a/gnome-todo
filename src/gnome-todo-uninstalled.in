@@ -1,8 +1,9 @@
 #!/bin/bash
 
 export GJS_PATH="@abs_builddir@${GJS_PATH:+:GJS_PATH}"
-export GI_TYPELIB_PATH="@abs_builddir@:@abs_top_builddir@/libgd${GI_TYPELIB_PATH:+:GI_TYPELIB_PATH}"
-export LD_LIBRARY_PATH="@abs_builddir@/.libs:@abs_top_builddir@/libgd/.libs${LD_LIBRARY_PATH:+:LD_LIBRARY_PATH}"
+export GI_TYPELIB_PATH="@abs_builddir@:@abs_top_builddir@/libgd:@abs_top_builddir@/egg-list-box${GI_TYPELIB_PATH:+:GI_TYPELIB_PATH}"
+
+export LD_LIBRARY_PATH="@abs_builddir@/.libs:@abs_top_builddir@/libgd/.libs:@abs_top_builddir@/egg-list-box/.libs${LD_LIBRARY_PATH:+:LD_LIBRARY_PATH}"
 
 glib-compile-schemas @abs_top_builddir@/data
 export GSETTINGS_SCHEMA_DIR="@abs_top_builddir@/data${GSETTINGS_SCHEMA_DIR:+:GSETTINGS_SCHEMA_DIR}"

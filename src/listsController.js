@@ -24,10 +24,11 @@ const Lang = imports.lang;
 
 const Config = imports.config;
 const Global = imports.global;
+const ListEditor = imports.listEditor;
+const ListsModel = imports.listsModel;
 const ListsView = imports.listsView;
 const ListsToolbar = imports.listsToolbar;
 const Selection = imports.selection;
-const ListsModel = imports.listsModel;
 
 function ListsController(mainWindow)
 {
@@ -35,11 +36,12 @@ function ListsController(mainWindow)
 }
 
 ListsController.prototype = {
-    _init: function(mainWindow) {
-        this.window = mainWindow;
+    _init: function(mainController) {
+        this._mainController = mainController;
+        this._window = mainController.window;
 
         this._toolbar = new ListsToolbar.ListsToolbar();
-        this._listsView = new ListsView.ListsView(this.window.contentView);
+        this._listsView = new ListsView.ListsView(this._window.contentView);
 
         this._model = new ListsModel.ListsModel();
         this._listsView.mainView.set_model(this._model);
@@ -54,6 +56,9 @@ ListsController.prototype = {
             Lang.bind(this, this._selectionModeToggled));
         this._toolbar.connect('new-button-clicked',
             Lang.bind(this, this._newButtonClicked));
+
+        this._listsView.mainView.connect('item-activated',
+            Lang.bind(this, this._itemActivated));
     },
 
     activate: function() {
@@ -62,13 +67,15 @@ ListsController.prototype = {
         Global.sourceManager.connect('source-removed',
             Lang.bind(this, this._sourceRemoved));
 
-        this.window.setToolbarWidget(this._toolbar);
-        this.window.setContentActor(this._listsView);
+        this._window.setToolbarWidget(this._toolbar);
+        this._window.setContentActor(this._listsView);
 
         this._refresh();
     },
 
     deactivate: function() {
+        this._window.setToolbarWidget(null);
+        this._window.setContentActor(null);
     },
 
     _refresh: function() {
@@ -144,7 +151,7 @@ ListsController.prototype = {
         builder.add_from_resource('/org/gnome/todo/ui/new_list_dialog.glade');
 
         let dialog = builder.get_object('new_list_dialog');
-        dialog.set_transient_for(this.window);
+        dialog.set_transient_for(this._window);
 
         dialog.connect('response',
             Lang.bind(this, function(dialog, response_id) {
@@ -180,6 +187,12 @@ ListsController.prototype = {
             }));
 
         dialog.show();
+    },
+
+    _itemActivated: function(mainView, id, path) {
+        let list = this._model.getListFromPath(path);
+        let listEditor = new ListEditor.ListEditorController(this._mainController, list);
+        this._mainController.pushController(listEditor);
     },
 
     onCancel: function() {

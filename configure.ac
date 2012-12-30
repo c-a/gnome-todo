@@ -35,6 +35,9 @@ AC_PROG_CXX
 AC_ISC_POSIX
 AC_HEADER_STDC
 
+# enable valac
+AM_PROG_VALAC([0.16.0])
+
 # no stupid static libraries
 AM_DISABLE_STATIC
 # enable libtool
@@ -76,12 +79,22 @@ LIBGD_INIT([
     notification
 ])
 
+# egg-list-box
+pkg_modules="gtk+-3.0 >= 3.4.0
+	     glib-2.0 >= 2.31.10"
+PKG_CHECK_MODULES(LISTBOX, [$pkg_modules])
+
+LISTBOX_PACKAGES="--pkg gtk+-3.0"
+AC_SUBST(LISTBOX_PACKAGES)
+
+
 GJS_CONSOLE=`$PKG_CONFIG --variable=gjs_console gjs-1.0`
 AC_SUBST(GJS_CONSOLE)
 
 AC_CONFIG_FILES([
     Makefile
     libgd/Makefile
+    egg-list-box/Makefile
     src/Makefile
     data/Makefile
     data/icons/Makefile
