@@ -46,6 +46,7 @@ ListsController.prototype = {
 
         // Create SelectionController handling selections
         this._selectionController = new Selection.SelectionController(this, this._listsView);
+        this._selectionModeActive = false;
 
         this._updateContentView();
 
@@ -107,9 +108,18 @@ ListsController.prototype = {
     },
 
     _selectionModeToggled: function(toolbar, active) {
-        this._selectionController.setActive(active);
+        this._setSelectionMode(active);
     },
 
+    _setSelectionMode: function(active) {
+        if (this._selectionModeActive == active)
+            return;
+        this._selectionModeActive = active;
+
+        this._toolbar.setSelectionMode(active);
+        this._selectionController.setActive(active);
+    },
+    
     _updateContentView: function() {
         if (this._outstandingLoads != 0)
             return;
@@ -171,4 +181,8 @@ ListsController.prototype = {
 
         dialog.show();
     },
+
+    onCancel: function() {
+        this._setSelectionMode(false);
+    }
 }

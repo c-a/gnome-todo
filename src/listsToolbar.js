@@ -89,24 +89,10 @@ const ListsToolbar = new Lang.Class({
     },
 
     _selectButtonClicked: function(selectButton) {
-        this._notebook.set_current_page(_SELECTION_PAGE);
-
-        if (this._toolbar) {
-            this._toolbar.get_style_context().add_class('selection-mode');
-            this._toolbar.reset_style();
-        }
-
         this.emit('selection-mode-toggled', true);
     },
 
     _doneButtonClicked: function(doneButton) {
-        this._notebook.set_current_page(_MAIN_PAGE);
-
-        if (this._toolbar) {
-            this._toolbar.get_style_context().remove_class('selection-mode');
-            this._toolbar.reset_style();
-        }
-
         this.emit('selection-mode-toggled', false);
     },
 
@@ -129,6 +115,25 @@ const ListsToolbar = new Lang.Class({
         this.emit('new-button-clicked');
     },
 
+    setSelectionMode: function(active) {
+        if (active) {
+            this._notebook.set_current_page(_SELECTION_PAGE);
+
+            if (this._toolbar) {
+                this._toolbar.get_style_context().add_class('selection-mode');
+                this._toolbar.reset_style();
+            }
+        }
+        else {
+            this._notebook.set_current_page(_MAIN_PAGE);
+
+            if (this._toolbar) {
+                this._toolbar.get_style_context().remove_class('selection-mode');
+                this._toolbar.reset_style();
+            }
+        }
+    },
+    
     setToolbar: function(toolbar) {
         this._toolbar = toolbar;
     },

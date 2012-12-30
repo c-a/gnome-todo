@@ -18,6 +18,7 @@
  * Author: Carl-Anton Ingmarsson <carlantoni@gnome.org>
  */
 
+const Gdk = imports.gi.Gdk;
 const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
@@ -41,6 +42,9 @@ MainController.prototype = {
         // Add the initial controller
         let listsController = new ListsController.ListsController(mainWindow);
         this.pushController(listsController);
+
+        mainWindow.connect('key-release-event',
+            Lang.bind(this, this._keyReleaseEvent));
     },
 
     pushController: function(controller)
@@ -62,5 +66,18 @@ MainController.prototype = {
 
         this._currentController = this._controllerStack.pop();
         this._currentController.activate();
-    }
+    },
+
+    _keyReleaseEvent: function(mainWindow, event)
+    {
+        let [res, keyval] = event.get_keyval();
+        
+        if (keyval == Gdk.KEY_Escape) {
+            if (this._currentController.onCancel)
+                this._currentController.onCancel();
+            return true;
+        }
+
+        return false;
+    },
 }
