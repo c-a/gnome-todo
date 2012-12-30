@@ -39,8 +39,8 @@ const Utils = imports.utils;
 const PIXBUF_WIDTH = 140;
 const PIXBUF_HEIGHT = 180;
 
-const TaskListsModel = Lang.Class({
-    Name: 'TaskListsModel',
+const ListsModel = Lang.Class({
+    Name: 'ListsModel',
     Extends: Gtk.ListStore,
 
     _init: function()

@@ -6,6 +6,7 @@ dist_js_DATA = \
     format.js \
     global.js \
     listsController.js \
+    listsModel.js \
     listsToolbar.js \
     listsView.js \
     main.js \
@@ -16,7 +17,6 @@ dist_js_DATA = \
     selection.js \
     sources.js \
     spinnerBox.js \
-    taskListsModel.js \
     utils.js
 
 jsutildir = $(pkgdatadir)/js/util/

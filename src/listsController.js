@@ -27,7 +27,7 @@ const Global = imports.global;
 const ListsView = imports.listsView;
 const ListsToolbar = imports.listsToolbar;
 const Selection = imports.selection;
-const TaskListsModel = imports.taskListsModel;
+const ListsModel = imports.listsModel;
 
 function ListsController(mainWindow)
 {
@@ -41,8 +41,8 @@ ListsController.prototype = {
         this._toolbar = new ListsToolbar.ListsToolbar();
         this._listsView = new ListsView.ListsView(this.window.contentView);
 
-        this._taskListsModel = new TaskListsModel.TaskListsModel();
-        this._listsView.mainView.set_model(this._taskListsModel);
+        this._model = new ListsModel.ListsModel();
+        this._listsView.mainView.set_model(this._model);
 
         // Create SelectionController handling selections
         this._selectionController = new Selection.SelectionController(this, this._listsView);
@@ -92,7 +92,7 @@ ListsController.prototype = {
                 for (let i = 0; i < taskLists.length; i++)
                 {
                     let list = taskLists[i];
-                    this._taskListsModel.add(list);
+                    this._model.add(list);
                 }
             }
 
@@ -102,7 +102,7 @@ ListsController.prototype = {
     },
 
     _sourceRemoved: function(manager, source) {
-        let model = this._taskListsModel;
+        let model = this._model;
         model.removeBySourceID(source.id);
         this._updateContentView();
     },
@@ -131,7 +131,7 @@ ListsController.prototype = {
         else {
             this._toolbar.setNewButtonSensitive(true);
 
-            if (this._taskListsModel.nItems() == 0)
+            if (this._model.nItems() == 0)
                 this._listsView.showNoResults(false);
             else
                 this._listsView.showMainView(false);
@@ -165,7 +165,7 @@ ListsController.prototype = {
                                 Global.notificationManager.addNotification(notification);
                             }
                             else
-                                this._taskListsModel.add(list);
+                                this._model.add(list);
                         }));
                 }
 
