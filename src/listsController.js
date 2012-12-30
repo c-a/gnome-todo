@@ -143,7 +143,7 @@ const ListsController = new Lang.Class({
         }
     },
 
-    _newButtonClicked: function() {
+    _newButtonClicked: function(toolbar) {
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/new_list_dialog.glade');

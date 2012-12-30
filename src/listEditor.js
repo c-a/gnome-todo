@@ -24,6 +24,7 @@ const GtkClutter = imports.gi.GtkClutter;
 const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
+const Signals = imports.signals;
 
 const Config = imports.config;
 const Global = imports.global;
@@ -36,6 +37,10 @@ const ListEditorController = new Lang.Class({
     _init: function(mainController, list) {
         this.parent(mainController);
 
+        this._toolbar = new ListEditorToolbar(list.title);
+        this._toolbar.connect('back-button-clicked',
+            Lang.bind(this, this._backButtonClicked));
+
         this._view = new ListEditorView();
         for(let i = 0; i < list.items.length; i++)
         {
@@ -45,7 +50,7 @@ const ListEditorController = new Lang.Class({
     },
 
     activate: function() {
-        this.window.setToolbarWidget(null);
+        this.window.setToolbarWidget(this._toolbar);
         this.window.setContentActor(this._view);
     },
 
@@ -55,6 +60,10 @@ const ListEditorController = new Lang.Class({
     },
 
     onCancel: function() {
+        this.mainController.popController();
+    },
+
+    _backButtonClicked: function(toolbar) {
         this.mainController.popController();
     }
 });
@@ -126,3 +135,41 @@ const ListItem = new Lang.Class({
         this.show();
     }
 });
+
+const ListEditorToolbar = new Lang.Class({
+    Name: 'ListEditorToolbar',
+    Extends: Gtk.Bin,
+
+    _init: function(title) {
+        this.parent();
+
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/list_editor_toolbar.glade');
+        this.add(builder.get_object('grid'));
+        this.show();
+
+        let backButton = builder.get_object('back_button');
+        backButton.connect('clicked',
+            Lang.bind(this, function(button) {
+                this.emit('back-button-clicked')
+            }));
+
+        let sendButton = builder.get_object('send_button');
+        sendButton.connect('clicked',
+            Lang.bind(this, function(button) {
+                this.emit('send-button-clicked')
+            }));
+
+        this._titleLabel = builder.get_object('title_label');
+        this.setTitle(title);
+    },
+
+    setTitle: function(title) {
+        this._titleLabel.label = title;
+    },
+
+    setToolbar: function(mainToolbar) {
+        this._mainToolbar = mainToolbar;
+    }
+});
+Signals.addSignalMethods(ListEditorToolbar.prototype);
