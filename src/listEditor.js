@@ -27,13 +27,14 @@ const Lang = imports.lang;
 
 const Config = imports.config;
 const Global = imports.global;
+const MainController = imports.mainController;
 
 const ListEditorController = new Lang.Class({
     Name: 'ListEditorController',
+    Extends: MainController.Controller,
 
     _init: function(mainController, list) {
-        this._mainController = mainController;
-        this._window = mainController.window;
+        this.parent(mainController);
 
         this._view = new ListEditorView();
         for(let i = 0; i < list.items.length; i++)
@@ -44,17 +45,17 @@ const ListEditorController = new Lang.Class({
     },
 
     activate: function() {
-        this._window.setToolbarWidget(null);
-        this._window.setContentActor(this._view);
+        this.window.setToolbarWidget(null);
+        this.window.setContentActor(this._view);
     },
 
     deactivate: function() {
-        this._window.setToolbarWidget(null);
-        this._window.setContentActor(null);
+        this.window.setToolbarWidget(null);
+        this.window.setContentActor(null);
     },
 
     onCancel: function() {
-        this._mainController.popController();
+        this.mainController.popController();
     }
 });
 

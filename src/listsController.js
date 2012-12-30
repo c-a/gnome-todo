@@ -28,20 +28,18 @@ const ListEditor = imports.listEditor;
 const ListsModel = imports.listsModel;
 const ListsView = imports.listsView;
 const ListsToolbar = imports.listsToolbar;
+const MainController = imports.mainController;
 const Selection = imports.selection;
 
-function ListsController(mainWindow)
-{
-    this._init(mainWindow);
-}
+const ListsController = new Lang.Class({
+    Name: 'ListsController',
+    Extends: MainController.Controller,
 
-ListsController.prototype = {
     _init: function(mainController) {
-        this._mainController = mainController;
-        this._window = mainController.window;
+        this.parent(mainController);
 
         this._toolbar = new ListsToolbar.ListsToolbar();
-        this._listsView = new ListsView.ListsView(this._window.contentView);
+        this._listsView = new ListsView.ListsView(this.window.contentView);
 
         this._model = new ListsModel.ListsModel();
         this._listsView.mainView.set_model(this._model);
@@ -67,15 +65,15 @@ ListsController.prototype = {
         Global.sourceManager.connect('source-removed',
             Lang.bind(this, this._sourceRemoved));
 
-        this._window.setToolbarWidget(this._toolbar);
-        this._window.setContentActor(this._listsView);
+        this.window.setToolbarWidget(this._toolbar);
+        this.window.setContentActor(this._listsView);
 
         this._refresh();
     },
 
     deactivate: function() {
-        this._window.setToolbarWidget(null);
-        this._window.setContentActor(null);
+        this.window.setToolbarWidget(null);
+        this.window.setContentActor(null);
     },
 
     _refresh: function() {
@@ -151,7 +149,7 @@ ListsController.prototype = {
         builder.add_from_resource('/org/gnome/todo/ui/new_list_dialog.glade');
 
         let dialog = builder.get_object('new_list_dialog');
-        dialog.set_transient_for(this._window);
+        dialog.set_transient_for(this.window);
 
         dialog.connect('response',
             Lang.bind(this, function(dialog, response_id) {
@@ -191,11 +189,11 @@ ListsController.prototype = {
 
     _itemActivated: function(mainView, id, path) {
         let list = this._model.getListFromPath(path);
-        let listEditor = new ListEditor.ListEditorController(this._mainController, list);
-        this._mainController.pushController(listEditor);
+        let listEditor = new ListEditor.ListEditorController(this.mainController, list);
+        this.mainController.pushController(listEditor);
     },
 
     onCancel: function() {
         this._setSelectionMode(false);
     }
-}
+});

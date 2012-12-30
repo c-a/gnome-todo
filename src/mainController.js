@@ -25,23 +25,24 @@ const Lang = imports.lang;
 
 const Config = imports.config;
 const Global = imports.global;
-const ListsController = imports.listsController;
 
-function MainController(mainWindow)
-{
-    this._init(mainWindow);
-}
+const Controller = new Lang.Class({
+    Name: 'Controller',
 
-MainController.prototype = {
+    _init: function(mainController) {
+        this.mainController = mainController;
+        this.window = mainController.window;
+    }
+});
+
+const MainController = new Lang.Class({
+    Name: 'MainController',
+
     _init: function(mainWindow) {
         this.window = mainWindow;
 
         this._controllerStack = [];
         this._currentController = null;
-
-        // Add the initial controller
-        let listsController = new ListsController.ListsController(this);
-        this.pushController(listsController);
 
         mainWindow.connect('key-release-event',
             Lang.bind(this, this._keyReleaseEvent));
@@ -77,5 +78,5 @@ MainController.prototype = {
         }
 
         return false;
-    },
-}
+    }
+});

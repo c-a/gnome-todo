@@ -34,6 +34,7 @@ const GLib = imports.gi.GLib;
 const Error = imports.error;
 const Format = imports.format;
 const Global = imports.global;
+const ListsController = imports.listsController;
 const Main = imports.main;
 const MainController = imports.mainController;
 const MainWindow = imports.mainWindow;
@@ -100,6 +101,9 @@ const Application = new Lang.Class({
 
         this._mainWindow = new MainWindow.MainWindow(this);
         this._mainController = new MainController.MainController(this._mainWindow);
+        // Add the initial controller
+        let listsController = new ListsController.ListsController(this._mainController);
+        this._mainController.pushController(listsController);
     },
 
     vfunc_activate: function() {
