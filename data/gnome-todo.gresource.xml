@@ -4,10 +4,10 @@
     <file>ui/lists_toolbar.glade</file>
     <file>ui/list_item.glade</file>
     <file>ui/list_editor_toolbar.glade</file>
-    <file>ui/note_editor.glade</file>
     <file>ui/rename_list_dialog.glade</file>
     <file>ui/selection_toolbar.glade</file>
     <file>ui/spinner_box.glade</file>
+    <file>ui/task_editor.glade</file>
     <file>ui/new_list_dialog.glade</file>
     <file>gnome-todo.css</file>
   </gresource>

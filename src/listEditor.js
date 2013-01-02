@@ -44,8 +44,8 @@ const ListEditorController = new Lang.Class({
         this._view = new ListEditorView();
         for(let i = 0; i < list.items.length; i++)
         {
-            let item = list.items[i];
-            this._view.addItem(item.completed, item.title);
+            let task = list.items[i];
+            this._view.addItem(task);
         }
     },
 
@@ -86,22 +86,24 @@ const ListEditorView = new Lang.Class({
         grid.attach(this._listBox, 0, 0, 1, 1);
 
         let builder = new Gtk.Builder();
-        builder.add_from_resource('/org/gnome/todo/ui/note_editor.glade');
-        this._noteEditor = builder.get_object('note_editor');
-        this._noteEditor.hide();
-        grid.attach(this._noteEditor, 1, 0, 1, 1);
+        builder.add_from_resource('/org/gnome/todo/ui/task_editor.glade');
+        this._taskEditor = builder.get_object('task_editor');
+        this._taskEditor.hide();
+        grid.attach(this._taskEditor, 1, 0, 1, 1);
+
+        this._noteTextBuffer = builder.get_object('note_textbuffer');
 
         this._listBox.connect('child-activated',
             Lang.bind(this, this._childActivated));
     },
 
-    addItem: function(done, title) {
-        let listItem = new ListItem(done, title);
+    addItem: function(task) {
+        let listItem = new ListItem(task);
         this._listBox.add(listItem);
     },
 
     _childActivated: function(listBox, listItem) {
-        this._noteEditor.show();
+        this._taskEditor.show();
 
         if (this._activatedItem)
             this._activatedItem.titleNotebook.set_current_page(0);
@@ -109,6 +111,12 @@ const ListEditorView = new Lang.Class({
         listItem.titleNotebook.set_current_page(1);
         listItem.titleEntry.grab_focus();
         this._activatedItem = listItem;
+
+        let task = listItem.task;
+        if (task.notes)
+            this._noteTextBuffer.text = task.notes;
+        else
+            this._noteTextBuffer.text = '';
     }
 });
 
@@ -116,8 +124,10 @@ const ListItem = new Lang.Class({
     Name: 'ListItem',
     Extends: Gtk.Bin,
 
-    _init: function(done, title) {
+    _init: function(task) {
         this.parent();
+
+        this.task = task;
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/list_item.glade');
@@ -128,9 +138,9 @@ const ListItem = new Lang.Class({
         this.titleLabel =  builder.get_object('title_label');
         this.titleEntry = builder.get_object('title_entry');
 
-        this.doneCheck.active = done;
-        this.titleLabel.label = title;
-        this.titleEntry.text = title;
+        this.doneCheck.active = task.done;
+        this.titleLabel.label = task.title;
+        this.titleEntry.text = task.title;
 
         this.show();
     }
