@@ -34,39 +34,33 @@ const Global = imports.global;
 
 const _ = imports.gettext.gettext;
 
-function MockSource()
-{
-  this._init();
-}
+const MockSource = new Lang.Class({
+    Name: 'MockSource',
 
-MockSource.prototype = {
-  _init: function()
-  {
-      this.id = 'mock##';
-      this.name ='MockSource';
-      this.icon = Gio.icon_new_for_string('system');
-      this.onlineSource = false;
-  },
+    _init: function()
+    {
+        this.id = 'mock##';
+        this.name ='MockSource';
+        this.icon = Gio.icon_new_for_string('system');
+        this.onlineSource = false;
+    },
 
-  listTaskLists: function(callback) {
-      let lists = [];
+    listTaskLists: function(callback) {
+        let lists = [];
 
-      lists.push({ title: 'Test List 1',
-          items: ['Item 1', 'Item 2'] });
+        lists.push({ title: 'Test List 1',
+            items: ['Item 1', 'Item 2'] });
 
-      lists.push({ title: 'Test List 2',
-          items: ['Item 3', 'Item 4'] });
+        lists.push({ title: 'Test List 2',
+            items: ['Item 3', 'Item 4'] });
 
-      callback(null, lists);
-  }
-}
+        callback(null, lists);
+    }
+});
 
-function GTasksSource(object)
-{
-    this._init(object);
-}
+const GTasksSource = new Lang.Class({
+    Name: 'GTasksSource',
 
-GTasksSource.prototype = {
     _init: function(object) {
         this._object = object
 
@@ -235,15 +229,11 @@ GTasksSource.prototype = {
             this._renameTaskListCallback(err);
         }
     }
-}
+});
 
+const SourceManager = new Lang.Class({
+    Name: 'SourceManager',
 
-function SourceManager()
-{
-    this._init();
-}
-
-SourceManager.prototype = {
     _init: function() {
         // Connect to goa
         try {
@@ -339,6 +329,6 @@ SourceManager.prototype = {
                 this._addGTasksSource(object);
         }
     }
-}
+});
 Signals.addSignalMethods(SourceManager.prototype);
 
