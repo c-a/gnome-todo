@@ -52,7 +52,6 @@ const ListsModel = new Lang.Class({
 
         this._sources = {};
         this._lists = {};
-        this._treeIters = {};
     },
 
     addSource: function(source)
@@ -104,12 +103,11 @@ const ListsModel = new Lang.Class({
         this._updateModel(list, iter);
 
         this._lists[list.id] = list;
-        this._treeIters[list.id] = iter;
     },
 
     _listUpdated: function(source, list)
     {
-        let iter = this._treeIters[list.id];
+        let iter = this._getIterFromID(list.id);
         this._updateModel(list, iter);
 
         this._lists[list.id] = list;
@@ -117,11 +115,10 @@ const ListsModel = new Lang.Class({
 
     _listRemoved: function(source, list)
     {
-        let iter = this._treeIters[list.id];
+        let iter = this._getIterFromID(list.id);
         this.remove(iter);
 
         delete this._lists[list.id];
-        delete this._treeIters[list.id];
     },
 
     _updateModel: function(list, iter)
@@ -135,5 +132,17 @@ const ListsModel = new Lang.Class({
 
         let pixbuf = GdPrivate.draw_task_list(titles);
         this.set_value(iter, Gd.MainColumns.ICON, pixbuf);
+    },
+
+    _getIterFromID: function(listID)
+    {
+        for(let [res, iter] = this.get_iter_first(); res; res = this.iter_next(iter)) {
+            let id = this.get_value(iter, Gd.MainColumns.ID);
+
+            if  (id == listID)
+                return iter;
+        }
+
+        return null;
     },
 });

@@ -94,11 +94,11 @@ const GTasksService = new Lang.Class({
                     Lang.bind(this, function(service, res) {
 
                         let listbody = service.call_function_finish(res);
-                        let listresponse = JSON.parse(listbody.toArray());
+                        let tasksObject = JSON.parse(listbody.toArray());
 
-                        let list = this._createList(listObject);
-                        if (listresponse.items)
-                            list.items = listresponse.items;
+                        let list = this.createList(listObject.id, listObject.title);
+                        if (tasksObject.items)
+                            list.items = tasksObject.items;
                         lists.push(list);
 
                         if (--outstandingRequests == 0)
@@ -132,14 +132,15 @@ const GTasksService = new Lang.Class({
             let response = service.call_function_finish(res);
 
             let listObject = JSON.parse(response.toArray());
-            this._createTaskListCallback(null, this._createList(listObject));
+            this._createTaskListCallback(null,
+                this.createList(listObject.id, listObject.title));
         } catch (err) {
             this._createTaskListCallback(err);
         }
     },
 
-    _createList: function(listObject) {
-        let list = { id: listObject.id, title: listObject.title, items: [] };
+    createList: function(id, title) {
+        let list = { id: id, title: title, items: [] };
         return list;
     },
 
@@ -187,7 +188,8 @@ const GTasksService = new Lang.Class({
             let response = service.call_function_finish(res);
 
             let listObject = JSON.parse(response.toArray());
-            this._patchTaskListCallback(null, this._createList(listObject));
+            this._patchTaskListCallback(null,
+                this.createList(listObject.id, listObject.title));
         } catch (err) {
             this._patchTaskListCallback(err);
         }
@@ -229,7 +231,16 @@ const GTasksSource = new Lang.Class({
     },
 
     createTaskList: function(title, callback) {
+
+        // Add a temporary item
+        let localID = this._createLocalId();
+        let tempList = this._service.createList(localID, title);
+        tempList.sourceID = this.id;
+        this.addItem(tempList);
+
         this._service.createTaskList(title, Lang.bind(this, function(error, list) {
+            this.removeItemById(tempList.id);
+
             if (error) {
                 callback(error);
                 return;
@@ -277,5 +288,20 @@ const GTasksSource = new Lang.Class({
 
                 callback(null);
             }));
+    },
+
+    _createLocalId: function() {
+        let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        let localID;
+        while(true) {
+            let randomCharacters = [];
+            for(let i = 0; i < 43; i++)
+                randomCharacters.push(possible.charAt(Math.floor(Math.random() * possible.length)));
+
+            localID = 'local-' + this.id + '-' + randomCharacters.join('');
+            if (!this.getItemById(localID))
+                return localID;
+        }
     }
 });

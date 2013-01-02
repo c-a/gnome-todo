@@ -72,10 +72,20 @@ const SelectionController = new Lang.Class({
 
     _deleteButtonClicked: function() {
         let selection = this._mainView.get_selection();
+
+        /* Need to get all lists before we start to remove them because
+         * the selection paths will be invalid after we the model changes. */
+        let lists = [];
         for (let i = 0; i < selection.length; i++)
         {
             let path = selection[i];
             let list = this._mainView.get_model().getListFromPath(path);
+            lists.push(list);
+        }
+
+        for (let i = 0; i < lists.length; i++)
+        {
+            let list = lists[i];
             let source = Global.sourceManager.getItemById(list.sourceID);
 
             source.deleteTaskList(list.id, Lang.bind(this, function(error) {
