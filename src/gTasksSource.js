@@ -28,44 +28,35 @@ const Signals = imports.signals;
 
 const Config = imports.config;
 const Global = imports.global;
+const Utils = imports.utils;
 
 const _ = imports.gettext.gettext;
 
 
-const GTasksSource = new Lang.Class({
-    Name: 'GTasksSource',
+const GTasksService = new Lang.Class({
+    Name: 'GTasksService',
 
-    _init: function(object) {
-        this._object = object
+    _init: function(oauth2Based) {
+        this._oauth2Based = oauth2Based;
 
-        this._authenticated = false;
-
-        let account = object.account;
-        this.id = account.id;
-        this.name = account.provider_name;
-        this.icon = Gio.icon_new_for_string(account.provider_icon);
-        this.onlineSource = true;
-
-        let oauth2Based = object.oauth2_based;
-
-        this._gTasksService = new GdPrivate.GTasksService(
+        this._service = new GdPrivate.GTasksService(
             { client_id: oauth2Based.client_id });
     },
 
-    _authenticate: function(callback) {
+     _authenticate: function(callback) {
 
         if (this._authenticated) {
             callback(null);
             return;
         }
 
-        let oauth2Based = this._object.oauth2_based;
+        let oauth2Based = this._oauth2Based;
         oauth2Based.call_get_access_token(null,
             Lang.bind(this, function(object, result) {
                 try {
                     let [res, access_token, expires_in] = oauth2Based.call_get_access_token_finish(result);
 
-                    this._gTasksService.access_token = access_token;
+                    this._service.access_token = access_token;
                     this._authenticated = true;
                     callback(null);
                 } catch (err) {
@@ -81,7 +72,7 @@ const GTasksSource = new Lang.Class({
                     callback(error);
 
                 this._listTaskListsCallback = callback;
-                this._gTasksService.call_function('GET',
+                this._service.call_function('GET',
                     'users/@me/lists', null,
                     null, Lang.bind(this, this._getListsCallCb));
             }));
@@ -98,7 +89,7 @@ const GTasksSource = new Lang.Class({
                 let listObject = response.items[i];
 
                 outstandingRequests++;
-                this._gTasksService.call_function('GET',
+                this._service.call_function('GET',
                     'lists/' + listObject.id + '/tasks', null, null,
                     Lang.bind(this, function(service, res) {
 
@@ -131,7 +122,7 @@ const GTasksSource = new Lang.Class({
                 let body = JSON.stringify(newTaskList);
 
                 this._createTaskListCallback = callback;
-                this._gTasksService.call_function('POST', 'users/@me/lists',
+                this._service.call_function('POST', 'users/@me/lists',
                     body, null, Lang.bind(this, this._createListCallCb));
             }));
     },
@@ -148,8 +139,7 @@ const GTasksSource = new Lang.Class({
     },
 
     _createList: function(listObject) {
-        let list = { id: listObject.id, title: listObject.title, items: [],
-            sourceID: this.id };
+        let list = { id: listObject.id, title: listObject.title, items: [] };
         return list;
     },
 
@@ -161,7 +151,7 @@ const GTasksSource = new Lang.Class({
             }
 
             this._deleteTaskListCallback = callback;
-            this._gTasksService.call_function('DELETE',
+            this._service.call_function('DELETE',
                 'users/@me/lists/' + id, null, null,
                 Lang.bind(this, this._deleteListCallCb));
         }));
@@ -176,31 +166,116 @@ const GTasksSource = new Lang.Class({
         }
     },
 
-    renameTaskList: function(id, title, callback) {
+    patchTaskList: function(id, patchTaskList, callback) {
         this._authenticate(Lang.bind(this, function(error) {
             if (error) {
                 callback(error);
                 return;
             }
 
-            let updatedTaskList = { 'title': title };
-            let body = JSON.stringify(updatedTaskList);
+            let body = JSON.stringify(patchTaskList);
 
-            this._renameTaskListCallback = callback;
-            this._gTasksService.call_function('PATCH',
+            this._patchTaskListCallback = callback;
+            this._service.call_function('PATCH',
                 'users/@me/lists/' + id, body, null,
-                Lang.bind(this, this._updateListCallCb));
+                Lang.bind(this, this._patchListCallCb));
         }));
     },
 
-    _updateListCallCb: function(service, res) {
+    _patchListCallCb: function(service, res) {
         try {
             let response = service.call_function_finish(res);
 
             let listObject = JSON.parse(response.toArray());
-            this._renameTaskListCallback(null, this._createList(listObject));
+            this._patchTaskListCallback(null, this._createList(listObject));
         } catch (err) {
-            this._renameTaskListCallback(err);
+            this._patchTaskListCallback(err);
         }
+    }
+});
+
+const GTasksSource = new Lang.Class({
+    Name: 'GTasksSource',
+    Extends: Utils.BaseManager,
+
+    _init: function(object) {
+        this.parent();
+
+        this._object = object
+        this._authenticated = false;
+
+        let account = object.account;
+        this.id = account.id;
+        this.name = account.provider_name;
+        this.icon = Gio.icon_new_for_string(account.provider_icon);
+        this.onlineSource = true;
+
+        this._service = new GTasksService(object.oauth2_based);
+    },
+
+    refresh: function(callback) {
+        this._service.listTaskLists(Lang.bind(this, function(error, lists) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            for (let i = 0; i < lists.length; i++)
+                lists[i].sourceID = this.id;
+
+            this.processNewItems(lists);
+            callback(null);
+        }));
+    },
+
+    createTaskList: function(title, callback) {
+        this._service.createTaskList(title, Lang.bind(this, function(error, list) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            list.sourceID = this.id;
+            this.addItem(list);
+            callback(null);
+        }));
+    },
+
+    deleteTaskList: function(id, callback) {
+        /* We remove the TaskList locally before it's actually removed from
+         * the server, and add it back if the removal was unsuccesful. */
+        let taskList = this.getItemById(id);
+        this.removeItemById(id);
+
+        this._service.deleteTaskList(id, Lang.bind(this, function(error) {
+            if (error) {
+                // Add back the TaskList
+                this.addItem(taskList);
+                callback(error);
+                return;
+            }
+            
+            callback(null);
+        }));
+    },
+
+    renameTaskList: function(id, title, callback) {
+        /* We rename the TaskList locally before it's actually renamed on
+         * the server, and change it back if the rename was unsuccesful. */
+        let taskList = this.getItemById(id);
+        let newTaskList = taskList;
+        newTaskList.title = title;
+        this.addItem(newTaskList);
+
+        let patchTaskList = { title: title };
+        this._service.patchTaskList(id, patchTaskList,
+            Lang.bind(this, function(patchedTaskList, error) {
+                if (error) {
+                    callback(error);
+                    return;
+                }
+
+                callback(null);
+            }));
     }
 });

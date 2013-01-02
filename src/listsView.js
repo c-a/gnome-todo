@@ -133,9 +133,9 @@ const ListsView = Lang.Class({
         this.mainView = new Gd.MainView({'view-type': Gd.MainViewType.ICON });
 
         this.mainView.show_all();
-        let viewActor = new GtkClutter.Actor({ contents: this.mainView,
+        this._mainViewActor = new GtkClutter.Actor({ contents: this.mainView,
             x_expand: true, y_expand: true });
-        this.add_child(viewActor);
+        this.add_child(this._mainViewActor);
 
         /* Add selectionToolbar. */
         this.selectionToolbar = new Selection.SelectionToolbar();
@@ -145,7 +145,7 @@ const ListsView = Lang.Class({
         this.selectionToolbar.add_constraint(
             new Clutter.AlignConstraint({ align_axis: Clutter.AlignAxis.Y_AXIS,
                 source: this, factor: 0.95 }));
-        this.insert_child_above(this.selectionToolbar, viewActor);
+        this.insert_child_above(this.selectionToolbar, this._mainViewActor);
     },
 
     _removeNoResults: function() {
@@ -173,6 +173,6 @@ const ListsView = Lang.Class({
         this._noResults = new EmptyResultsBox(noAccounts);
         this._noResultsActor = new GtkClutter.Actor({ contents: this._noResults,
             x_expand: true, y_expand: true });
-        this.insert_child_below(this._noResultsActor, Global.notificationManager);
+        this.insert_child_above(this._noResultsActor, this._mainViewActor);
     }
 });

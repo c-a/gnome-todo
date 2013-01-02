@@ -29,6 +29,7 @@ const Signals = imports.signals;
 const Config = imports.config;
 const Global = imports.global;
 const GTasksSource = imports.gTasksSource;
+const Utils = imports.utils;
 
 const _ = imports.gettext.gettext;
 
@@ -56,11 +57,13 @@ const MockSource = new Lang.Class({
     }
 });
 
-
 const SourceManager = new Lang.Class({
     Name: 'SourceManager',
+    Extends: Utils.BaseManager,
 
     _init: function() {
+        this.parent();
+
         // Connect to goa
         try {
             this._goaClient = Goa.Client.new_sync(null);
@@ -68,8 +71,7 @@ const SourceManager = new Lang.Class({
             throw('Unable to create the GOA client: ' + e.toString());
         }
 
-        this.sources = {};
-        this.nSources = 0;
+        this._defaultSource = null;
 
         let accounts = this._goaClient.get_accounts();
         for (let i = 0; i < accounts.length; i++)
@@ -93,27 +95,20 @@ const SourceManager = new Lang.Class({
         //this._addSource(mockSource);
     },
 
-    _addSource: function(source)
-    {
-        this.sources[source.id] = source;
-        this.nSources++;
-        this.emit('source-added', source);
+    getDefaultSource: function() {
+        return this._defaultSource;
     },
 
-    _removeSource: function(id)
-    {
-        if (this.sources.hasOwnProperty(id))
-        {
-            let source = this.sources[id];
-            delete this.sources[id];
-            this.nSources--;
-            this.emit('source-removed', source);
-        }
+    setDefaultSource: function(source) {
+        this._defaultSource = source;
     },
 
     _addGTasksSource: function(object) {
         let source = new GTasksSource.GTasksSource(object);
-        this._addSource(source);
+        this.addItem(source);
+
+        if (!this._defaultSource)
+            this._defaultSource = source;
     },
 
     _validObject: function(object) {
@@ -137,7 +132,7 @@ const SourceManager = new Lang.Class({
         if (!account)
             return;
 
-        this._removeSource(account.id);
+        this.removeItemById(account.id);
     },
 
     _accountChangedCb: function(goaClient, object) {
@@ -148,7 +143,7 @@ const SourceManager = new Lang.Class({
 
         if (this.sources.hasOwnProperty(account.id)) {
             if (!this._validObject(object))
-                this._removeSource(account.id);
+                this.removeItemById(account.id);
         }
         else {
             if (this._validObject(object))
@@ -156,5 +151,3 @@ const SourceManager = new Lang.Class({
         }
     }
 });
-Signals.addSignalMethods(SourceManager.prototype);
-

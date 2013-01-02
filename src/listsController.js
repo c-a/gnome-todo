@@ -48,6 +48,7 @@ const ListsController = new Lang.Class({
         this._selectionController = new Selection.SelectionController(this, this._listsView);
         this._selectionModeActive = false;
 
+        this._outstandingLoads = 0;
         this._updateContentView();
 
         this._toolbar.connect('selection-mode-toggled',
@@ -57,18 +58,20 @@ const ListsController = new Lang.Class({
 
         this._listsView.mainView.connect('item-activated',
             Lang.bind(this, this._itemActivated));
+
+
+        Global.sourceManager.forEachItem(Lang.bind(this, function(source) {
+            this._sourceAdded(null, source);
+        }));
+        Global.sourceManager.connect('item-added',
+            Lang.bind(this, this._sourceAdded));
+        Global.sourceManager.connect('item-removed',
+            Lang.bind(this, this._sourceRemoved));
     },
 
     activate: function() {
-        Global.sourceManager.connect('source-added',
-            Lang.bind(this, this._sourceAdded));
-        Global.sourceManager.connect('source-removed',
-            Lang.bind(this, this._sourceRemoved));
-
         this.window.setToolbarWidget(this._toolbar);
         this.window.setContentActor(this._listsView);
-
-        this._refresh();
     },
 
     deactivate: function() {
@@ -77,38 +80,18 @@ const ListsController = new Lang.Class({
     },
 
     _refresh: function() {
-        this._outstandingLoads = 0;
-        for (let sourceID in Global.sourceManager.sources) {
-            this._sourceAdded(null, Global.sourceManager.sources[sourceID]);
-        }
-    },
-
-    _sourceAdded: function(manager, source) {
-
-        if (this._outstandingLoads++ == 0)
-            this._listsView.showMainView(true);
-
-        source.listTaskLists(Lang.bind(this, function(error, taskLists) {
-            if (error) {
-                let notification = new Gtk.Label({ label: error.message });
-                Global.notificationManager.addNotification(notification);
-            }
-            else {
-                for (let i = 0; i < taskLists.length; i++)
-                {
-                    let list = taskLists[i];
-                    this._model.add(list);
-                }
-            }
-
-            this._outstandingLoads--;
-            this._updateContentView();
+        Global.sourceManager.forEachItem(Lang.bind(this, function(source) {
+            this._refreshSource(source);
         }));
     },
 
+    _sourceAdded: function(manager, source) {
+        this._model.addSource(source);
+        this._refreshSource(source);
+    },
+
     _sourceRemoved: function(manager, source) {
-        let model = this._model;
-        model.removeBySourceID(source.id);
+        this._model.removeSourceByID(source.id);
         this._updateContentView();
     },
 
@@ -124,19 +107,34 @@ const ListsController = new Lang.Class({
         this._toolbar.setSelectionMode(active);
         this._selectionController.setActive(active);
     },
-    
+
+    _refreshSource: function(source) {
+        if (this._outstandingLoads++ == 0)
+            this._listsView.showMainView(true);
+
+        source.refresh(Lang.bind(this, function(error) {
+            if (error) {
+                let notification = new Gtk.Label({ label: error.message });
+                Global.notificationManager.addNotification(notification);
+            }
+
+            this._outstandingLoads--;
+            this._updateContentView();
+        }));
+    },
+
     _updateContentView: function() {
         if (this._outstandingLoads != 0)
             return;
 
-        if (Global.sourceManager.nSources == 0) {
+        if (Global.sourceManager.getItemsCount() == 0) {
             this._toolbar.setNewButtonSensitive(false);
             this._listsView.showNoResults(true);
         }
         else {
             this._toolbar.setNewButtonSensitive(true);
 
-            if (this._model.nItems() == 0)
+            if (this._model.getListCount() == 0)
                 this._listsView.showNoResults(false);
             else
                 this._listsView.showMainView(false);
@@ -156,22 +154,15 @@ const ListsController = new Lang.Class({
 
                 if (response_id == Gtk.ResponseType.ACCEPT)
                 {
-                    let source;
-                    for (let sourceID in Global.sourceManager.sources) {
-                        source = Global.sourceManager.sources[sourceID];
-                        break;
-                    }
+                    let source = Global.sourceManager.getDefaultSource();
 
                     let entry = builder.get_object('entry');
-                    source.createTaskList(entry.text,
-                        Lang.bind(this, function(error, list) {
-                            if (error) {
-                                let notification = new Gtk.Label({ label: error.message });
-                                Global.notificationManager.addNotification(notification);
-                            }
-                            else
-                                this._model.add(list);
-                        }));
+                    source.createTaskList(entry.text, Lang.bind(this, function(error) {
+                        if (error) {
+                            let notification = new Gtk.Label({ label: error.message });
+                            Global.notificationManager.addNotification(notification);
+                        }
+                    }));
                 }
 
                 dialog.destroy();

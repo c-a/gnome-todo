@@ -36,10 +36,8 @@ const Lang = imports.lang;
 const Global = imports.global;
 const Utils = imports.utils;
 
-const PIXBUF_WIDTH = 140;
-const PIXBUF_HEIGHT = 180;
 
-const ListsModel = Lang.Class({
+const ListsModel = new Lang.Class({
     Name: 'ListsModel',
     Extends: Gtk.ListStore,
 
@@ -52,30 +50,78 @@ const ListsModel = Lang.Class({
                                GdkPixbuf.Pixbuf, GObject.TYPE_INT64,
                                GObject.TYPE_BOOLEAN]);
 
+        this._sources = {};
         this._lists = {};
+        this._treeIters = {};
     },
 
-    add: function(list)
+    addSource: function(source)
+    {
+        source.forEachItem(Lang.bind(this, this._listAdded));
+
+        source.connect('item-added', Lang.bind(this, this._listAdded));
+        source.connect('item-updated', Lang.bind(this, this._listUpdated));
+        source.connect('item-removed', Lang.bind(this, this._listRemoved));
+
+        this._sources[source.id] = source;
+    },
+
+    removeSourceByID: function(sourceID)
+    {
+        let source = this._sources[sourceID];
+        // FIXME: Kind of bad to use disconnectAll.
+        source.disconnectAll();
+
+        // Remove all TaskLists belonging to this source.
+        let [res, iter] = this.get_iter_first();
+        while(res) {
+            let id = this.get_value(iter, Gd.MainColumns.ID);
+
+            if (source.getItemByID(id))
+                res = this.remove(iter);
+            else
+                res = this.iter_next(iter);
+        }
+
+        delete this._sources[sourceID];
+    },
+
+    getListFromPath: function(path)
+    {
+        let [res, iter] = this.get_iter(path);
+        let listID = this.get_value(iter, Gd.MainColumns.ID);
+
+        return this._lists[listID];
+    },
+
+    getListCount: function() {
+        return Object.keys(this._lists).length;
+    },
+
+    _listAdded: function(source, list)
     {
         let iter = this.append();
         this._updateModel(list, iter);
 
         this._lists[list.id] = list;
+        this._treeIters[list.id] = iter;
     },
 
-    update: function(list)
+    _listUpdated: function(source, list)
     {
-        let [res, iter] = this.get_iter_first();
-        for(;res; res = this.iter_next(iter)) {
-            let id = this.get_value(iter, Gd.MainColumns.ID);
-            if (id == list.id)
-                break;
-        }
-        if (!res)
-            return;
-
+        let iter = this._treeIters[list.id];
         this._updateModel(list, iter);
+
         this._lists[list.id] = list;
+    },
+
+    _listRemoved: function(source, list)
+    {
+        let iter = this._treeIters[list.id];
+        this.remove(iter);
+
+        delete this._lists[list.id];
+        delete this._treeIters[list.id];
     },
 
     _updateModel: function(list, iter)
@@ -90,71 +136,4 @@ const ListsModel = Lang.Class({
         let pixbuf = GdPrivate.draw_task_list(titles);
         this.set_value(iter, Gd.MainColumns.ICON, pixbuf);
     },
-    
-    removeBySourceID: function(sourceID)
-    {
-        let [res, iter] = this.get_iter_first();
-        while(res) {
-            let id = this.get_value(iter, Gd.MainColumns.ID);
-            let list = this._lists[id];
-
-            if (list.sourceID == sourceID)
-                res = this.remove(iter);
-            else
-                res = this.iter_next(iter);
-        }
-    },
-
-    nItems: function()
-    {
-        let nItems = 0;
-        for(let [res, iter] = this.get_iter_first(); res; res = this.iter_next(iter))
-            nItems++;
-
-        return nItems;
-    },
-
-    getListFromPath: function(path)
-    {
-        let [res, iter] = this.get_iter(path);
-        let id = this.get_value(iter, Gd.MainColumns.ID);
-
-        return this._lists[id];
-    },
-
-    deleteByPath: function(path)
-    {
-        let [res, iter] = this.get_iter(path);
-        let id = this.get_value(iter, Gd.MainColumns.ID);
-        
-        this.remove(iter);
-        delete this._lists[id];
-    },
-    
-    _drawPixbuf: function(items)
-    {
-        let provider = GdPrivate.load_css_provider_from_resource('/org/gnome/todo/gnome-todo.css');
-
-        let style_context = new Gtk.StyleContext();
-        let path = new Gtk.WidgetPath();
-        path.append_type(Gd.MainIconView);
-        style_context.set_path(path);
-        style_context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-        style_context.add_class('todo-task-list-renderer');
-
-        let border = style_context.get_border(Gtk.StateFlags.NORMAL);
-        let padding = style_context.get_padding(Gtk.StateFlags.NORMAL);
-
-        let width = PIXBUF_WIDTH + padding.left + padding.right + border.left + border.right;
-        let height = PIXBUF_HEIGHT + padding.top + padding.bottom + border.top + border.bottom;
-
-        let surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, width, height);
-        let context = new Cairo.Context(surface);
-
-        Gtk.render_background(style_context, context, padding.left, padding.top,
-                              PIXBUF_WIDTH + border.left + border.right,
-                              PIXBUF_WIDTH + border.top + border.bottom);
-
-        return Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height);
-    }
 });
