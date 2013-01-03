@@ -145,9 +145,13 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
-              <object class="GtkComboBox" id="due_date_combo">
+              <object class="GtkBox" id="due_date_placeholder">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <placeholder/>
+                </child>
               </object>
             </child>
           </object>
@@ -187,6 +191,7 @@
       <object class="GtkButton" id="save_button">
         <property name="label">gtk-save</property>
         <property name="visible">True</property>
+        <property name="sensitive">False</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
         <property name="use_stock">True</property>

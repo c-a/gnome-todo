@@ -50,6 +50,13 @@ function alphaGtkWidget(widget) {
         new Gdk.RGBA({ red: 0, green: 0, blue: 0, alpha: 0 }));
 }
 
+function dateTimeFromISO8601(string) {
+    let [res, timeval] = GLib.TimeVal.from_iso8601(string);
+    if (!res)
+        return null;
+
+    return GLib.DateTime.new_from_timeval_utc(timeval);
+};
 const BaseManager = new Lang.Class({
     Name: 'BaseManager',
 

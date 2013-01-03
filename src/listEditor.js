@@ -29,6 +29,7 @@ const Signals = imports.signals;
 const Config = imports.config;
 const Global = imports.global;
 const MainController = imports.mainController;
+const Utils = imports.utils;
 
 const ListEditorController = new Lang.Class({
     Name: 'ListEditorController',
@@ -66,82 +67,6 @@ const ListEditorController = new Lang.Class({
 
     _backButtonClicked: function(toolbar) {
         this.mainController.popController();
-    }
-});
-
-const LIST_COMBO_COLUMN_TITLE = 0;
-const LIST_COMBO_COLUMN_ID    = 1;
-
-const TaskEditor = new Lang.Class({
-    Name: 'TaskEditor',
-    Extends: Gtk.Bin,
-
-    _init: function(source) {
-        this.parent();
-
-        let builder = new Gtk.Builder();
-        builder.add_from_resource('/org/gnome/todo/ui/task_editor.glade');
-        this._taskEditor = builder.get_object('task_editor');
-        this.add(this._taskEditor);
-
-        this._noteTextBuffer = builder.get_object('note_textbuffer');
-        this._listCombo = builder.get_object('list_combo');
-        this._listStore = builder.get_object('list_store');
-
-        this._setSource(source);
-    },
-
-    setTask: function(task, listID) {
-        this._task = task;
-
-        if (task.notes)
-            this._noteTextBuffer.text = task.notes;
-        else
-            this._noteTextBuffer.text = '';
-
-        let iter = this._getIterFromListID(listID);
-        this._listCombo.set_active_iter(iter);
-    },
-
-    _setSource: function(source) {
-        this._source = source;
-
-        source.forEachItem(Lang.bind(this, function(list) {
-            this._listAdded(source, list);
-        }));
-        source.connect('item-added', Lang.bind(this, this._listAdded));
-        source.connect('item-updated', Lang.bind(this, this._listUpdated));
-        source.connect('item-removed', Lang.bind(this, this._listRemoved));
-    },
-
-    _listAdded: function(source, list) {
-        let iter = this._listStore.append();
-        this._listStore.set_value(iter, LIST_COMBO_COLUMN_ID, list.id);
-        this._listStore.set_value(iter, LIST_COMBO_COLUMN_TITLE, list.title);
-    },
-
-    _listUpdated: function(source, list) {
-        let iter = this._getIterFromListID(list.id);
-        if (iter)
-            this._listStore.set_value(iter, LIST_COMBO_COLUMN_TITLE, list.title);
-    },
-
-    _listRemoved: function(source, list) {
-        let iter = this._getIterFromListID(list.id);
-        if (iter)
-            this._listStore.remove(iter);
-    },
-
-    _getIterFromListID: function(listID) {
-        for (let [res, iter] = this._listStore.get_iter_first();
-            res;
-            res = this._listStore.iter_next(iter))
-        {
-            let id = this._listStore.get_value(iter, LIST_COMBO_COLUMN_ID);
-            if (id == listID)
-                return iter;
-        }
-        return null;
     }
 });
 
@@ -214,6 +139,115 @@ const ListItem = new Lang.Class({
         this.titleEntry.text = task.title;
 
         this.show();
+    }
+});
+
+const LIST_COMBO_COLUMN_TITLE = 0;
+const LIST_COMBO_COLUMN_ID    = 1;
+
+const TaskEditor = new Lang.Class({
+    Name: 'TaskEditor',
+    Extends: Gtk.Bin,
+
+    _init: function(source) {
+        this.parent();
+
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/task_editor.glade');
+        this._taskEditor = builder.get_object('task_editor');
+        this.add(this._taskEditor);
+
+        this._noteTextBuffer = builder.get_object('note_textbuffer');
+        this._listCombo = builder.get_object('list_combo');
+        this._listStore = builder.get_object('list_store');
+
+        let dueDatePlaceholder = builder.get_object('due_date_placeholder');
+        this._dueDatePicker = new DatePicker();
+        dueDatePlaceholder.add(this._dueDatePicker);
+
+        this._setSource(source);
+    },
+
+    setTask: function(task, listID) {
+        this._task = task;
+
+        if (task.notes)
+            this._noteTextBuffer.text = task.notes;
+        else
+            this._noteTextBuffer.text = '';
+
+        let dateTime = null;
+        if (task.due)
+            dateTime = Utils.dateTimeFromISO8601(task.due);
+        this._dueDatePicker.setDateTime(dateTime);
+
+        let iter = this._getIterFromListID(listID);
+        this._listCombo.set_active_iter(iter);
+    },
+
+    _setSource: function(source) {
+        this._source = source;
+
+        source.forEachItem(Lang.bind(this, function(list) {
+            this._listAdded(source, list);
+        }));
+        source.connect('item-added', Lang.bind(this, this._listAdded));
+        source.connect('item-updated', Lang.bind(this, this._listUpdated));
+        source.connect('item-removed', Lang.bind(this, this._listRemoved));
+    },
+
+    _listAdded: function(source, list) {
+        let iter = this._listStore.append();
+        this._listStore.set_value(iter, LIST_COMBO_COLUMN_ID, list.id);
+        this._listStore.set_value(iter, LIST_COMBO_COLUMN_TITLE, list.title);
+    },
+
+    _listUpdated: function(source, list) {
+        let iter = this._getIterFromListID(list.id);
+        if (iter)
+            this._listStore.set_value(iter, LIST_COMBO_COLUMN_TITLE, list.title);
+    },
+
+    _listRemoved: function(source, list) {
+        let iter = this._getIterFromListID(list.id);
+        if (iter)
+            this._listStore.remove(iter);
+    },
+
+    _getIterFromListID: function(listID) {
+        for (let [res, iter] = this._listStore.get_iter_first();
+            res;
+            res = this._listStore.iter_next(iter))
+        {
+            let id = this._listStore.get_value(iter, LIST_COMBO_COLUMN_ID);
+            if (id == listID)
+                return iter;
+        }
+        return null;
+    }
+});
+
+const DatePicker = new Lang.Class({
+    Name: 'DatePicker',
+    Extends: Gtk.Bin,
+
+    _init: function() {
+        this.parent();
+
+        this._entry = new Gtk.Entry({ 'editable': false });
+        this.add(this._entry);
+
+        this.show_all();
+    },
+
+    setDateTime: function(dateTime) {
+        let text;
+        if (dateTime)
+            text = dateTime.format('%x');
+        else
+            text = '';
+
+        this._entry.text = text;
     }
 });
 
