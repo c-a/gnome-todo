@@ -41,7 +41,8 @@ const ListEditorController = new Lang.Class({
         this._toolbar.connect('back-button-clicked',
             Lang.bind(this, this._backButtonClicked));
 
-        this._view = new ListEditorView();
+        let source = Global.sourceManager.getItemById(list.sourceID);
+        this._view = new ListEditorView(source, list);
         for(let i = 0; i < list.items.length; i++)
         {
             let task = list.items[i];
@@ -68,14 +69,91 @@ const ListEditorController = new Lang.Class({
     }
 });
 
+const LIST_COMBO_COLUMN_TITLE = 0;
+const LIST_COMBO_COLUMN_ID    = 1;
+
+const TaskEditor = new Lang.Class({
+    Name: 'TaskEditor',
+    Extends: Gtk.Bin,
+
+    _init: function(source) {
+        this.parent();
+
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/task_editor.glade');
+        this._taskEditor = builder.get_object('task_editor');
+        this.add(this._taskEditor);
+
+        this._noteTextBuffer = builder.get_object('note_textbuffer');
+        this._listCombo = builder.get_object('list_combo');
+        this._listStore = builder.get_object('list_store');
+
+        this._setSource(source);
+    },
+
+    setTask: function(task, listID) {
+        this._task = task;
+
+        if (task.notes)
+            this._noteTextBuffer.text = task.notes;
+        else
+            this._noteTextBuffer.text = '';
+
+        let iter = this._getIterFromListID(listID);
+        this._listCombo.set_active_iter(iter);
+    },
+
+    _setSource: function(source) {
+        this._source = source;
+
+        source.forEachItem(Lang.bind(this, function(list) {
+            this._listAdded(source, list);
+        }));
+        source.connect('item-added', Lang.bind(this, this._listAdded));
+        source.connect('item-updated', Lang.bind(this, this._listUpdated));
+        source.connect('item-removed', Lang.bind(this, this._listRemoved));
+    },
+
+    _listAdded: function(source, list) {
+        let iter = this._listStore.append();
+        this._listStore.set_value(iter, LIST_COMBO_COLUMN_ID, list.id);
+        this._listStore.set_value(iter, LIST_COMBO_COLUMN_TITLE, list.title);
+    },
+
+    _listUpdated: function(source, list) {
+        let iter = this._getIterFromListID(list.id);
+        if (iter)
+            this._listStore.set_value(iter, LIST_COMBO_COLUMN_TITLE, list.title);
+    },
+
+    _listRemoved: function(source, list) {
+        let iter = this._getIterFromListID(list.id);
+        if (iter)
+            this._listStore.remove(iter);
+    },
+
+    _getIterFromListID: function(listID) {
+        for (let [res, iter] = this._listStore.get_iter_first();
+            res;
+            res = this._listStore.iter_next(iter))
+        {
+            let id = this._listStore.get_value(iter, LIST_COMBO_COLUMN_ID);
+            if (id == listID)
+                return iter;
+        }
+        return null;
+    }
+});
+
 const ListEditorView = new Lang.Class({
     Name: 'ListEditorView',
     Extends: GtkClutter.Actor,
 
-    _init: function(contentView) {
+    _init: function(source, list) {
         this.parent({ x_expand: true, y_expand: true });
 
-        this._contentView = contentView;
+        this._source = source;
+        this._list = list;
 
         let grid = new Gtk.Grid({ margin: 6 });
         grid.show();
@@ -85,13 +163,9 @@ const ListEditorView = new Lang.Class({
         this._listBox.show();
         grid.attach(this._listBox, 0, 0, 1, 1);
 
-        let builder = new Gtk.Builder();
-        builder.add_from_resource('/org/gnome/todo/ui/task_editor.glade');
-        this._taskEditor = builder.get_object('task_editor');
+        this._taskEditor = new TaskEditor(source);
         this._taskEditor.hide();
         grid.attach(this._taskEditor, 1, 0, 1, 1);
-
-        this._noteTextBuffer = builder.get_object('note_textbuffer');
 
         this._listBox.connect('child-activated',
             Lang.bind(this, this._childActivated));
@@ -103,7 +177,6 @@ const ListEditorView = new Lang.Class({
     },
 
     _childActivated: function(listBox, listItem) {
-        this._taskEditor.show();
 
         if (this._activatedItem)
             this._activatedItem.titleNotebook.set_current_page(0);
@@ -113,10 +186,8 @@ const ListEditorView = new Lang.Class({
         this._activatedItem = listItem;
 
         let task = listItem.task;
-        if (task.notes)
-            this._noteTextBuffer.text = task.notes;
-        else
-            this._noteTextBuffer.text = '';
+        this._taskEditor.setTask(task, this._list.id);
+        this._taskEditor.show();
     }
 });
 
