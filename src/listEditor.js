@@ -92,8 +92,12 @@ const ListEditorView = new Lang.Class({
         this._taskEditor.hide();
         grid.attach(this._taskEditor, 1, 0, 1, 1);
 
+        this._listBox.set_sort_func(
+            Lang.bind(this, this._listBoxSortFunc));
         this._listBox.connect('child-activated',
             Lang.bind(this, this._childActivated));
+
+        this._listBox.add(new NewListItem());
     },
 
     addItem: function(task) {
@@ -101,18 +105,38 @@ const ListEditorView = new Lang.Class({
         this._listBox.add(listItem);
     },
 
+    _listBoxSortFunc: function(item1, item2) {
+        if (item1.isNewListItem)
+            return 1;
+        if (item2.isNewListItem)
+            return -1;
+
+        if (item1.position < item2.position)
+            return -1;
+        if (item1.position > item2.position)
+            return 1;
+
+        return 0;
+    },
+
     _childActivated: function(listBox, listItem) {
 
         if (this._activatedItem)
             this._activatedItem.titleNotebook.set_current_page(0);
 
-        listItem.titleNotebook.set_current_page(1);
-        listItem.titleEntry.grab_focus();
-        this._activatedItem = listItem;
+        if (listItem.isNewListItem) {
+            this._taskEditor.hide();
+            this._activatedItem = null;
+        }
+        else {
+            listItem.titleNotebook.set_current_page(1);
+            listItem.titleEntry.grab_focus();
+            this._activatedItem = listItem;
 
-        let task = listItem.task;
-        this._taskEditor.setTask(task, this._list.id);
-        this._taskEditor.show();
+            let task = listItem.task;
+            this._taskEditor.setTask(task, this._list.id);
+            this._taskEditor.show();
+        }
     }
 });
 
@@ -123,6 +147,7 @@ const ListItem = new Lang.Class({
     _init: function(task) {
         this.parent();
 
+        this.isNewListItem = false;
         this.task = task;
 
         let builder = new Gtk.Builder();
@@ -137,6 +162,24 @@ const ListItem = new Lang.Class({
         this.doneCheck.active = task.done;
         this.titleLabel.label = task.title;
         this.titleEntry.text = task.title;
+
+        this.show();
+    }
+});
+
+const NewListItem = new Lang.Class({
+    Name: 'NewListItem',
+    Extends: Gtk.Bin,
+
+    _init: function(task) {
+        this.parent();
+
+        this.isNewListItem = true;
+        this.task = task;
+
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/new_list_item.glade');
+        this.add(builder.get_object('grid'));
 
         this.show();
     }

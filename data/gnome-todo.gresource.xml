@@ -9,6 +9,7 @@
     <file>ui/spinner_box.glade</file>
     <file>ui/task_editor.glade</file>
     <file>ui/new_list_dialog.glade</file>
+    <file>ui/new_list_item.glade</file>
     <file>gnome-todo.css</file>
   </gresource>
 </gresources>
