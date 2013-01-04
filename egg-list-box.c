@@ -63,7 +63,7 @@ struct _EggListBoxPrivate
   GHashTable *child_hash;
   GHashTable *separator_hash;
 
-  GCompareDataFunc sort_func;
+  EggListBoxSortFunc sort_func;
   gpointer sort_func_target;
   GDestroyNotify sort_func_target_destroy_notify;
 
@@ -573,9 +573,15 @@ egg_list_box_reseparate (EggListBox *list_box)
   gtk_widget_queue_resize (GTK_WIDGET (list_box));
 }
 
+/**
+ * egg_list_box_set_sort_func:
+ * @f: (closure f_target):
+ * @f_target: (allow-none):
+ * @f_target_destroy_notify: (allow-none):
+ */
 void
 egg_list_box_set_sort_func (EggListBox *list_box,
-			    GCompareDataFunc f,
+			    EggListBoxSortFunc f,
 			    void *f_target,
 			    GDestroyNotify f_target_destroy_notify)
 {
