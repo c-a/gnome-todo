@@ -35,6 +35,7 @@ struct _EggListBoxClass
 };
 
 typedef gboolean (*EggListBoxFilterFunc) (GtkWidget* child, void* user_data);
+typedef gint (*EggListBoxSortFunc) (GtkWidget* child1, GtkWidget* child2, void* user_data);
 typedef void (*EggListBoxUpdateSeparatorFunc) (GtkWidget** separator, GtkWidget* child, GtkWidget* before, void* user_data);
 
 GType egg_list_box_get_type (void) G_GNUC_CONST;
@@ -61,7 +62,7 @@ void        egg_list_box_refilter                     (EggListBox               
 void        egg_list_box_resort                       (EggListBox                    *self);
 void        egg_list_box_reseparate                   (EggListBox                    *self);
 void        egg_list_box_set_sort_func                (EggListBox                    *self,
-						       GCompareDataFunc               f,
+						       EggListBoxSortFunc             f,
 						       void                          *f_target,
 						       GDestroyNotify                 f_target_destroy_notify);
 void        egg_list_box_child_changed                (EggListBox                    *self,
