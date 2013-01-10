@@ -149,6 +149,17 @@ const ListsController = new Lang.Class({
         let dialog = builder.get_object('new_list_dialog');
         dialog.set_transient_for(this.window);
 
+        let entry = builder.get_object('entry');
+        entry.connect('changed',
+            Lang.bind(this, function(entry) {
+                let createButton = builder.get_object('create_button');
+                createButton.sensitive = !!entry.text;
+            }));
+        entry.connect('activate', function(entry) {
+            if (entry.text)
+                dialog.response(Gtk.ResponseType.ACCEPT);
+        });
+
         dialog.connect('response',
             Lang.bind(this, function(dialog, response_id) {
 
@@ -166,13 +177,6 @@ const ListsController = new Lang.Class({
                 }
 
                 dialog.destroy();
-            }));
-
-        let entry = builder.get_object('entry');
-        entry.connect('changed',
-            Lang.bind(this, function(entry) {
-                let createButton = builder.get_object('create_button');
-                createButton.sensitive = !!entry.text;
             }));
 
         dialog.show();

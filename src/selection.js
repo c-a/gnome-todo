@@ -123,6 +123,10 @@ const SelectionController = new Lang.Class({
                 let updateButton = builder.get_object('update_button');
                 updateButton.sensitive = (entry.text && entry.text != list.title);
             }));
+        entry.connect('activate', function(entry) {
+            if (entry.text && entry.text != list.title)
+                dialog.response(Gtk.ResponseType.ACCEPT);
+        });
 
         dialog.connect('response',
             Lang.bind(this, function(dialog, response_id) {
