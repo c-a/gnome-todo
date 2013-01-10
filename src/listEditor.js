@@ -92,6 +92,9 @@ const ListEditorView = new Lang.Class({
         this._taskEditor.hide();
         grid.attach(this._taskEditor, 1, 0, 1, 1);
 
+        this._taskEditor.connect('cancelled',
+            Lang.bind(this, this._taskEditorCancelled));
+
         this._listBox.set_sort_func(
             Lang.bind(this, this._listBoxSortFunc));
         this._listBox.connect('child-activated',
@@ -103,6 +106,8 @@ const ListEditorView = new Lang.Class({
     addItem: function(task) {
         let listItem = new ListItem(task);
         this._listBox.add(listItem);
+
+        return listItem;
     },
 
     _listBoxSortFunc: function(item1, item2) {
@@ -125,18 +130,33 @@ const ListEditorView = new Lang.Class({
             this._activatedItem.titleNotebook.set_current_page(0);
 
         if (listItem.isNewListItem) {
-            this._taskEditor.hide();
-            this._activatedItem = null;
+            listItem = this.addItem(null);
+            listBox.select_child(listItem);
         }
-        else {
-            listItem.titleNotebook.set_current_page(1);
-            listItem.titleEntry.grab_focus();
-            this._activatedItem = listItem;
 
-            let task = listItem.task;
-            this._taskEditor.setTask(task, this._list.id);
-            this._taskEditor.show();
+        listItem.titleNotebook.set_current_page(1);
+        listItem.titleEntry.grab_focus();
+        this._activatedItem = listItem;
+
+        this._taskEditor.setTask(listItem.task, this._list.id);
+        this._taskEditor.show();
+    },
+
+    _taskEditorCancelled: function(taskEditor) {
+
+        /* Remove the listItem if it's a new one. */
+        if (!this._activatedItem.task) {
+            this._listBox.remove(this._activatedItem);
         }
+        else
+            this._activatedItem.titleNotebook.set_current_page(0);
+
+        this._activatedItem = null;
+        this._taskEditor.hide();
+
+        /* Set SelectionMode to NONE to unselect the item. */
+        this._listBox.set_selection_mode(Gtk.SelectionMode.NONE);
+        this._listBox.set_selection_mode(Gtk.SelectionMode.SINGLE);
     }
 });
 
@@ -159,9 +179,12 @@ const ListItem = new Lang.Class({
         this.titleLabel =  builder.get_object('title_label');
         this.titleEntry = builder.get_object('title_entry');
 
-        this.doneCheck.active = task.done;
-        this.titleLabel.label = task.title;
-        this.titleEntry.text = task.title;
+        if (task)
+        {
+            this.doneCheck.active = task.done;
+            this.titleLabel.label = task.title;
+            this.titleEntry.text = task.title;
+        }
 
         this.show();
     }
@@ -192,6 +215,10 @@ const TaskEditor = new Lang.Class({
     Name: 'TaskEditor',
     Extends: Gtk.Bin,
 
+    Signals: {
+        'cancelled': {},
+    },
+
     _init: function(source) {
         this.parent();
 
@@ -208,19 +235,24 @@ const TaskEditor = new Lang.Class({
         this._dueDatePicker = new DatePicker();
         dueDatePlaceholder.add(this._dueDatePicker);
 
+        let cancelButton = builder.get_object('cancel_button');
+        cancelButton.connect('clicked', Lang.bind(this, function(button) {
+            this.emit('cancelled');
+        }));
+
         this._setSource(source);
     },
 
     setTask: function(task, listID) {
         this._task = task;
 
-        if (task.notes)
+        if (task && task.notes)
             this._noteTextBuffer.text = task.notes;
         else
             this._noteTextBuffer.text = '';
 
         let dateTime = null;
-        if (task.due)
+        if (task && task.due)
             dateTime = Utils.dateTimeFromISO8601(task.due);
         this._dueDatePicker.setDateTime(dateTime);
 
