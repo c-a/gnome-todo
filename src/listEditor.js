@@ -46,11 +46,9 @@ const ListEditorController = new Lang.Class({
 
         let source = Global.sourceManager.getItemById(list.sourceID);
         this._view = new ListEditorView(source, list);
-        for(let i = 0; i < list.items.length; i++)
-        {
-            let task = list.items[i];
+        list.forEachItem(Lang.bind(this, function(task) {
             this._view.addItem(task);
-        }
+        }));
     },
 
     activate: function() {

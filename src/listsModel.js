@@ -127,8 +127,9 @@ const ListsModel = new Lang.Class({
         this.set_value(iter, Gd.MainColumns.PRIMARY_TEXT, list.title);
 
         let titles = [];
-        for (let i = 0; i < list.items.length; i++)
-            titles.push(list.items[i].title);
+        list.forEachItem(function(item) {
+            titles.push(item.title);
+        });
 
         let pixbuf = GdPrivate.draw_task_list(titles);
         this.set_value(iter, Gd.MainColumns.ICON, pixbuf);
