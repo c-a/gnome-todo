@@ -74,6 +74,9 @@ const ListEditorView = new Lang.Class({
     Name: 'ListEditorView',
     Extends: GtkClutter.Actor,
 
+    Signals: { 'save': { param_types: [ GObject.TYPE_OBJECT ] },
+    },
+
     _init: function(source, list) {
         this.parent({ x_expand: true, y_expand: true });
 
@@ -84,28 +87,30 @@ const ListEditorView = new Lang.Class({
         grid.show();
         this.contents = grid;
 
-        this._listBox = new EggListBox.ListBox();
-        this._listBox.show();
-        grid.attach(this._listBox, 0, 0, 1, 1);
+        this.listBox = new EggListBox.ListBox();
+        this.listBox.show();
+        grid.attach(this.listBox, 0, 0, 1, 1);
 
-        this._taskEditor = new TaskEditor(source);
-        this._taskEditor.hide();
-        grid.attach(this._taskEditor, 1, 0, 1, 1);
+        this.taskEditor = new TaskEditor(source);
+        this.taskEditor.hide();
+        grid.attach(this.taskEditor, 1, 0, 1, 1);
 
-        this._taskEditor.connect('cancelled',
+        this.taskEditor.connect('cancelled',
             Lang.bind(this, this._taskEditorCancelled));
+        this.taskEditor.connect('save',
+            Lang.bind(this, this._taskEditorSave));
 
-        this._listBox.set_sort_func(
+        this.listBox.set_sort_func(
             Lang.bind(this, this._listBoxSortFunc));
-        this._listBox.connect('child-activated',
+        this.listBox.connect('child-activated',
             Lang.bind(this, this._childActivated));
 
-        this._listBox.add(new NewListItem());
+        this.listBox.add(new NewListItem());
     },
 
     addItem: function(task) {
         let listItem = new ListItem(task);
-        this._listBox.add(listItem);
+        this.listBox.add(listItem);
 
         listItem.connect('notify::titleModified',
             Lang.bind(this, function(item) {
@@ -113,7 +118,7 @@ const ListEditorView = new Lang.Class({
                     return;
 
                 let saveSensitive = item.title && item.titleModified;
-                this._taskEditor.setSaveSensitive(saveSensitive);
+                this.taskEditor.setSaveSensitive(saveSensitive);
             }));
 
         return listItem;
@@ -136,35 +141,23 @@ const ListEditorView = new Lang.Class({
     _childActivated: function(listBox, listItem) {
 
         if (this._activatedItem)
-            this._activatedItem.titleNotebook.set_current_page(0);
+            this._activatedItem.deactivate(this);
 
-        if (listItem.isNewListItem) {
-            listItem = this.addItem(null);
-            listBox.select_child(listItem);
-        }
-
-        listItem.titleNotebook.set_current_page(1);
-        this._activatedItem = listItem;
-
-        this._taskEditor.setTask(listItem.task, this._list.id);
-        this._taskEditor.show();
+        this._activatedItem = listItem.activate(this);
     },
 
     _taskEditorCancelled: function(taskEditor) {
 
-        /* Remove the listItem if it's a new one. */
-        if (!this._activatedItem.task) {
-            this._listBox.remove(this._activatedItem);
-        }
-        else
-            this._activatedItem.titleNotebook.set_current_page(0);
-
+        this._activatedItem.deactivate(this);
         this._activatedItem = null;
-        this._taskEditor.hide();
 
         /* Set SelectionMode to NONE to unselect the item. */
-        this._listBox.set_selection_mode(Gtk.SelectionMode.NONE);
-        this._listBox.set_selection_mode(Gtk.SelectionMode.SINGLE);
+        this.listBox.set_selection_mode(Gtk.SelectionMode.NONE);
+        this.listBox.set_selection_mode(Gtk.SelectionMode.SINGLE);
+    },
+
+    _taskEditorSave: function(taskEditor) {
+        this.emit('save', this._activatedItem);
     }
 });
 
@@ -176,21 +169,21 @@ const ListItem = new Lang.Class({
         'TitleModified', 'If the title has been modfied', GObject.ParamFlags.READABLE, false)
     },
 
-    _init: function(task) {
+    _init: function(task, listID) {
         this.parent();
 
         this.isNewListItem = false;
         this._titleModified = false;
         this.task = task;
+        this._listID = listID;
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/list_item.glade');
         this.add(builder.get_object('grid'));
 
-        this.doneCheck = builder.get_object('done_check');
-        this.titleNotebook = builder.get_object('title_notebook');
-        this.titleLabel =  builder.get_object('title_label');
-
+        this._doneCheck = builder.get_object('done_check');
+        this._titleNotebook = builder.get_object('title_notebook');
+        this._titleLabel =  builder.get_object('title_label');
 
         this._titleEntry = builder.get_object('title_entry');
         this._titleEntry.connect('changed',
@@ -198,12 +191,32 @@ const ListItem = new Lang.Class({
 
         if (task)
         {
-            this.doneCheck.active = task.done;
-            this.titleLabel.label = task.title;
+            this._doneCheck.active = task.done;
+            this._titleLabel.label = task.title;
             this._titleEntry.text = task.title;
         }
 
         this.show();
+    },
+
+    activate: function(listEditor) {
+        this._titleNotebook.set_current_page(1);
+
+        listEditor.taskEditor.setTask(this.task, this._listID);
+        listEditor.taskEditor.show();
+
+        return this;
+    },
+
+    deactivate: function(listEditor) {
+        /* Remove the listItem if it's a new one. */
+        if (!this.task) {
+            listEditor.listBox.remove(this);
+        }
+        else
+            this._titleNotebook.set_current_page(0);
+
+        listEditor.taskEditor.hide();
     },
 
     get titleModified() {
@@ -245,6 +258,14 @@ const NewListItem = new Lang.Class({
         this.add(builder.get_object('grid'));
 
         this.show();
+    },
+
+    activate: function(listEditor) {
+        let newItem = listEditor.addItem(null);
+        listEditor.listBox.select_child(newItem);
+
+        newItem.activate(listEditor);
+        return newItem;
     }
 });
 
@@ -257,6 +278,7 @@ const TaskEditor = new Lang.Class({
 
     Signals: {
         'cancelled': {},
+        'save': {}
     },
 
     _init: function(source) {
@@ -281,6 +303,9 @@ const TaskEditor = new Lang.Class({
         }));
 
         this._saveButton = builder.get_object('save_button');
+        this._saveButton.connect('clicked', Lang.bind(this, function(button) {
+            this.emit('save');
+        }));
 
         this._setSource(source);
     },
