@@ -58,7 +58,7 @@ GTK_MIN_VERSION=3.3.6
 GOBJECT_INTROSPECTION_MIN_VERSION=1.31.6
 GOA_MIN_VERSION=3.2.0
 CLUTTER_GTK_MIN_VERSION=1.0.2
-REST_MIN_VERSION=0.7.13
+SOUP_MIN_VERSION=2.40.0
 
 PKG_CHECK_MODULES(TODO,
                   clutter-gtk-1.0 >= $CLUTTER_GTK_MIN_VERSION
@@ -68,7 +68,7 @@ PKG_CHECK_MODULES(TODO,
                   gtk+-3.0 >= $GTK_MIN_VERSION
                   gnome-desktop-3.0
                   goa-1.0 >= $GOA_MIN_VERSION
-                  rest-0.7 >= $REST_MIN_VERSION)
+                  libsoup-2.4 >= $SOUP_MIN_VERSION)
 
 LIBGD_INIT([
     gtk-hacks

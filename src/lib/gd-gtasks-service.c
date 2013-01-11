@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.";
  */
 
-#include <rest/oauth2-proxy.h>
+#include <libsoup/soup.h>
 #include <string.h>
 
 #include "gd-gtasks-service.h"
@@ -50,75 +50,6 @@ G_DEFINE_BOXED_TYPE (GdGTasksServiceParameter, gd_gtasks_service_parameter,
     (GBoxedCopyFunc)gd_gtasks_service_parameter_ref,
     (GBoxedFreeFunc)gd_gtasks_service_parameter_unref);
 
-#define GD_TYPE_GTASKS_SERVICE_PROXY_CALL            (gd_gtasks_service_proxy_call_get_type ())
-#define GD_GTASKS_SERVICE_PROXY_CALL(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), GD_TYPE_GTASKS_SERVICE_PROXY_CALL, GdGTasksServiceProxyCall))
-#define GD_GTASKS_SERVICE_PROXY_CALL_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), GD_TYPE_GTASKS_SERVICE_PROXY_CALL, GdGTasksServiceProxyCallClass))
-#define GD_IS_GTASKS_SERVICE_PROXY_CALL(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GD_TYPE_GTASKS_SERVICE_PROXY_CALL))
-#define GD_IS_GTASKS_SERVICE_PROXY_CALL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GD_TYPE_GTASKS_SERVICE_PROXY_CALL))
-#define GD_GTASKS_SERVICE_PROXY_CALL_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), GD_TYPE_GTASKS_SERVICE_PROXY_CALL, GdGTasksServiceProxyCallClass))
-
-typedef struct {
-    RestProxyCall parent;
-
-    char* content;
-} GdGTasksServiceProxyCall;
-
-typedef struct {
-    RestProxyCallClass parent_class;
-} GdGTasksServiceProxyCallClass;
-
-GType gd_gtasks_service_proxy_call_get_type (void);
-
-G_DEFINE_TYPE (GdGTasksServiceProxyCall, gd_gtasks_service_proxy_call, REST_TYPE_PROXY_CALL)
-
-static RestProxyCall*
-gd_gtasks_service_proxy_call_new (RestProxy *proxy)
-{
-    return g_object_new (GD_TYPE_GTASKS_SERVICE_PROXY_CALL, "proxy", proxy, NULL);
-}
-
-static void
-gd_gtasks_service_proxy_call_set_content (GdGTasksServiceProxyCall *call, const gchar* content)
-{
-    g_return_if_fail (GD_IS_GTASKS_SERVICE_PROXY_CALL (call));
-
-    if (call->content)
-        g_free (call->content);
-
-    call->content = g_strdup (content);
-}
-
-static gboolean
-gd_gtasks_service_proxy_call_serialize (RestProxyCall *self,
-    gchar **content_type,
-    gchar **content, gsize *content_len,
-    GError **error)
-{
-    GdGTasksServiceProxyCall *call = GD_GTASKS_SERVICE_PROXY_CALL (self);
-
-    *content_type = g_strdup ("application/json");
-    *content = call->content;
-    if (*content)
-        *content_len = strlen (*content);
-    else
-        *content_len = 0;
-
-    return TRUE;
-}
-
-static void
-gd_gtasks_service_proxy_call_class_init (GdGTasksServiceProxyCallClass *klass)
-{
-    RestProxyCallClass *parent_klass = (RestProxyCallClass*) klass;
-
-    parent_klass->serialize_params = gd_gtasks_service_proxy_call_serialize;
-}
-
-static void
-gd_gtasks_service_proxy_call_init (GdGTasksServiceProxyCall *self)
-{
-}
-
 /**
  * gd_gtasks_service_parameter_new:
  * @name:
@@ -151,8 +82,9 @@ struct _GdGTasksServicePrivate {
     /* Properties */
     char *client_id;
     char *client_secret;
+    char *access_token;
 
-    RestProxy *proxy;
+    SoupSession *session;
 };
 
 
@@ -160,46 +92,55 @@ G_DEFINE_TYPE (GdGTasksService, gd_gtasks_service, G_TYPE_OBJECT);
 
 
 static void
-invoke_async_cb (GObject *source_object,
-                 GAsyncResult *result,
-                 gpointer user_data)
+queue_message_cb (SoupSession *session,
+                  SoupMessage *msg,
+                  gpointer user_data)
 {
-    RestProxyCall *call = REST_PROXY_CALL (source_object);
     GSimpleAsyncResult *simple = user_data;
 
     GError *err = NULL;
+    SoupBuffer *buffer;
     GBytes *body;
 
-    if (!rest_proxy_call_invoke_finish (call, result, &err))
-    {
-        g_simple_async_result_take_error (simple, err);
-        goto done;
-    }
-
-    if (!(rest_proxy_call_get_status_code (call) >= 200 &&
-          rest_proxy_call_get_status_code (call) < 300))
+    if (!SOUP_STATUS_IS_SUCCESSFUL (msg->status_code))
     {
         gint error_code;
 
 
-        if (rest_proxy_call_get_status_code (call) == 401)
+        if (msg->status_code == SOUP_STATUS_UNAUTHORIZED)
             error_code = G_IO_ERROR_PERMISSION_DENIED;
         else
             error_code = G_IO_ERROR_FAILED;
 
         g_simple_async_result_set_error (simple, G_IO_ERROR, error_code,
-            "%s", rest_proxy_call_get_status_message (call));
+            "%s", msg->reason_phrase);
         goto done;
     }
 
-    body = g_bytes_new (rest_proxy_call_get_payload (call),
-        rest_proxy_call_get_payload_length (call));
+    buffer = soup_message_body_flatten (msg->response_body);
+    body = soup_buffer_get_as_bytes (buffer);
+    soup_buffer_free (buffer);
+
     g_simple_async_result_set_op_res_gpointer (simple, body, (GDestroyNotify)g_bytes_unref);
 
 done:
     g_simple_async_result_complete (simple);
     g_object_unref (simple);
-    g_object_unref (call);
+}
+
+static SoupMessage*
+gd_gtasks_service_create_message (GdGTasksService *service,
+                                  const char *method,
+                                  const char *function)
+{
+    char *url;
+    SoupMessage *message;
+
+    url = g_strconcat(GTASKS_URL, function, NULL);
+    message = soup_message_new (method, url);
+    g_free (url);
+
+    return message;
 }
 
 /**
@@ -221,27 +162,28 @@ gd_gtasks_service_call_function (GdGTasksService *service,
                         gpointer user_data)
 {
     GSimpleAsyncResult *simple;
-    RestProxyCall *call;
+    SoupMessage* msg;
     int i;
     char *access_token, *authorization;
 
     simple = g_simple_async_result_new (G_OBJECT (service), callback, user_data,
         gd_gtasks_service_call_function);
 
-    call = gd_gtasks_service_proxy_call_new (service->priv->proxy);
+    msg = gd_gtasks_service_create_message (service, method, function);
 
-    rest_proxy_call_set_method (call, method);
-    rest_proxy_call_set_function (call, function);
-    gd_gtasks_service_proxy_call_set_content (GD_GTASKS_SERVICE_PROXY_CALL (call),
-        content);
+    if (content)
+    {
+        soup_message_set_request (msg, "application/json", SOUP_MEMORY_COPY,
+            content, strlen (content));
+    }
 
-    g_object_get (service->priv->proxy, "access-token", &access_token, NULL);
-    authorization = g_strdup_printf ("Bearer %s", access_token);
-    rest_proxy_call_add_header (call, "Authorization", authorization);
-    g_free (access_token);
+    authorization = g_strdup_printf ("Bearer %s", service->priv->access_token);
+    soup_message_headers_append (msg->request_headers, "Authorization",
+        authorization);
     g_free (authorization);
 
-    rest_proxy_call_invoke_async (call, cancellable, invoke_async_cb, simple);
+    soup_session_queue_message (service->priv->session, msg, queue_message_cb,
+        simple);
 }
 
 /**
@@ -296,7 +238,7 @@ gd_gtasks_service_set_property (GObject *object, guint prop_id, const GValue *va
             service->priv->client_secret = g_value_dup_string (value);
             break;
         case PROP_ACCESS_TOKEN:
-            g_object_set_property (G_OBJECT (service->priv->proxy), "access-token", value);
+            service->priv->access_token = g_value_dup_string (value);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -318,8 +260,7 @@ gd_gtasks_service_get_property (GObject *object, guint prop_id, GValue *value, G
             g_value_set_string (value, service->priv->client_secret);
             break;
         case PROP_ACCESS_TOKEN:
-            g_object_get_property (G_OBJECT (service->priv->proxy), "access-token",
-                value);
+            g_value_set_string (value, service->priv->access_token);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -338,8 +279,7 @@ gd_gtasks_service_constructed (GObject *object)
 {
     GdGTasksService *service = (GdGTasksService *)object;
 
-    service->priv->proxy = oauth2_proxy_new (service->priv->client_id,
-        NULL, GTASKS_URL, FALSE);
+    service->priv->session = soup_session_async_new();
 
     G_OBJECT_CLASS (gd_gtasks_service_parent_class)->constructed (object);
 }
@@ -352,7 +292,7 @@ gd_gtasks_service_finalize (GObject *object)
     g_free (service->priv->client_id);
     g_free (service->priv->client_secret);
 
-    g_clear_object (&service->priv->proxy);
+    g_clear_object (&service->priv->session);
 
     G_OBJECT_CLASS (gd_gtasks_service_parent_class)->finalize (object);
 }
