@@ -61,12 +61,12 @@ const Application = new Lang.Class({
     },
 
     _initMenus: function() {
-        let quitAction = new Gio.SimpleAction({ name: 'quit' });
-	    quitAction.connect('activate', Lang.bind(this,
-                function() {
-                    this._mainWindow.window.destroy();
-	        }));
-	    this.add_action(quitAction);
+        let refreshAction = new Gio.SimpleAction({ name: 'refresh' });
+        refreshAction.connect('activate', Lang.bind(this,
+            function() {
+                this._mainController.refresh();
+            }));
+        this.add_action(refreshAction);
 
         let aboutAction = new Gio.SimpleAction({ name: 'about' });
         aboutAction.connect('activate', Lang.bind(this,
@@ -75,11 +75,17 @@ const Application = new Lang.Class({
             }));
         this.add_action(aboutAction);
 
-        let menu = new Gio.Menu();
+        let quitAction = new Gio.SimpleAction({ name: 'quit' });
+        quitAction.connect('activate', Lang.bind(this,
+            function() {
+                this._mainWindow.window.destroy();
+            }));
+        this.add_action(quitAction);
 
-        menu.append(_("About To Do"), 'app.about');
-        menu.append(_("Quit"), 'app.quit');
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/app-menu.ui');
 
+        let menu = builder.get_object('app-menu');
         this.set_app_menu(menu);
     },
 

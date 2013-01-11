@@ -32,6 +32,15 @@ const Controller = new Lang.Class({
     _init: function(mainController) {
         this.mainController = mainController;
         this.window = mainController.window;
+    },
+
+    activate: function() {
+    },
+
+    deactivate: function() {
+    },
+    
+    refresh: function() {
     }
 });
 
@@ -65,6 +74,11 @@ const MainController = new Lang.Class({
 
         this._currentController = this._controllerStack.pop();
         this._currentController.activate();
+    },
+
+    refresh: function()
+    {
+        this._currentController.refresh();
     },
 
     _keyReleaseEvent: function(mainWindow, event)

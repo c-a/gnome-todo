@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/org/gnome/todo">
+    <file>ui/app-menu.ui</file>
     <file>ui/lists_toolbar.glade</file>
     <file>ui/list_item.glade</file>
     <file>ui/list_editor_toolbar.glade</file>

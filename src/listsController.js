@@ -79,7 +79,7 @@ const ListsController = new Lang.Class({
         this.window.setContentActor(null);
     },
 
-    _refresh: function() {
+    refresh: function() {
         Global.sourceManager.forEachItem(Lang.bind(this, function(source) {
             this._refreshSource(source);
         }));
