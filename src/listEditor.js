@@ -107,6 +107,15 @@ const ListEditorView = new Lang.Class({
         let listItem = new ListItem(task);
         this._listBox.add(listItem);
 
+        listItem.connect('notify::titleModified',
+            Lang.bind(this, function(item) {
+                if (item != this._activatedItem)
+                    return;
+
+                let saveSensitive = item.title && item.titleModified;
+                this._taskEditor.setSaveSensitive(saveSensitive);
+            }));
+
         return listItem;
     },
 
@@ -135,7 +144,6 @@ const ListEditorView = new Lang.Class({
         }
 
         listItem.titleNotebook.set_current_page(1);
-        listItem.titleEntry.grab_focus();
         this._activatedItem = listItem;
 
         this._taskEditor.setTask(listItem.task, this._list.id);
@@ -164,10 +172,15 @@ const ListItem = new Lang.Class({
     Name: 'ListItem',
     Extends: Gtk.Bin,
 
+    Properties: { 'titleModified': GObject.ParamSpec.boolean('titleModified',
+        'TitleModified', 'If the title has been modfied', GObject.ParamFlags.READABLE, false)
+    },
+
     _init: function(task) {
         this.parent();
 
         this.isNewListItem = false;
+        this._titleModified = false;
         this.task = task;
 
         let builder = new Gtk.Builder();
@@ -177,16 +190,43 @@ const ListItem = new Lang.Class({
         this.doneCheck = builder.get_object('done_check');
         this.titleNotebook = builder.get_object('title_notebook');
         this.titleLabel =  builder.get_object('title_label');
-        this.titleEntry = builder.get_object('title_entry');
+
+
+        this._titleEntry = builder.get_object('title_entry');
+        this._titleEntry.connect('changed',
+            Lang.bind(this, this._titleEntryChanged));
 
         if (task)
         {
             this.doneCheck.active = task.done;
             this.titleLabel.label = task.title;
-            this.titleEntry.text = task.title;
+            this._titleEntry.text = task.title;
         }
 
         this.show();
+    },
+
+    get titleModified() {
+        return this._titleModified;
+    },
+
+    get title() {
+        if (this._titleEntry)
+            return this._titleEntry.text;
+        else
+            return null;
+    },
+
+    _titleEntryChanged: function(entry) {
+        let titleModified = this._titleModified;
+
+        if (this.task)
+            this._titleModified = (entry.text != this.task.title);
+        else
+            this._titleModified = !!entry.text;
+
+        if (this._titleModified != titleModified)
+            this.notify('titleModified');
     }
 });
 
@@ -240,6 +280,8 @@ const TaskEditor = new Lang.Class({
             this.emit('cancelled');
         }));
 
+        this._saveButton = builder.get_object('save_button');
+
         this._setSource(source);
     },
 
@@ -258,6 +300,10 @@ const TaskEditor = new Lang.Class({
 
         let iter = this._getIterFromListID(listID);
         this._listCombo.set_active_iter(iter);
+    },
+
+    setSaveSensitive: function(sensitive) {
+        this._saveButton.set_sensitive(sensitive);
     },
 
     _setSource: function(source) {
