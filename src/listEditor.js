@@ -40,15 +40,17 @@ const ListEditorController = new Lang.Class({
     _init: function(mainController, list) {
         this.parent(mainController);
 
+        this._list = list;
+
         this._toolbar = new ListEditorToolbar(list.title);
         this._toolbar.connect('back-button-clicked',
             Lang.bind(this, this._backButtonClicked));
 
         let source = Global.sourceManager.getItemById(list.sourceID);
         this._view = new ListEditorView(source, list);
-        list.forEachItem(Lang.bind(this, function(task) {
-            this._view.addItem(task);
-        }));
+
+        this._view.connect('delete',
+            Lang.bind(this, this._listEditorDelete));
     },
 
     activate: function() {
@@ -67,6 +69,17 @@ const ListEditorController = new Lang.Class({
 
     _backButtonClicked: function(toolbar) {
         this.mainController.popController();
+    },
+
+    _listEditorDelete: function(view, listItem) {
+        let task = listItem.task;
+
+        this._list.deleteTask(task.id, Lang.bind(this, function(error) {
+            if (error) {
+                let notification = new Gtk.Label({ label: error.message });
+                Global.notificationManager.addNotification(notification);
+            }
+        }));
     }
 });
 
@@ -75,6 +88,7 @@ const ListEditorView = new Lang.Class({
     Extends: GtkClutter.Actor,
 
     Signals: { 'save': { param_types: [ GObject.TYPE_OBJECT ] },
+        'delete': { param_types: [GObject.TYPE_OBJECT ] },
     },
 
     _init: function(source, list) {
@@ -99,17 +113,27 @@ const ListEditorView = new Lang.Class({
             Lang.bind(this, this._taskEditorCancelled));
         this.taskEditor.connect('save',
             Lang.bind(this, this._taskEditorSave));
+        this.taskEditor.connect('delete',
+            Lang.bind(this, this._taskEditorDelete));
 
         this.listBox.set_sort_func(
             Lang.bind(this, this._listBoxSortFunc));
         this.listBox.connect('child-activated',
             Lang.bind(this, this._childActivated));
 
+        list.forEachItem(Lang.bind(this, function(task) {
+            this.addItem(task);
+        }));
+        list.connect('item-added',
+            Lang.bind(this, this._taskAdded));
+        list.connect('item-removed',
+            Lang.bind(this, this._taskRemoved));
+
         this.listBox.add(new NewListItem());
     },
 
     addItem: function(task) {
-        let listItem = new ListItem(task);
+        let listItem = new ListItem(task, this._list.id);
         this.listBox.add(listItem);
 
         listItem.connect('notify::titleModified',
@@ -122,6 +146,32 @@ const ListEditorView = new Lang.Class({
             }));
 
         return listItem;
+    },
+
+    _taskAdded: function(list, task) {
+        this.addItem(task);
+    },
+
+    _taskUpdated: function(list, task) {
+    },
+    
+    _taskRemoved: function(list, task) {
+
+        let listItems = this.listBox.get_children();
+        for (let i = 0; i < listItems.length; i++) {
+            let listItem = listItems[i];
+
+            if (listItem.isNewListItem)
+                continue;
+
+            if (listItem.task && listItem.task.id == task.id) {
+                if (listItem.active) {
+                    this._activatedItem = listItem.deactivate(this);
+                }
+                this.listBox.remove(listItem);
+                break;
+            }
+        }
     },
 
     _listBoxSortFunc: function(item1, item2) {
@@ -158,6 +208,10 @@ const ListEditorView = new Lang.Class({
 
     _taskEditorSave: function(taskEditor) {
         this.emit('save', this._activatedItem);
+    },
+
+    _taskEditorDelete: function(taskEditor) {
+        this._activatedItem = this._activatedItem.remove(this);
     }
 });
 
@@ -173,6 +227,7 @@ const ListItem = new Lang.Class({
         this.parent();
 
         this.isNewListItem = false;
+        this.active = false;
         this._titleModified = false;
         this.task = task;
         this._listID = listID;
@@ -200,6 +255,8 @@ const ListItem = new Lang.Class({
     },
 
     activate: function(listEditor) {
+        this.active = true;
+
         this._titleNotebook.set_current_page(1);
 
         listEditor.taskEditor.setTask(this.task, this._listID);
@@ -209,6 +266,8 @@ const ListItem = new Lang.Class({
     },
 
     deactivate: function(listEditor) {
+        this.active = false;
+
         /* Remove the listItem if it's a new one. */
         if (!this.task) {
             listEditor.listBox.remove(this);
@@ -217,6 +276,18 @@ const ListItem = new Lang.Class({
             this._titleNotebook.set_current_page(0);
 
         listEditor.taskEditor.hide();
+    },
+
+    remove: function(listEditor) {
+        if (this.task) {
+            listEditor.emit('delete', this);
+            return this;
+        }
+        else {
+            listEditor.listBox.remove(this);
+            listEditor.taskEditor.hide();
+            return null;
+        }
     },
 
     get titleModified() {
@@ -278,7 +349,8 @@ const TaskEditor = new Lang.Class({
 
     Signals: {
         'cancelled': {},
-        'save': {}
+        'save': {},
+        'delete': {}
     },
 
     _init: function(source) {
@@ -296,6 +368,11 @@ const TaskEditor = new Lang.Class({
         let dueDatePlaceholder = builder.get_object('due_date_placeholder');
         this._dueDatePicker = new DatePicker();
         dueDatePlaceholder.add(this._dueDatePicker);
+
+        let deleteButton = builder.get_object('delete_button');
+        deleteButton.connect('clicked', Lang.bind(this, function(button) {
+            this.emit('delete');
+        }));
 
         let cancelButton = builder.get_object('cancel_button');
         cancelButton.connect('clicked', Lang.bind(this, function(button) {
