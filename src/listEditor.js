@@ -154,6 +154,9 @@ const ListEditorView = new Lang.Class({
 
         this.listBox.set_sort_func(
             Lang.bind(this, this._listBoxSortFunc));
+        this.listBox.set_separator_funcs(
+            Lang.bind(this, this._listBoxSeparatorFunc));
+
         this.listBox.connect('child-activated',
             Lang.bind(this, this._childActivated));
 
@@ -209,6 +212,12 @@ const ListEditorView = new Lang.Class({
             return 1;
 
         return 0;
+    },
+
+    
+    _listBoxSeparatorFunc: function(child, before) {
+
+        return new Gtk.Separator({ 'orientation': Gtk.Orientation.HORIZONTAL });
     },
 
     _childActivated: function(listBox, listItem) {
