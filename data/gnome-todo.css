@@ -1,5 +1,6 @@
 .todo-task-list-renderer {
     padding: 6px;
     color: #000000;
-    background-color: #a939f0;
+    background-color: #ffffff;
+    box-shadow: 0px -1px 5px black;
 }
