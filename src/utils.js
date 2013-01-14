@@ -57,6 +57,15 @@ function dateTimeFromISO8601(string) {
 
     return GLib.DateTime.new_from_timeval_utc(timeval);
 };
+
+GLib.DateTime.prototype.toISO8601 = function() {
+    let [res, timeval] = this.to_timeval();
+    if (!res)
+        throw 'DateTime.to_timeval() failed';
+
+    timeval.to_iso8601();
+}
+
 const BaseManager = new Lang.Class({
     Name: 'BaseManager',
 

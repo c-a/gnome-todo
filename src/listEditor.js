@@ -49,8 +49,16 @@ const ListEditorController = new Lang.Class({
         let source = Global.sourceManager.getItemById(list.sourceID);
         this._view = new ListEditorView(source, list);
 
+        this._view.connect('save',
+            Lang.bind(this, this._listEditorSave));
         this._view.connect('delete',
             Lang.bind(this, this._listEditorDelete));
+
+        list.forEachItem(Lang.bind(this, function(task) {
+            this._view.addItem(task);
+        }));
+        list.connect('item-removed',
+            Lang.bind(this, this._taskRemoved));
     },
 
     activate: function() {
@@ -69,6 +77,33 @@ const ListEditorController = new Lang.Class({
 
     _backButtonClicked: function(toolbar) {
         this.mainController.popController();
+    },
+
+    _taskRemoved: function(list, task) {
+        let item = this._view.getItemForTask(task);
+        if (item)
+            this._view.removeItem(item);
+    },
+
+    _listEditorSave: function(view, listItem) {
+
+        // Create a new task if the listItem doesn't have a task yet.
+        if (!listItem.task) {
+            this._list.createTask(listItem.title, listItem.completed, null, null,
+                Lang.bind(this, function(error, task) {
+                    if (error) {
+                        let notification = new Gtk.Label({ label: error.message });
+                        Global.notificationManager.addNotification(notification);
+                        return;
+                    }
+
+                    listItem.setTask(task);
+                }));
+        }
+        // Update the task otherwise
+        else {
+            //TODO: Implement!!!
+        }
     },
 
     _listEditorDelete: function(view, listItem) {
@@ -121,19 +156,11 @@ const ListEditorView = new Lang.Class({
         this.listBox.connect('child-activated',
             Lang.bind(this, this._childActivated));
 
-        list.forEachItem(Lang.bind(this, function(task) {
-            this.addItem(task);
-        }));
-        list.connect('item-added',
-            Lang.bind(this, this._taskAdded));
-        list.connect('item-removed',
-            Lang.bind(this, this._taskRemoved));
-
         this.listBox.add(new NewListItem());
     },
 
     addItem: function(task) {
-        let listItem = new ListItem(task, this._list.id);
+        let listItem = new ListItem(this._list.id, this, task);
         this.listBox.add(listItem);
 
         listItem.connect('notify::titleModified',
@@ -148,15 +175,14 @@ const ListEditorView = new Lang.Class({
         return listItem;
     },
 
-    _taskAdded: function(list, task) {
-        this.addItem(task);
+    removeItem: function(listItem) {
+        if (listItem.active) {
+            this._activatedItem = listItem.deactivate(this);
+        }
+        this.listBox.remove(listItem);
     },
 
-    _taskUpdated: function(list, task) {
-    },
-    
-    _taskRemoved: function(list, task) {
-
+    getItemForTask: function(task) {
         let listItems = this.listBox.get_children();
         for (let i = 0; i < listItems.length; i++) {
             let listItem = listItems[i];
@@ -164,14 +190,10 @@ const ListEditorView = new Lang.Class({
             if (listItem.isNewListItem)
                 continue;
 
-            if (listItem.task && listItem.task.id == task.id) {
-                if (listItem.active) {
-                    this._activatedItem = listItem.deactivate(this);
-                }
-                this.listBox.remove(listItem);
-                break;
+            if (listItem.task && listItem.task.id == task.id)
+                return listItem;
             }
-        }
+        return null;
     },
 
     _listBoxSortFunc: function(item1, item2) {
@@ -223,14 +245,15 @@ const ListItem = new Lang.Class({
         'TitleModified', 'If the title has been modfied', GObject.ParamFlags.READABLE, false)
     },
 
-    _init: function(task, listID) {
+    _init: function(listID, listEditor, task) {
         this.parent();
 
         this.isNewListItem = false;
         this.active = false;
         this._titleModified = false;
-        this.task = task;
         this._listID = listID;
+        this._listEditor = listEditor;
+        this.task = task;
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/list_item.glade');
@@ -245,15 +268,24 @@ const ListItem = new Lang.Class({
             Lang.bind(this, this._titleEntryChanged));
 
         if (task)
-        {
-            this._doneCheck.active = task.done;
-            this._titleLabel.label = task.title;
-            this._titleEntry.text = task.title;
-        }
+            this.setTask(task);
 
         this.show();
     },
 
+    setTask: function(task) {
+        this.task = task;
+
+        this._doneCheck.active = task.completed;
+        this._titleLabel.label = task.title;
+        this._titleEntry.text = task.title;
+        // titleModified may change even if the text of the entry haven't changed.
+        this._titleEntryChanged(this._titleEntry);
+
+        if (this.active)
+            this._listEditor.taskEditor.setTask(this.task, this._listID);
+    },
+    
     activate: function(listEditor) {
         this.active = true;
 
@@ -268,13 +300,7 @@ const ListItem = new Lang.Class({
     deactivate: function(listEditor) {
         this.active = false;
 
-        /* Remove the listItem if it's a new one. */
-        if (!this.task) {
-            listEditor.listBox.remove(this);
-        }
-        else
-            this._titleNotebook.set_current_page(0);
-
+        this._titleNotebook.set_current_page(0);
         listEditor.taskEditor.hide();
     },
 
@@ -297,11 +323,19 @@ const ListItem = new Lang.Class({
     get title() {
         if (this._titleEntry)
             return this._titleEntry.text;
-        else
-            return null;
+        return null;
+    },
+
+    get completed() {
+        if (this._doneCheck)
+            return this._doneCheck.active;
+        return false;
     },
 
     _titleEntryChanged: function(entry) {
+
+        this._titleLabel.label = entry.text;
+
         let titleModified = this._titleModified;
 
         if (this.task)
@@ -395,10 +429,8 @@ const TaskEditor = new Lang.Class({
         else
             this._noteTextBuffer.text = '';
 
-        let dateTime = null;
-        if (task && task.due)
-            dateTime = Utils.dateTimeFromISO8601(task.due);
-        this._dueDatePicker.setDateTime(dateTime);
+        let dueDate = task ? task.dueDate : null;
+        this._dueDatePicker.setDateTime(dueDate);
 
         let iter = this._getIterFromListID(listID);
         this._listCombo.set_active_iter(iter);
