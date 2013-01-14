@@ -180,10 +180,32 @@ const ListEditorView = new Lang.Class({
     },
 
     removeItem: function(listItem) {
-        if (listItem.active) {
+        if (listItem.active)
             this._activatedItem = listItem.deactivate(this);
+
+        // Find the next and previous items.
+        let prevItem = null, nextItem = null;
+        let listItems = this.listBox.get_children();
+        for (let i = 0; i < listItems.length; i++) {
+            let item = listItems[i];
+
+            if (item == listItem) {
+                if (i + 1 < listItems.length) {
+                    nextItem = listItems[i + 1];
+                    if (nextItem.isNewListItem)
+                        nextItem = null;
+                }
+                break;
+            }
+            prevItem = item;
         }
+
         this.listBox.remove(listItem);
+
+        if (prevItem)
+            this._activatedItem = prevItem.activate(this);
+        else if (nextItem)
+            this._activatedItem = nextItem.activate(this);
     },
 
     getItemForTask: function(task) {
@@ -196,7 +218,7 @@ const ListEditorView = new Lang.Class({
 
             if (listItem.task && listItem.task.id == task.id)
                 return listItem;
-            }
+        }
         return null;
     },
 
@@ -243,7 +265,12 @@ const ListEditorView = new Lang.Class({
     },
 
     _taskEditorDelete: function(taskEditor) {
-        this._activatedItem = this._activatedItem.remove(this);
+        let listItem = this._activatedItem;
+
+        if (listItem.task)
+            this.emit('delete', listItem);
+        else
+            this.removeItem(listItem);
     }
 });
 
@@ -304,6 +331,9 @@ const ListItem = new Lang.Class({
         listEditor.taskEditor.setTask(this.task, this._listID);
         listEditor.taskEditor.show();
 
+        listEditor.listBox.select_child(this);
+        this._titleEntry.grab_focus();
+
         return this;
     },
 
@@ -312,18 +342,6 @@ const ListItem = new Lang.Class({
 
         this._titleNotebook.set_current_page(0);
         listEditor.taskEditor.hide();
-    },
-
-    remove: function(listEditor) {
-        if (this.task) {
-            listEditor.emit('delete', this);
-            return this;
-        }
-        else {
-            listEditor.listBox.remove(this);
-            listEditor.taskEditor.hide();
-            return null;
-        }
     },
 
     get titleModified() {
