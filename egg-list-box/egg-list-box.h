@@ -36,6 +36,14 @@ struct _EggListBoxClass
 
 typedef gboolean (*EggListBoxFilterFunc) (GtkWidget* child, void* user_data);
 typedef gint (*EggListBoxSortFunc) (GtkWidget* child1, GtkWidget* child2, void* user_data);
+
+/**
+ * EggListBoxUpdateSeparatorFunc:
+ * @separator: (out):
+ * @child:
+ * @before:
+ * @user_data:
+ */
 typedef void (*EggListBoxUpdateSeparatorFunc) (GtkWidget** separator, GtkWidget* child, GtkWidget* before, void* user_data);
 
 GType egg_list_box_get_type (void) G_GNUC_CONST;

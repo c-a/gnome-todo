@@ -503,6 +503,12 @@ egg_list_box_set_filter_func (EggListBox *list_box,
   egg_list_box_refilter (list_box);
 }
 
+/**
+ * egg_list_box_set_separator_funcs:
+ * @update_separator: (closure update_separator_target):
+ * @update_separator_target: (allow-none):
+ * @update_separator_target_destroy_notify: (allow-none):
+ */
 void
 egg_list_box_set_separator_funcs (EggListBox *list_box,
 				  EggListBoxUpdateSeparatorFunc update_separator,
