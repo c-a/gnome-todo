@@ -1,6 +1,7 @@
 jsdir = $(pkgdatadir)/js/
 dist_js_DATA = \
     application.js \
+    datePicker.js \
     error.js \
     errorBox.js \
     format.js \
