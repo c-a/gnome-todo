@@ -94,6 +94,13 @@ const BaseManager = new Lang.Class({
             this.emit('item-added', item);
     },
 
+    replaceItem: function(item, newItem) {
+        delete this._items[item.id];
+        this._items[newItem.id] = newItem;
+
+        this.emit('item-replaced', item, newItem);
+    },
+
     getItems: function() {
         return this._items;
     },

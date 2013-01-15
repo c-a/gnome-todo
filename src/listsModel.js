@@ -60,6 +60,7 @@ const ListsModel = new Lang.Class({
 
         source.connect('item-added', Lang.bind(this, this._listAdded));
         source.connect('item-updated', Lang.bind(this, this._listUpdated));
+        source.connect('item-replaced', Lang.bind(this, this._listReplaced));
         source.connect('item-removed', Lang.bind(this, this._listRemoved));
 
         this._sources[source.id] = source;
@@ -111,6 +112,15 @@ const ListsModel = new Lang.Class({
         this._updateModel(list, iter);
 
         this._lists[list.id] = list;
+    },
+
+    _listReplaced: function(source, oldList, newList)
+    {
+        let iter = this._getIterFromID(oldList.id);
+        this._updateModel(newList, iter);
+
+        delete this._lists[oldList.id];
+        this._lists[newList.id] = newList;
     },
 
     _listRemoved: function(source, list)

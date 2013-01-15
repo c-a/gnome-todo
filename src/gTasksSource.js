@@ -130,8 +130,7 @@ const GTasksService = new Lang.Class({
             let response = service.call_function_finish(res);
 
             let listObject = JSON.parse(response.toArray());
-            this._createTaskListCallback(null,
-                new GTasksList(listObject.id, listObject.title, this));
+            this._createTaskListCallback(null, listObject);
         } catch (err) {
             this._createTaskListCallback(err);
         }
@@ -301,15 +300,15 @@ const GTasksSource = new Lang.Class({
         let tempList = new GTasksList(localID, title, this);
         this.addItem(tempList);
 
-        this._service.createTaskList(title, Lang.bind(this, function(error, list) {
-            this.removeItemById(tempList.id);
-
+        this._service.createTaskList(title, Lang.bind(this, function(error, listObject) {
             if (error) {
+                this.removeItemById(tempList.id);
                 callback(error);
                 return;
             }
 
-            this.addItem(list);
+            let newLtem = new GTasksList(listObject.id, listObject.title, this);
+            this.replaceItem(tempList, newList);
             callback(null);
         }));
     },
