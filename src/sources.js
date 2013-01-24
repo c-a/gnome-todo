@@ -23,39 +23,13 @@ const Gio = imports.gi.Gio;
 const Goa = imports.gi.Goa;
 
 const Lang = imports.lang;
-const Mainloop = imports.mainloop;
 const Signals = imports.signals;
 
 const Config = imports.config;
-const Global = imports.global;
 const GTasksSource = imports.gTasksSource;
 const Utils = imports.utils;
 
 const _ = imports.gettext.gettext;
-
-const MockSource = new Lang.Class({
-    Name: 'MockSource',
-
-    _init: function()
-    {
-        this.id = 'mock##';
-        this.name ='MockSource';
-        this.icon = Gio.icon_new_for_string('system');
-        this.onlineSource = false;
-    },
-
-    listTaskLists: function(callback) {
-        let lists = [];
-
-        lists.push({ title: 'Test List 1',
-            items: ['Item 1', 'Item 2'] });
-
-        lists.push({ title: 'Test List 2',
-            items: ['Item 3', 'Item 4'] });
-
-        callback(null, lists);
-    }
-});
 
 const SourceManager = new Lang.Class({
     Name: 'SourceManager',
@@ -89,10 +63,6 @@ const SourceManager = new Lang.Class({
             Lang.bind(this, this._accountRemovedCb));
         this._goaClient.connect('account-changed',
             Lang.bind(this, this._accountChangedCb));
-
-        /*XXX: Add mock source */
-        //let mockSource = new MockSource();
-        //this._addSource(mockSource);
     },
 
     getDefaultSource: function() {

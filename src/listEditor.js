@@ -46,7 +46,7 @@ const ListEditorController = new Lang.Class({
         this._toolbar.connect('back-button-clicked',
             Lang.bind(this, this._backButtonClicked));
 
-        let source = Global.sourceManager.getItemById(list.sourceID);
+        let source = Global.sourceManager.getItemById(list.source.id);
         this._view = new ListEditorView(source, list);
 
         this._view.connect('save',

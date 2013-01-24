@@ -43,7 +43,10 @@ const Controller = new Lang.Class({
     getView: function() {
     },
 
-    refresh: function() {
+    sync: function() {
+    },
+
+    shutdown: function() {
     }
 });
 
@@ -82,11 +85,20 @@ const MainController = new Lang.Class({
         this._currentController.activate();
     },
 
-    refresh: function()
+    sync: function()
     {
-        this._currentController.refresh();
+        this._currentController.sync();
     },
 
+    shutdown: function()
+    {
+        if (this._currentController)
+            this._currentController.shutdown();
+
+        for (let i in this._controllerStack)
+            this._controllerStack[i].shutdown();
+    },
+    
     _keyReleaseEvent: function(mainWindow, event)
     {
         let [res, keyval] = event.get_keyval();

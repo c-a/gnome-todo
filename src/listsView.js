@@ -38,11 +38,13 @@ const EmptyResultsBox = new Lang.Class({
     Extends: Gtk.Grid,
 
     _init: function(noAccounts) {
-        this.parent({ orientation: Gtk.Orientation.HORIZONTAL,
-                                     column_spacing: 12,
-                                     expand: true,
-                                     halign: Gtk.Align.CENTER,
-                                     valign: Gtk.Align.CENTER });
+        this.parent({
+            orientation: Gtk.Orientation.HORIZONTAL,
+            column_spacing: 12,
+            expand: true,
+            halign: Gtk.Align.CENTER,
+            valign: Gtk.Align.CENTER
+        });
 
         this.get_style_context().add_class('dim-label');
 
@@ -128,6 +130,12 @@ const ListsView = Lang.Class({
         this._stack = new Gd.Stack({ transition_type: Gd.StackTransitionType.CROSSFADE });
         this.add(this._stack);
 
+        this._noResults = new EmptyResultsBox(false);
+        this._stack.add(this._noResults);
+
+        this._noAccounts = new EmptyResultsBox(true);
+        this._stack.add(this._noAccounts);
+
         /* Add SpinnerBox */
         this._spinnerBox = new SpinnerBox();
         this._stack.add(this._spinnerBox);
@@ -145,32 +153,20 @@ const ListsView = Lang.Class({
         this.show();
     },
 
-    _removeNoResults: function() {
-        if (this._noResults)
-        {
-            this._noResults.destroy();
-            delete this._noResults;
-        }
-    },
-
     showMainView: function(loading) {
-        this._removeNoResults();
-        this._setLoading(loading);
+        this._stack.set_visible_child(this.mainView);
     },
     
-    showNoResults: function(noAccounts) {
-        this._removeNoResults();
-
-        this._noResults = new EmptyResultsBox(noAccounts);
-        this._stack.add(this._noResults);
+    showNoResults: function() {
         this._stack.set_visible_child(this._noResults);
     },
 
-    _setLoading: function(loading) {
-        if (loading)
-            this._showSpinnerBoxDelayed();
-        else
-            this._stack.set_visible_child(this.mainView);
+    showNoAccounts: function() {
+        this._stack.set_visible_child(this._noAccounts);
+    },
+
+    showLoading: function() {
+        this._showSpinnerBoxDelayed();
     },
 
     _showSpinnerBoxDelayed: function(delay) {

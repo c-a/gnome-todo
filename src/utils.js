@@ -1,4 +1,5 @@
 const Gdk = imports.gi.Gdk;
+const GdPrivate = imports.gi.GdPrivate;
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
@@ -45,11 +46,6 @@ function loadCssProviderFromResource(path)
     return provider;
 }
 
-function alphaGtkWidget(widget) {
-    widget.override_background_color(0,
-        new Gdk.RGBA({ red: 0, green: 0, blue: 0, alpha: 0 }));
-}
-
 function dateTimeFromISO8601(string) {
     let [res, timeval] = GLib.TimeVal.from_iso8601(string);
     if (!res)
@@ -59,11 +55,20 @@ function dateTimeFromISO8601(string) {
 };
 
 GLib.DateTime.prototype.toISO8601 = function() {
-    let [res, timeval] = this.to_timeval();
+    let res = GdPrivate.date_time_to_iso8601(this);
     if (!res)
-        throw 'DateTime.to_timeval() failed';
+        throw 'Failed to convert DateTime into iso8601';
 
-    timeval.to_iso8601();
+    return res;
+}
+
+function generateID(type) {
+    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let randomCharacters = [];
+    for(let i = 0; i < 43; i++)
+        randomCharacters.push(possible.charAt(Math.floor(Math.random() * possible.length)));
+
+    return type + '-' + randomCharacters.join('');
 }
 
 const BaseManager = new Lang.Class({
@@ -71,34 +76,7 @@ const BaseManager = new Lang.Class({
 
     _init: function() {
         this._items = {};
-    },
-
-    getItemById: function(id) {
-        let retval = this._items[id];
-
-        if (!retval)
-            retval = null;
-
-        return retval;
-    },
-
-    addItem: function(item) {
-        item._manager = this;
-
-        let oldItem = this._items[item.id];
-
-        this._items[item.id] = item;
-        if (oldItem)
-            this.emit('item-updated', item);
-        else
-            this.emit('item-added', item);
-    },
-
-    replaceItem: function(item, newItem) {
-        delete this._items[item.id];
-        this._items[newItem.id] = newItem;
-
-        this.emit('item-replaced', item, newItem);
+        this._changedSignals = {};
     },
 
     getItems: function() {
@@ -109,6 +87,25 @@ const BaseManager = new Lang.Class({
         return Object.keys(this._items).length;
     },
 
+    getItemById: function(id) {
+        let retval = this._items[id];
+
+        if (!retval)
+            retval = null;
+
+        return retval;
+    },
+    
+    addItem: function(item) {
+        item._manager = this;
+
+        this._items[item.id] = item;
+        this._changedSignals[item.id] =
+            item.connect('changed', Lang.bind(this, this._itemChanged));
+
+        this.emit('item-added', item);
+    },
+
     removeItem: function(item) {
         this.removeItemById(item.id);
     },
@@ -117,7 +114,10 @@ const BaseManager = new Lang.Class({
         let item = this._items[id];
 
         if (item) {
+            item.disconnect(this._changedSignals[id]);
+            delete(this._changedSignals[id]);
             delete this._items[id];
+
             this.emit('item-removed', item);
             item._manager = null;
         }
@@ -151,8 +151,10 @@ const BaseManager = new Lang.Class({
             if (!oldItems[idx])
                 this.addItem(newItems[idx]);
         }
+    },
 
-        // TODO: merge existing item properties with new values
+    _itemChanged: function(item) {
+        this.emit('item-changed', item);
     }
 });
 Signals.addSignalMethods(BaseManager.prototype)

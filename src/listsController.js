@@ -48,9 +48,11 @@ const ListsController = new Lang.Class({
 
         this._model = new ListsModel.ListsModel();
         this._listsView.mainView.set_model(this._model);
+        this._model.connect('row-inserted', Lang.bind(this, this._updateContentView));
+        this._model.connect('row-deleted', Lang.bind(this, this._updateContentView));
 
         this._outstandingLoads = 0;
-        this._updateContentView();
+        this._outstandingSyncs = 0;
 
         this._toolbar.connect('selection-mode-toggled',
             Lang.bind(this, this._selectionModeToggled));
@@ -59,7 +61,6 @@ const ListsController = new Lang.Class({
 
         this._listsView.mainView.connect('item-activated',
             Lang.bind(this, this._itemActivated));
-
 
         Global.sourceManager.forEachItem(Lang.bind(this, function(source) {
             this._sourceAdded(null, source);
@@ -82,19 +83,26 @@ const ListsController = new Lang.Class({
         return this._listsView;
     },
 
-    refresh: function() {
+    sync: function() {
+        // FIXME: Should only sync loaded sources
         Global.sourceManager.forEachItem(Lang.bind(this, function(source) {
-            this._refreshSource(source);
+            this._syncSource(source);
+        }));
+    },
+
+    shutdown: function() {
+        // FIXME: Should only save loaded sources
+        Global.sourceManager.forEachItem(Lang.bind(this, function(source) {
+            source.save();
         }));
     },
 
     _sourceAdded: function(manager, source) {
-        this._model.addSource(source);
-        this._refreshSource(source);
+        this._loadSource(source);
     },
 
     _sourceRemoved: function(manager, source) {
-        this._model.removeSourceByID(source.id);
+        this._model.removeSource(source);
         this._updateContentView();
     },
 
@@ -111,36 +119,68 @@ const ListsController = new Lang.Class({
         this._selectionController.setActive(active);
     },
 
-    _refreshSource: function(source) {
-        if (this._outstandingLoads++ == 0)
-            this._listsView.showMainView(true);
+    _sourceSaveError: function(source, error) {
+        let notification = new Gtk.Label({ label: error.message });
+        Global.notificationManager.addNotification(notification);
+    },
 
-        source.refresh(Lang.bind(this, function(error) {
+    _loadSource: function(source) {
+        this._outstandingLoads++;
+        this._updateContentView();
+
+        source.load(Lang.bind(this, function(error) {
+            this._outstandingLoads--;
+
             if (error) {
                 let notification = new Gtk.Label({ label: error.message });
                 Global.notificationManager.addNotification(notification);
+
+                this._updateContentView();
+                return;
             }
 
-            this._outstandingLoads--;
+            this._model.addSource(source);
+            source.connect('save-error', this._sourceSaveError);
+            this._syncSource(source);
+
             this._updateContentView();
         }));
     },
 
+    _syncSource: function(source) {
+        this._outstandingSyncs++;
+
+        source.sync(Lang.bind(this, function(error) {
+            this._outstandingSyncs--;
+
+            if (error) {
+                let notification = new Gtk.Label({ label: error.message });
+                Global.notificationManager.addNotification(notification);
+                return;
+            }
+        }));
+    },
+
     _updateContentView: function() {
-        if (this._outstandingLoads != 0)
-            return;
-
-        if (Global.sourceManager.getItemsCount() == 0) {
+        if (this._outstandingLoads > 0)
+        {
             this._toolbar.setNewButtonSensitive(false);
-            this._listsView.showNoResults(true);
+            this._listsView.showLoading(true);
         }
-        else {
-            this._toolbar.setNewButtonSensitive(true);
 
-            if (this._model.getListCount() == 0)
-                this._listsView.showNoResults(false);
-            else
-                this._listsView.showMainView(false);
+        else {
+            if (Global.sourceManager.getItemsCount() == 0) {
+                this._toolbar.setNewButtonSensitive(false);
+                this._listsView.showNoAccounts();
+            }
+            else {
+                this._toolbar.setNewButtonSensitive(true);
+
+                if (this._model.getListCount() == 0)
+                    this._listsView.showNoResults();
+                else
+                    this._listsView.showMainView();
+            }
         }
     },
 
@@ -171,12 +211,7 @@ const ListsController = new Lang.Class({
                     let source = Global.sourceManager.getDefaultSource();
 
                     let entry = builder.get_object('entry');
-                    source.createTaskList(entry.text, Lang.bind(this, function(error) {
-                        if (error) {
-                            let notification = new Gtk.Label({ label: error.message });
-                            Global.notificationManager.addNotification(notification);
-                        }
-                    }));
+                    source.createTaskList(entry.text);
                 }
 
                 dialog.destroy();

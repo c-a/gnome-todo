@@ -28,5 +28,7 @@ GtkCssProvider *gd_load_css_provider_from_resource (const char *path, GError **e
 
 GdkPixbuf* gd_draw_task_list (GPtrArray* items);
 
+char* gd_date_time_to_iso8601(GDateTime* datetime);
+
 #endif /* __GD_UTILS_H__ */
                                   

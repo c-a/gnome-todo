@@ -50,40 +50,35 @@ const ListsModel = new Lang.Class({
                                GdkPixbuf.Pixbuf, GObject.TYPE_INT64,
                                GObject.TYPE_BOOLEAN]);
 
-        this._sources = {};
+        this._sourceSignals = {};
         this._lists = {};
     },
 
     addSource: function(source)
     {
-        source.forEachItem(Lang.bind(this, this._listAdded));
+        source.forEachItem(Lang.bind(this, function(list) {
+            this._listAdded(source, list);
+        }));
 
-        source.connect('item-added', Lang.bind(this, this._listAdded));
-        source.connect('item-updated', Lang.bind(this, this._listUpdated));
-        source.connect('item-replaced', Lang.bind(this, this._listReplaced));
-        source.connect('item-removed', Lang.bind(this, this._listRemoved));
+        let signals = [];
+        signals.push(source.connect('item-added', Lang.bind(this, this._listAdded)));
+        signals.push(source.connect('item-changed', Lang.bind(this, this._listChanged)));
+        signals.push(source.connect('item-removed', Lang.bind(this, this._listRemoved)));
+        signals.push(source.connect('clear', Lang.bind(this, this._sourceCleared)));
 
-        this._sources[source.id] = source;
+        this._sourceSignals[source.id] = signals;
     },
 
-    removeSourceByID: function(sourceID)
+    removeSource: function(source)
     {
-        let source = this._sources[sourceID];
-        // FIXME: Kind of bad to use disconnectAll.
-        source.disconnectAll();
+        // Disconnect our signal handlers
+        let signals = this._sourceSignals[source.id];
+        for (let i = 0; i < signals.length; i++)
+            source.disconnect(signals[i]);
 
-        // Remove all TaskLists belonging to this source.
-        let [res, iter] = this.get_iter_first();
-        while(res) {
-            let id = this.get_value(iter, Gd.MainColumns.ID);
+        delete this._sourceSignals[source.id];
 
-            if (source.getItemById(id))
-                res = this.remove(iter);
-            else
-                res = this.iter_next(iter);
-        }
-
-        delete this._sources[sourceID];
+        this._removeListsBySource(source);
     },
 
     getListFromPath: function(path)
@@ -100,35 +95,30 @@ const ListsModel = new Lang.Class({
 
     _listAdded: function(source, list)
     {
+        this._lists[list.id] = list;
+
         let iter = this.append();
         this._updateModel(list, iter);
-
-        this._lists[list.id] = list;
     },
 
-    _listUpdated: function(source, list)
+    _listChanged: function(source, list)
     {
+        this._lists[list.id] = list;
+
         let iter = this._getIterFromID(list.id);
         this._updateModel(list, iter);
-
-        this._lists[list.id] = list;
-    },
-
-    _listReplaced: function(source, oldList, newList)
-    {
-        let iter = this._getIterFromID(oldList.id);
-        this._updateModel(newList, iter);
-
-        delete this._lists[oldList.id];
-        this._lists[newList.id] = newList;
     },
 
     _listRemoved: function(source, list)
     {
+        delete this._lists[list.id];
+
         let iter = this._getIterFromID(list.id);
         this.remove(iter);
+    },
 
-        delete this._lists[list.id];
+    _sourceCleared: function(source) {
+        this._removeListsBySource(source);
     },
 
     _updateModel: function(list, iter)
@@ -156,4 +146,17 @@ const ListsModel = new Lang.Class({
 
         return null;
     },
+
+    _removeListsBySource: function(source) {
+        // Remove all TaskLists belonging to this source.
+        let [res, iter] = this.get_iter_first();
+        while(res) {
+            let id = this.get_value(iter, Gd.MainColumns.ID);
+
+            if (source.getItemById(id))
+                res = this.remove(iter);
+            else
+                res = this.iter_next(iter);
+        }
+    }
 });

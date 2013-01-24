@@ -57,26 +57,19 @@ const Application = new Lang.Class({
     },
 
     _initMenus: function() {
-        let refreshAction = new Gio.SimpleAction({ name: 'refresh' });
-        refreshAction.connect('activate', Lang.bind(this,
-            function() {
-                this._mainController.refresh();
-            }));
-        this.add_action(refreshAction);
+        let actionEntries = [
+            { name: 'sync', callback: this._sync },
+            { name: 'about', callback: this._showAbout },
+            { name: 'quit', callback: this._quit }];
 
-        let aboutAction = new Gio.SimpleAction({ name: 'about' });
-        aboutAction.connect('activate', Lang.bind(this,
-            function() {
-                this._mainWindow.showAbout();
-            }));
-        this.add_action(aboutAction);
+        actionEntries.forEach(Lang.bind(this, function(entry) {
+            let action = new Gio.SimpleAction({ name: entry.name });
 
-        let quitAction = new Gio.SimpleAction({ name: 'quit' });
-        quitAction.connect('activate', Lang.bind(this,
-            function() {
-                this._mainWindow.window.destroy();
-            }));
-        this.add_action(quitAction);
+            if (entry.callback)
+                action.connect('activate', Lang.bind(this, entry.callback));
+
+            this.add_action(action);
+        }));
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/app-menu.ui');
@@ -85,6 +78,18 @@ const Application = new Lang.Class({
         this.set_app_menu(menu);
     },
 
+    _sync: function(action) {
+        this._mainController.sync();
+    },
+
+    _showAbout: function(action) {
+        this._mainWindow.showAbout();
+    },
+
+    _quit: function(action) {
+        this.quit();
+    },
+    
     vfunc_startup: function() {
         this.parent();
 
@@ -106,5 +111,11 @@ const Application = new Lang.Class({
 
     vfunc_activate: function() {
         this._mainWindow.show();
+    },
+
+    vfunc_shutdown: function() {
+        this._mainController.shutdown();
+
+        Gtk.Application.prototype.vfunc_shutdown.call(this);
     }
 });

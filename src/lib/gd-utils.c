@@ -152,3 +152,21 @@ gd_draw_task_list (GPtrArray* items)
 
     return gdk_pixbuf_get_from_surface (surface, 0, 0, width, height);
 }
+
+/**
+ * gd_date_time_to_iso8601:
+ * @datetime:
+ *
+ * Returns: (transfer full): A string representation of @datetime in ISO8601
+ * or %NULL on error.
+ */
+char*
+gd_date_time_to_iso8601(GDateTime* datetime)
+{
+    GTimeVal tv;
+
+    if (!g_date_time_to_timeval (datetime, &tv))
+        return NULL;
+
+    return g_time_val_to_iso8601(&tv);
+}

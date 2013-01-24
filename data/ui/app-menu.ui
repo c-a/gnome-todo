@@ -2,8 +2,8 @@
   <menu id="app-menu">
     <section>
       <item>
-        <attribute name="action">app.refresh</attribute>
-        <attribute name="label" translatable="yes">Refresh</attribute>
+        <attribute name="action">app.sync</attribute>
+        <attribute name="label" translatable="yes">Synchronize</attribute>
       </item>
     </section>
     <section>
