@@ -171,12 +171,7 @@ const ListsController = new Lang.Class({
                     let source = Global.sourceManager.getDefaultSource();
 
                     let entry = builder.get_object('entry');
-                    source.createTaskList(entry.text, Lang.bind(this, function(error) {
-                        if (error) {
-                            let notification = new Gtk.Label({ label: error.message });
-                            Global.notificationManager.addNotification(notification);
-                        }
-                    }));
+                    source.createTaskList(entry.text);
                 }
 
                 dialog.destroy();

@@ -45,11 +45,6 @@ function loadCssProviderFromResource(path)
     return provider;
 }
 
-function alphaGtkWidget(widget) {
-    widget.override_background_color(0,
-        new Gdk.RGBA({ red: 0, green: 0, blue: 0, alpha: 0 }));
-}
-
 function dateTimeFromISO8601(string) {
     let [res, timeval] = GLib.TimeVal.from_iso8601(string);
     if (!res)
@@ -65,6 +60,15 @@ GLib.DateTime.prototype.toISO8601 = function() {
 
     timeval.to_iso8601();
 }
+
+function generateID(type) {
+    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let randomCharacters = [];
+    for(let i = 0; i < 43; i++)
+        randomCharacters.push(possible.charAt(Math.floor(Math.random() * possible.length)));
+
+    return type + '-' + randomCharacters.join();
+},
 
 const BaseManager = new Lang.Class({
     Name: 'BaseManager',
