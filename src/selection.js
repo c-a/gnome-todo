@@ -88,14 +88,7 @@ const SelectionController = new Lang.Class({
             let list = lists[i];
             let source = Global.sourceManager.getItemById(list.sourceID);
 
-            source.deleteTaskList(list.id, Lang.bind(this, function(error) {
-                if (error)
-                {
-                    let notification = new Gtk.Label({
-                        label: Format.format('Failed to delete list (%s)', error.message) });
-                    Global.notificationManager.addNotification(notification);
-                }
-            }));
+            source.deleteTaskList(list.id);
         }
 
         // No lists may still be selected so notify that the selection has changed
@@ -134,12 +127,7 @@ const SelectionController = new Lang.Class({
                 if (response_id == Gtk.ResponseType.ACCEPT)
                 {
                     let source = Global.sourceManager.getItemById(list.sourceID);
-                    source.renameTaskList(list.id, entry.text, Lang.bind(this, function(error) {
-                        if (error) {
-                            let notification = new Gtk.Label({ label: error.message });
-                            Global.notificationManager.addNotification(notification);
-                        }
-                    }));
+                    source.renameTaskList(list.id, entry.text);
                 }
 
                 dialog.destroy();

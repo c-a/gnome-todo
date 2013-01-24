@@ -180,8 +180,7 @@ const GTasksService = new Lang.Class({
             let response = service.call_function_finish(res);
 
             let listObject = JSON.parse(response.toArray());
-            this._patchTaskListCallback(null,
-                this.createList(listObject.id, listObject.title));
+            this._patchTaskListCallback(null, listObject);
         } catch (err) {
             this._patchTaskListCallback(err);
         }
@@ -245,26 +244,17 @@ const GTasksService = new Lang.Class({
     },
 });
 
-const GTasksSource = new Lang.Class({
-    Name: 'GTasksSource',
-    Extends: Utils.BaseManager,
+const GTasksSyncer = new Lang.Class({
+    Name: 'GTasksSyncer',
 
-    _init: function(object) {
-        this.parent();
+    _init: function(source, service) {
+        this._source = source;
 
-        this._object = object
-        this._authenticated = false;
-
-        let account = object.account;
-        this.id = account.id;
-        this.name = account.provider_name;
-        this.icon = Gio.icon_new_for_string(account.provider_icon);
-        this.onlineSource = true;
-
-        this._service = new GTasksService(object.oauth2_based);
+        this._service = service;
     },
 
-    refresh: function(callback) {
+    sync: function(callback) {
+        
         this._service.listTaskLists(Lang.bind(this, function(error, lists) {
             if (error) {
                 callback(error);
@@ -288,67 +278,105 @@ const GTasksSource = new Lang.Class({
                 taskLists.push(taskList);
             }
 
-            this.processNewItems(taskLists);
-            callback(null);
+            source.processNewItems(taskLists);
         }));
+
+        this._source.connect('item-added', Lang.bind(this, this._listAdded));
+        this._source.connect('item-updated', Lang.bind(this, this._listUpdated));
+        this._source.connect('item-removed', Lang.bind(this, this._listRemoved));
     },
 
-    createTaskList: function(title, callback) {
-
-        // Add a temporary item
-        let localID = this._createLocalId();
-        let tempList = new GTasksList(localID, title, this);
-        this.addItem(tempList);
-
+    _listAdded: function(source, list) {
         this._service.createTaskList(title, Lang.bind(this, function(error, listObject) {
             if (error) {
-                this.removeItemById(tempList.id);
-                callback(error);
+                this.emit('error', error);
                 return;
             }
 
-            let newLtem = new GTasksList(listObject.id, listObject.title, this);
-            this.replaceItem(tempList, newList);
-            callback(null);
+            this.replaceItem(list, newList);
         }));
     },
 
-    deleteTaskList: function(id, callback) {
+    _listUpdated: function(source, list) {
+        let patchTaskList = { title: list.title };
+        this._service.patchTaskList(id, patchTaskList,
+            Lang.bind(this, function(error, listObject) {
+                if (error) {
+                    this.emit('error', error);
+                    return;
+                }
+                list.changed = false;
+            }));
+    },
+
+    _listRemoved: function(source, list) {
+        this._service.deleteTaskList(id, Lang.bind(this, function(error) {
+            if (error) {
+                this.emit('error', error);
+                return;
+            }
+            source.taskListRemoved(id);
+        }));
+    }
+});
+
+const GTasksSource = new Lang.Class({
+    Name: 'GTasksSource',
+    Extends: Utils.BaseManager,
+
+    _init: function(object) {
+        this.parent();
+
+        this._object = object
+        this._authenticated = false;
+
+        let account = object.account;
+        this.id = account.id;
+        this.name = account.provider_name;
+        this.icon = Gio.icon_new_for_string(account.provider_icon);
+        this.onlineSource = true;
+
+        this._service = new GTasksService(object.oauth2_based);
+
+        this._syncer = new GTasksSyncer(this, this._service);
+        this._syncer.connect('error', Lang.bind(this, this._syncerError));
+
+        this._deletedIDs = {};
+    },
+
+    refresh: function(callback) {
+        this._syncer.sync(callback);
+    },
+
+    createTaskList: function(title) {
+
+        // Add a new list
+        let localID = this._createLocalId();
+        let tempList = new GTasksList(localID, title, this);
+        this.addItem(tempList);
+    },
+
+    deleteTaskList: function(id) {
         /* We remove the TaskList locally before it's actually removed from
          * the server, and add it back if the removal was unsuccesful. */
         let taskList = this.getItemById(id);
         this.removeItemById(id);
 
-        this._service.deleteTaskList(id, Lang.bind(this, function(error) {
-            if (error) {
-                // Add back the TaskList
-                this.addItem(taskList);
-                callback(error);
-                return;
-            }
-            
-            callback(null);
-        }));
+        this._deletedIDs[id] = true;
     },
 
-    renameTaskList: function(id, title, callback) {
+    taskListRemoved: function(id) {
+        delete this._deletedIDs[id];
+    },
+
+    renameTaskList: function(id, title) {
         /* We rename the TaskList locally before it's actually renamed on
          * the server, and change it back if the rename was unsuccesful. */
         let taskList = this.getItemById(id);
         let newTaskList = taskList;
         newTaskList.title = title;
+        newTaskList.changed = true;
         this.addItem(newTaskList);
-
-        let patchTaskList = { title: title };
-        this._service.patchTaskList(id, patchTaskList,
-            Lang.bind(this, function(patchedTaskList, error) {
-                if (error) {
-                    callback(error);
-                    return;
-                }
-
-                callback(null);
-            }));
     },
 
     _createLocalId: function() {
@@ -364,6 +392,10 @@ const GTasksSource = new Lang.Class({
             if (!this.getItemById(localID))
                 return localID;
         }
+    },
+
+    _syncerError: function(syncer, error) {
+        this.emit('error', error);
     }
 });
 
