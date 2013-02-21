@@ -363,6 +363,14 @@ create_window (void)
   g_signal_connect (G_OBJECT (widget), "toggled",
                     G_CALLBACK (homogeneous_toggled), flowbox);
 
+  widget = gtk_check_button_new_with_label ("Activate on single click");
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), FALSE);
+  g_object_bind_property (widget, "active",
+                          flowbox, "activate-on-single-click",
+                          G_BINDING_SYNC_CREATE);
+  gtk_widget_show (widget);
+  gtk_box_pack_start (GTK_BOX (flowbox_cntl), widget, FALSE, FALSE, 0);
+
   /* Add alignment controls */
   widget = gtk_combo_box_text_new ();
   gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (widget), "Fill");
