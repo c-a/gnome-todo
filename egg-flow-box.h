@@ -66,6 +66,8 @@ struct _EggFlowBoxClass
   void (*activate_cursor_child) (EggFlowBox *self);
   void (*toggle_cursor_child) (EggFlowBox *self);
   void (*move_cursor) (EggFlowBox *self, GtkMovementStep step, gint count);
+  void (*select_all) (EggFlowBox *self);
+  void (*unselect_all) (EggFlowBox *self);
 };
 
 GType                 egg_flow_box_get_type                  (void) G_GNUC_CONST;

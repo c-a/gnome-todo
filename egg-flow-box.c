@@ -80,6 +80,8 @@ enum {
   ACTIVATE_CURSOR_CHILD,
   TOGGLE_CURSOR_CHILD,
   MOVE_CURSOR,
+  SELECT_ALL,
+  UNSELECT_ALL,
   LAST_SIGNAL
 };
 
@@ -2290,26 +2292,21 @@ egg_flow_box_select_all_between (EggFlowBox          *box,
 {
   GSequenceIter *iter, *iter1, *iter2;
 
-  if (g_sequence_iter_compare (child1->iter, child2->iter) < 0)
+  iter1 = child1 ? child1->iter : g_sequence_get_begin_iter (box->priv->children);
+  iter2 = child2 ? child2->iter : g_sequence_get_end_iter (box->priv->children);
+  if (g_sequence_iter_compare (iter2, iter1) < 0)
     {
-      iter1 = child1->iter;
-      iter2 = child2->iter;
-    }
-  else
-    {
-      iter1 = child2->iter;
-      iter2 = child1->iter;
+      iter = iter1;
+      iter1 = iter2;
+      iter2 = iter;
     }
 
   for (iter = iter1; ; iter = g_sequence_iter_next (iter))
     {
       EggFlowBoxChildInfo *child_info;
-      GtkWidget *child;
 
       child_info = g_sequence_get (iter);
-      child = child_info->widget;
-
-      if (child_is_visible (child))
+      if (child_info && child_is_visible (child_info->widget))
         {
           child_info->selected = TRUE;
           egg_flow_box_queue_draw_child (box, child_info);
@@ -2973,6 +2970,35 @@ egg_flow_box_real_move_cursor (EggFlowBox     *box,
     egg_flow_box_update_selection (box, child, FALSE, extend_selection_pressed);
 }
 
+static void
+egg_flow_box_real_select_all (EggFlowBox *box)
+{
+  if (box->priv->selection_mode != GTK_SELECTION_MULTIPLE)
+    return;
+
+  if (g_sequence_get_length (box->priv->children) > 0)
+    {
+      egg_flow_box_select_all_between (box, NULL, NULL);
+      g_signal_emit (box, signals[SELECTED_CHILDREN_CHANGED], 0);
+    }
+}
+
+static void
+egg_flow_box_real_unselect_all (EggFlowBox *box)
+{
+  gboolean dirty = FALSE;
+
+  g_return_if_fail (EGG_IS_FLOW_BOX (box));
+
+  if (box->priv->selection_mode == GTK_SELECTION_BROWSE)
+    return;
+
+  dirty = egg_flow_box_unselect_all_internal (box);
+
+  if (dirty)
+    g_signal_emit (box, signals[SELECTED_CHILDREN_CHANGED], 0);
+}
+
 static gboolean
 egg_flow_box_real_draw (GtkWidget *widget,
                         cairo_t   *cr)
@@ -3128,6 +3154,8 @@ egg_flow_box_class_init (EggFlowBoxClass *class)
   class->activate_cursor_child = egg_flow_box_real_activate_cursor_child;
   class->toggle_cursor_child = egg_flow_box_real_toggle_cursor_child;
   class->move_cursor = egg_flow_box_real_move_cursor;
+  class->select_all = egg_flow_box_real_select_all;
+  class->unselect_all = egg_flow_box_real_unselect_all;
 
   g_object_class_override_property (object_class, PROP_ORIENTATION, "orientation");
 
@@ -3294,6 +3322,20 @@ egg_flow_box_class_init (EggFlowBoxClass *class)
                                        _egg_marshal_VOID__ENUM_INT,
                                        G_TYPE_NONE, 2,
                                        GTK_TYPE_MOVEMENT_STEP, G_TYPE_INT);
+  signals[SELECT_ALL] = g_signal_new ("select-all",
+                                      EGG_TYPE_FLOW_BOX,
+                                      G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+                                      G_STRUCT_OFFSET (EggFlowBoxClass, select_all),
+                                      NULL, NULL,
+                                      g_cclosure_marshal_VOID__VOID,
+                                      G_TYPE_NONE, 0);
+  signals[UNSELECT_ALL] = g_signal_new ("unselect-all",
+                                      EGG_TYPE_FLOW_BOX,
+                                      G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+                                      G_STRUCT_OFFSET (EggFlowBoxClass, unselect_all),
+                                      NULL, NULL,
+                                      g_cclosure_marshal_VOID__VOID,
+                                      G_TYPE_NONE, 0);
 
   widget_class->activate_signal = signals[ACTIVATE_CURSOR_CHILD];
 
@@ -3336,6 +3378,12 @@ egg_flow_box_class_init (EggFlowBoxClass *class)
                                 "toggle-cursor-child", 0, NULL);
   gtk_binding_entry_add_signal (binding_set, GDK_KEY_KP_Space, GDK_CONTROL_MASK,
                                 "toggle-cursor-child", 0, NULL);
+
+  gtk_binding_entry_add_signal (binding_set, GDK_KEY_a, GDK_CONTROL_MASK,
+                                "select-all", 0);
+  gtk_binding_entry_add_signal (binding_set, GDK_KEY_a, GDK_CONTROL_MASK | GDK_SHIFT_MASK,
+                                "unselect-all", 0);
+
 
   g_type_class_add_private (class, sizeof (EggFlowBoxPrivate));
 }
