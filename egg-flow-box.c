@@ -2269,7 +2269,6 @@ egg_flow_box_select_child_info (EggFlowBox          *box,
 {
   if (child_info->selected)
     return;
-
   if (box->priv->selection_mode == GTK_SELECTION_NONE)
     return;
   else if (box->priv->selection_mode != GTK_SELECTION_MULTIPLE)
@@ -2281,7 +2280,87 @@ egg_flow_box_select_child_info (EggFlowBox          *box,
   g_signal_emit (box, signals[SELECTED_CHILDREN_CHANGED], 0);
 
   egg_flow_box_queue_draw_child (box, child_info);
+  egg_flow_box_update_cursor (box, child_info);
+}
 
+static void
+egg_flow_box_select_all_between (EggFlowBox          *box,
+                                 EggFlowBoxChildInfo *child1,
+                                 EggFlowBoxChildInfo *child2)
+{
+  GSequenceIter *iter, *iter1, *iter2;
+
+  if (g_sequence_iter_compare (child1->iter, child2->iter) < 0)
+    {
+      iter1 = child1->iter;
+      iter2 = child2->iter;
+    }
+  else
+    {
+      iter1 = child2->iter;
+      iter2 = child1->iter;
+    }
+
+  for (iter = iter1; ; iter = g_sequence_iter_next (iter))
+    {
+      EggFlowBoxChildInfo *child_info;
+      GtkWidget *child;
+
+      child_info = g_sequence_get (iter);
+      child = child_info->widget;
+
+      if (child_is_visible (child))
+        {
+          child_info->selected = TRUE;
+          egg_flow_box_queue_draw_child (box, child_info);
+        }
+
+      if (g_sequence_iter_compare (iter, iter2) == 0)
+        break;
+    }
+}
+
+static void
+egg_flow_box_update_selection (EggFlowBox          *box,
+                               EggFlowBoxChildInfo *child_info,
+                               gboolean             extend)
+{
+  EggFlowBoxPrivate *priv = box->priv;
+
+  if (priv->selection_mode == GTK_SELECTION_NONE)
+    return;
+  else if (priv->selection_mode == GTK_SELECTION_BROWSE ||
+           priv->selection_mode == GTK_SELECTION_SINGLE)
+    {
+      egg_flow_box_unselect_all_internal (box);
+
+      child_info->selected = TRUE;
+      priv->selected_child = child_info;
+    }
+  else if (priv->selection_mode == GTK_SELECTION_MULTIPLE)
+    {
+g_print ("update multi selection: extend: %d\n", extend);
+      egg_flow_box_unselect_all_internal (box);
+      if (extend)
+        {
+          if (priv->selected_child == NULL)
+            {
+              child_info->selected = TRUE;
+              priv->selected_child = child_info;
+            }
+          else
+            egg_flow_box_select_all_between (box, priv->selected_child, child_info);
+        }
+      else
+        {
+          child_info->selected = TRUE;
+          priv->selected_child = child_info;
+        }
+    }
+
+  g_signal_emit (box, signals[SELECTED_CHILDREN_CHANGED], 0);
+
+  egg_flow_box_queue_draw_child (box, child_info);
   egg_flow_box_update_cursor (box, child_info);
 }
 
@@ -2478,6 +2557,7 @@ egg_flow_box_real_focus (GtkWidget       *widget,
   EggFlowBoxChildInfo *current_focus_child;
   EggFlowBoxChildInfo *next_focus_child;
   gboolean modify_selection_pressed;
+  gboolean extend_selection_pressed;
   GdkModifierType state = 0;
 
   recurse_into = NULL;
@@ -2514,7 +2594,7 @@ egg_flow_box_real_focus (GtkWidget       *widget,
           if (priv->selected_child != NULL)
             recurse_into = priv->selected_child->widget;
         }
-    }
+   }
 
   if (recurse_into != NULL)
     {
@@ -2586,9 +2666,16 @@ egg_flow_box_real_focus (GtkWidget       *widget,
     }
 
   modify_selection_pressed = FALSE;
+  extend_selection_pressed = FALSE;
   if (gtk_get_current_event_state (&state))
     {
+      GdkModifierType extend_mod_mask;
       GdkModifierType modify_mod_mask;
+
+      extend_mod_mask = gtk_widget_get_modifier_mask (GTK_WIDGET (box),
+                                                      GDK_MODIFIER_INTENT_EXTEND_SELECTION);
+      if ((state & extend_mod_mask) == extend_mod_mask)
+        extend_selection_pressed = TRUE;
 
       modify_mod_mask = gtk_widget_get_modifier_mask (GTK_WIDGET (box),
                                                       GDK_MODIFIER_INTENT_MODIFY_SELECTION);
@@ -2596,10 +2683,9 @@ egg_flow_box_real_focus (GtkWidget       *widget,
         modify_selection_pressed = TRUE;
     }
 
-  if (modify_selection_pressed)
-    egg_flow_box_update_cursor (box, next_focus_child);
-  else
-    egg_flow_box_select_child_info (box, next_focus_child);
+  egg_flow_box_update_cursor (box, next_focus_child);
+  if (!modify_selection_pressed)
+    egg_flow_box_update_selection (box, next_focus_child, extend_selection_pressed);
 
   return TRUE;
 }
@@ -2635,29 +2721,29 @@ egg_flow_box_add_move_binding (GtkBindingSet  *binding_set,
                                GtkMovementStep step,
                                gint            count)
 {
-  gtk_binding_entry_add_signal (binding_set,
-                                keyval,
-                                modmask,
-                                "move-cursor",
-                                (guint) 2,
-                                GTK_TYPE_MOVEMENT_STEP,
-                                step,
-                                G_TYPE_INT,
-                                count,
+  gtk_binding_entry_add_signal (binding_set, keyval, modmask,
+                                "move-cursor", (guint) 2,
+                                GTK_TYPE_MOVEMENT_STEP, step,
+                                G_TYPE_INT, count,
+                                NULL);
+  gtk_binding_entry_add_signal (binding_set, keyval, modmask | GDK_SHIFT_MASK,
+                                "move-cursor", (guint) 2,
+                                GTK_TYPE_MOVEMENT_STEP, step,
+                                G_TYPE_INT, count,
                                 NULL);
 
   if ((modmask & GDK_CONTROL_MASK) == GDK_CONTROL_MASK)
     return;
 
-  gtk_binding_entry_add_signal (binding_set,
-                                keyval,
-                                GDK_CONTROL_MASK,
-                                "move-cursor",
-                                (guint) 2,
-                                GTK_TYPE_MOVEMENT_STEP,
-                                step,
-                                G_TYPE_INT,
-                                count,
+  gtk_binding_entry_add_signal (binding_set, keyval, GDK_CONTROL_MASK,
+                                "move-cursor", (guint) 2,
+                                GTK_TYPE_MOVEMENT_STEP, step,
+                                G_TYPE_INT, count,
+                                NULL);
+  gtk_binding_entry_add_signal (binding_set, keyval, GDK_CONTROL_MASK | GDK_SHIFT_MASK,
+                                "move-cursor", (guint) 2,
+                                GTK_TYPE_MOVEMENT_STEP, step,
+                                G_TYPE_INT, count,
                                 NULL);
 }
 
@@ -2691,8 +2777,10 @@ egg_flow_box_real_move_cursor (EggFlowBox     *box,
 {
   EggFlowBoxPrivate *priv = box->priv;
   GdkModifierType state;
+  gboolean extend_selection_pressed;
   gboolean modify_selection_pressed;
   EggFlowBoxChildInfo *child;
+  GdkModifierType extend_mod_mask;
   GdkModifierType modify_mod_mask;
   EggFlowBoxChildInfo *prev;
   EggFlowBoxChildInfo *next;
@@ -2701,10 +2789,16 @@ egg_flow_box_real_move_cursor (EggFlowBox     *box,
   gint start_y;
   gint end_y;
 
+  extend_selection_pressed = FALSE;
   modify_selection_pressed = FALSE;
 
   if (gtk_get_current_event_state (&state))
     {
+      extend_mod_mask = gtk_widget_get_modifier_mask (GTK_WIDGET (box),
+                                                      GDK_MODIFIER_INTENT_EXTEND_SELECTION);
+      if ((state & extend_mod_mask) == extend_mod_mask)
+        extend_selection_pressed = TRUE;
+
       modify_mod_mask = gtk_widget_get_modifier_mask (GTK_WIDGET (box),
                                                       GDK_MODIFIER_INTENT_MODIFY_SELECTION);
       if ((state & modify_mod_mask) == modify_mod_mask)
@@ -2845,7 +2939,7 @@ egg_flow_box_real_move_cursor (EggFlowBox     *box,
 
   egg_flow_box_update_cursor (box, child);
   if (!modify_selection_pressed)
-    egg_flow_box_select_child_info (box, child);
+    egg_flow_box_update_selection (box, child, extend_selection_pressed);
 }
 
 static gboolean
@@ -3181,13 +3275,13 @@ egg_flow_box_class_init (EggFlowBoxClass *class)
                                  GTK_MOVEMENT_BUFFER_ENDS, 1);
   egg_flow_box_add_move_binding (binding_set, GDK_KEY_KP_End, 0,
                                  GTK_MOVEMENT_BUFFER_ENDS, 1);
-  egg_flow_box_add_move_binding (binding_set, GDK_KEY_Up, GDK_CONTROL_MASK,
+  egg_flow_box_add_move_binding (binding_set, GDK_KEY_Up, 0,
                                  GTK_MOVEMENT_DISPLAY_LINES, -1);
-  egg_flow_box_add_move_binding (binding_set, GDK_KEY_KP_Up, GDK_CONTROL_MASK,
+  egg_flow_box_add_move_binding (binding_set, GDK_KEY_KP_Up, 0,
                                  GTK_MOVEMENT_DISPLAY_LINES, -1);
-  egg_flow_box_add_move_binding (binding_set, GDK_KEY_Down, GDK_CONTROL_MASK,
+  egg_flow_box_add_move_binding (binding_set, GDK_KEY_Down, 0,
                                  GTK_MOVEMENT_DISPLAY_LINES, 1);
-  egg_flow_box_add_move_binding (binding_set, GDK_KEY_KP_Down, GDK_CONTROL_MASK,
+  egg_flow_box_add_move_binding (binding_set, GDK_KEY_KP_Down, 0,
                                  GTK_MOVEMENT_DISPLAY_LINES, 1);
   egg_flow_box_add_move_binding (binding_set, GDK_KEY_Page_Up, 0,
                                  GTK_MOVEMENT_PAGES, -1);
