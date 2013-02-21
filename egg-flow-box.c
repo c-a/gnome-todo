@@ -944,6 +944,8 @@ egg_flow_box_real_size_allocate (GtkWidget     *widget,
           child_allocation.height = this_item_size;
         }
 
+      if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
+        child_allocation.x = allocation->x + allocation->width - (child_allocation.x - allocation->x) - child_allocation.width;
       child_info->area.x = child_allocation.x;
       child_info->area.y = child_allocation.y;
       child_info->area.width = child_allocation.width;
@@ -2712,6 +2714,28 @@ egg_flow_box_real_move_cursor (EggFlowBox     *box,
   child = NULL;
   switch (step)
     {
+    case GTK_MOVEMENT_VISUAL_POSITIONS:
+      if (priv->cursor_child != NULL)
+        {
+          iter = priv->cursor_child->iter;
+          if (gtk_widget_get_direction (GTK_WIDGET (box)) == GTK_TEXT_DIR_RTL)
+            count = - count;
+
+          while (count < 0 && iter != NULL)
+            {
+              iter = egg_flow_box_get_previous_visible (box, iter);
+              count = count + 1;
+            }
+          while (count > 0  && iter != NULL)
+            {
+              iter = egg_flow_box_get_next_visible (box, iter);
+              count = count - 1;
+            }
+
+          if (iter != NULL && !g_sequence_iter_is_end (iter))
+            child = g_sequence_get (iter);
+        }
+      break;
     case GTK_MOVEMENT_BUFFER_ENDS:
       if (count < 0)
         child = egg_flow_box_get_first_visible (box);
@@ -3173,6 +3197,15 @@ egg_flow_box_class_init (EggFlowBoxClass *class)
                                  GTK_MOVEMENT_PAGES, 1);
   egg_flow_box_add_move_binding (binding_set, GDK_KEY_KP_Page_Down, 0,
                                  GTK_MOVEMENT_PAGES, 1);
+
+  egg_flow_box_add_move_binding (binding_set, GDK_KEY_Right, 0,
+                                 GTK_MOVEMENT_VISUAL_POSITIONS, 1);
+  egg_flow_box_add_move_binding (binding_set, GDK_KEY_KP_Right, 0,
+                                 GTK_MOVEMENT_VISUAL_POSITIONS, 1);
+  egg_flow_box_add_move_binding (binding_set, GDK_KEY_Left, 0,
+                                 GTK_MOVEMENT_VISUAL_POSITIONS, -1);
+  egg_flow_box_add_move_binding (binding_set, GDK_KEY_KP_Left, 0,
+                                 GTK_MOVEMENT_VISUAL_POSITIONS, -1);
 
   gtk_binding_entry_add_signal (binding_set, GDK_KEY_space, GDK_CONTROL_MASK,
                                 "toggle-cursor-child", 0, NULL);
