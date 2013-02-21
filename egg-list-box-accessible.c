@@ -171,8 +171,7 @@ static void atk_selection_interface_init (AtkSelectionIface *iface)
 }
 
 void
-_egg_list_box_accessible_update_selected (EggListBox *box,
-                                          GtkWidget  *child)
+_egg_list_box_accessible_selection_changed (EggListBox *box)
 {
   AtkObject *accessible;
   accessible = gtk_widget_get_accessible (GTK_WIDGET (box));

@@ -824,7 +824,7 @@ egg_list_box_update_selected (EggListBox *list_box,
 		     (priv->selected_child != NULL) ? priv->selected_child->widget : NULL);
       gtk_widget_queue_draw (GTK_WIDGET (list_box));
     }
-  _egg_list_box_accessible_update_selected (list_box, child ? child->widget : NULL);
+  _egg_list_box_accessible_selection_changed (list_box);
   if (child != NULL)
     egg_list_box_update_cursor (list_box, child);
 }
