@@ -944,7 +944,7 @@ egg_list_box_real_button_press_event (GtkWidget *widget,
   EggListBox *list_box = EGG_LIST_BOX (widget);
   EggListBoxPrivate *priv = list_box->priv;
 
-  if (event->button == 1)
+  if (event->button == GDK_BUTTON_PRIMARY)
     {
       EggListBoxChildInfo *child;
       child = egg_list_box_find_child_at_y (list_box, event->y);
@@ -974,7 +974,7 @@ egg_list_box_real_button_release_event (GtkWidget *widget,
   EggListBox *list_box = EGG_LIST_BOX (widget);
   EggListBoxPrivate *priv = list_box->priv;
 
-  if (event->button == 1)
+  if (event->button == GDK_BUTTON_PRIMARY)
     {
       if (priv->active_child != NULL &&
           priv->active_child_active)

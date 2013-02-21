@@ -2162,7 +2162,7 @@ egg_flow_box_real_button_press_event (GtkWidget      *widget,
   EggFlowBox *box = EGG_FLOW_BOX (widget);
   EggFlowBoxPrivate *priv = box->priv;
 
-  if (event->button == 1)
+  if (event->button == GDK_BUTTON_PRIMARY)
     {
       EggFlowBoxChildInfo *child_info;
       child_info = egg_flow_box_find_child_at_pos (box, event->x, event->y);
@@ -2305,7 +2305,7 @@ egg_flow_box_real_button_release_event (GtkWidget      *widget,
   EggFlowBox *box = EGG_FLOW_BOX (widget);
   EggFlowBoxPrivate *priv = box->priv;
 
-  if (event->button == 1)
+  if (event->button == GDK_BUTTON_PRIMARY)
     {
       if (priv->active_child != NULL &&
           priv->active_child_active)
