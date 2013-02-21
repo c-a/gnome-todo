@@ -115,6 +115,6 @@ INTROSPECTION_GIRS += Egg-1.0.gir
 noinst_DATA = $(INTROSPECTION_GIRS)
 
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
-DISTCLEANFILES = $(srcdir)/Egg-1.0.gir
+DISTCLEANFILES = $(builddir)/Egg-1.0.gir
 
 endif
