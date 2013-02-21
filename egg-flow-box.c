@@ -2323,26 +2323,34 @@ egg_flow_box_select_all_between (EggFlowBox          *box,
 static void
 egg_flow_box_update_selection (EggFlowBox          *box,
                                EggFlowBoxChildInfo *child_info,
+                               gboolean             modify,
                                gboolean             extend)
 {
   EggFlowBoxPrivate *priv = box->priv;
 
   if (priv->selection_mode == GTK_SELECTION_NONE)
     return;
-  else if (priv->selection_mode == GTK_SELECTION_BROWSE ||
-           priv->selection_mode == GTK_SELECTION_SINGLE)
+
+  if (priv->selection_mode == GTK_SELECTION_BROWSE)
     {
       egg_flow_box_unselect_all_internal (box);
-
       child_info->selected = TRUE;
       priv->selected_child = child_info;
     }
-  else if (priv->selection_mode == GTK_SELECTION_MULTIPLE)
+  else if (priv->selection_mode == GTK_SELECTION_SINGLE)
     {
-g_print ("update multi selection: extend: %d\n", extend);
+      gboolean was_selected;
+
+      was_selected = child_info->selected;
       egg_flow_box_unselect_all_internal (box);
+      child_info->selected = modify ? !was_selected : TRUE;
+      priv->selected_child = child_info->selected ? child_info : NULL;
+    }
+  else /* GTK_SELECTION_MULTIPLE */
+    {
       if (extend)
         {
+          egg_flow_box_unselect_all_internal (box);
           if (priv->selected_child == NULL)
             {
               child_info->selected = TRUE;
@@ -2353,7 +2361,7 @@ g_print ("update multi selection: extend: %d\n", extend);
         }
       else
         {
-          child_info->selected = TRUE;
+          child_info->selected = modify ? !child_info->selected : TRUE;
           priv->selected_child = child_info;
         }
     }
@@ -2391,10 +2399,32 @@ egg_flow_box_real_button_release_event (GtkWidget      *widget,
       if (priv->active_child != NULL &&
           priv->active_child_active)
         {
+          GdkModifierType state = 0;
+          gboolean modify_selection_pressed;
+          gboolean extend_selection_pressed;
+
+          modify_selection_pressed = FALSE;
+          extend_selection_pressed = FALSE;
+          if (gtk_get_current_event_state (&state))
+            {
+              GdkModifierType extend_mod_mask;
+              GdkModifierType modify_mod_mask;
+
+              extend_mod_mask = gtk_widget_get_modifier_mask (GTK_WIDGET (box),
+                                                              GDK_MODIFIER_INTENT_EXTEND_SELECTION);
+              if ((state & extend_mod_mask) == extend_mod_mask)
+                extend_selection_pressed = TRUE;
+
+              modify_mod_mask = gtk_widget_get_modifier_mask (GTK_WIDGET (box),
+                                                              GDK_MODIFIER_INTENT_MODIFY_SELECTION);
+              if ((state & modify_mod_mask) == modify_mod_mask)
+                modify_selection_pressed = TRUE;
+            }
+
           if (priv->activate_on_single_click)
             egg_flow_box_select_and_activate (box, priv->active_child);
           else
-            egg_flow_box_select_child_info (box, priv->active_child);
+            egg_flow_box_update_selection (box, priv->active_child, modify_selection_pressed, extend_selection_pressed);
         }
       priv->active_child = NULL;
       priv->active_child_active = FALSE;
@@ -2685,7 +2715,7 @@ egg_flow_box_real_focus (GtkWidget       *widget,
 
   egg_flow_box_update_cursor (box, next_focus_child);
   if (!modify_selection_pressed)
-    egg_flow_box_update_selection (box, next_focus_child, extend_selection_pressed);
+    egg_flow_box_update_selection (box, next_focus_child, FALSE, extend_selection_pressed);
 
   return TRUE;
 }
@@ -2940,7 +2970,7 @@ egg_flow_box_real_move_cursor (EggFlowBox     *box,
 
   egg_flow_box_update_cursor (box, child);
   if (!modify_selection_pressed)
-    egg_flow_box_update_selection (box, child, extend_selection_pressed);
+    egg_flow_box_update_selection (box, child, FALSE, extend_selection_pressed);
 }
 
 static gboolean
