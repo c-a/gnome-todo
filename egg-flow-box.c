@@ -2235,7 +2235,7 @@ egg_flow_box_unselect_child_info (EggFlowBox          *box,
   else if (box->priv->selection_mode != GTK_SELECTION_MULTIPLE)
     egg_flow_box_unselect_all_internal (box);
   else
-    child_info->selected = TRUE;
+    child_info->selected = FALSE;
 
   g_signal_emit (box, signals[SELECTED_CHILDREN_CHANGED], 0);
 
@@ -2763,7 +2763,8 @@ egg_flow_box_real_toggle_cursor_child (EggFlowBox *box)
   if (priv->cursor_child == NULL)
     return;
 
-  if (priv->selection_mode == GTK_SELECTION_SINGLE &&
+  if ((priv->selection_mode == GTK_SELECTION_SINGLE ||
+       priv->selection_mode == GTK_SELECTION_MULTIPLE) &&
       priv->cursor_child->selected)
     egg_flow_box_unselect_child_info (box, priv->cursor_child);
   else
