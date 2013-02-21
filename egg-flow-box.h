@@ -109,6 +109,12 @@ void                  egg_flow_box_selected_foreach             (EggFlowBox     
                                                                  gpointer           data);
 void                  egg_flow_box_select_child                 (EggFlowBox        *box,
                                                                  GtkWidget         *child);
+void                  egg_flow_box_unselect_child               (EggFlowBox        *box,
+                                                                 GtkWidget         *child);
+void                  egg_flow_box_select_all                   (EggFlowBox        *box);
+void                  egg_flow_box_unselect_all                 (EggFlowBox        *box);
+gboolean              egg_flow_box_is_child_selected            (EggFlowBox        *box,
+                                                                 GtkWidget         *child);
 GtkSelectionMode      egg_flow_box_get_selection_mode           (EggFlowBox        *box);
 void                  egg_flow_box_set_selection_mode           (EggFlowBox        *box,
                                                                  GtkSelectionMode   mode);

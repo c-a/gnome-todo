@@ -2970,9 +2970,11 @@ egg_flow_box_real_move_cursor (EggFlowBox     *box,
     egg_flow_box_update_selection (box, child, FALSE, extend_selection_pressed);
 }
 
-static void
-egg_flow_box_real_select_all (EggFlowBox *box)
+void
+egg_flow_box_select_all (EggFlowBox *box)
 {
+  g_return_if_fail (EGG_IS_FLOW_BOX (box));
+
   if (box->priv->selection_mode != GTK_SELECTION_MULTIPLE)
     return;
 
@@ -2983,8 +2985,8 @@ egg_flow_box_real_select_all (EggFlowBox *box)
     }
 }
 
-static void
-egg_flow_box_real_unselect_all (EggFlowBox *box)
+void
+egg_flow_box_unselect_all (EggFlowBox *box)
 {
   gboolean dirty = FALSE;
 
@@ -3119,6 +3121,11 @@ egg_flow_box_finalize (GObject *obj)
 }
 
 static void
+egg_flow_box_real_selected_children_changed (EggFlowBox *box)
+{
+}
+
+static void
 egg_flow_box_class_init (EggFlowBoxClass *class)
 {
   GObjectClass      *object_class = G_OBJECT_CLASS (class);
@@ -3154,8 +3161,9 @@ egg_flow_box_class_init (EggFlowBoxClass *class)
   class->activate_cursor_child = egg_flow_box_real_activate_cursor_child;
   class->toggle_cursor_child = egg_flow_box_real_toggle_cursor_child;
   class->move_cursor = egg_flow_box_real_move_cursor;
-  class->select_all = egg_flow_box_real_select_all;
-  class->unselect_all = egg_flow_box_real_unselect_all;
+  class->select_all = egg_flow_box_select_all;
+  class->unselect_all = egg_flow_box_unselect_all;
+  class->selected_children_changed = egg_flow_box_real_selected_children_changed;
 
   g_object_class_override_property (object_class, PROP_ORIENTATION, "orientation");
 
@@ -3384,7 +3392,6 @@ egg_flow_box_class_init (EggFlowBoxClass *class)
   gtk_binding_entry_add_signal (binding_set, GDK_KEY_a, GDK_CONTROL_MASK | GDK_SHIFT_MASK,
                                 "unselect-all", 0);
 
-
   g_type_class_add_private (class, sizeof (EggFlowBoxPrivate));
 }
 
@@ -3469,6 +3476,41 @@ egg_flow_box_select_child (EggFlowBox *box,
     }
 
   egg_flow_box_select_child_info (box, child_info);
+}
+
+void
+egg_flow_box_unselect_child (EggFlowBox *box,
+                             GtkWidget  *child)
+{
+  EggFlowBoxChildInfo *child_info;
+
+  g_return_if_fail (EGG_IS_FLOW_BOX (box));
+  g_return_if_fail (child != NULL);
+
+  child_info = egg_flow_box_lookup_info (box, child);
+  if (child_info == NULL)
+    {
+      g_warning ("Tried to unselect non-child %p\n", child);
+      return;
+    }
+
+  egg_flow_box_unselect_child_info (box, child_info);
+}
+
+gboolean
+egg_flow_box_is_child_selected (EggFlowBox *box,
+                                GtkWidget  *child)
+{
+  EggFlowBoxChildInfo *child_info;
+
+  child_info = egg_flow_box_lookup_info (box, child);
+  if (child_info == NULL)
+    {
+      g_warning ("Tried to obtain selection status of non-child %p\n", child);
+      return FALSE;
+    }
+
+  return child_info->selected;
 }
 
 /**
