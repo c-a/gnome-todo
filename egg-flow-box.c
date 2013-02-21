@@ -2842,7 +2842,7 @@ egg_flow_box_real_draw (GtkWidget *widget,
   state = gtk_widget_get_state_flags (widget);
   gtk_render_background (context, cr, (gdouble) 0, (gdouble) 0, (gdouble) allocation.width, (gdouble) allocation.height);
 
-  for (iter = g_sequence_get_begin_iter (box->priv->children);
+  for (iter = g_sequence_get_begin_iter (priv->children);
        !g_sequence_iter_is_end (iter);
        iter = g_sequence_iter_next (iter))
     {
@@ -2883,6 +2883,19 @@ egg_flow_box_real_draw (GtkWidget *widget,
           gtk_style_context_restore (context);
         }
     }
+
+  if (gtk_widget_has_visible_focus (GTK_WIDGET (box)) && priv->cursor_child != NULL)
+    {
+      gtk_style_context_get_style (context,
+                                   "focus-padding", &focus_pad,
+                                   NULL);
+      gtk_render_focus (context, cr,
+                        priv->cursor_child->area.x + focus_pad,
+                        priv->cursor_child->area.y + focus_pad,
+                        priv->cursor_child->area.width - 2 * focus_pad,
+                        priv->cursor_child->area.height - 2 * focus_pad);
+    }
+
 
   GTK_WIDGET_CLASS (egg_flow_box_parent_class)->draw ((GtkWidget *) G_TYPE_CHECK_INSTANCE_CAST (box, GTK_TYPE_CONTAINER, GtkContainer), cr);
 
