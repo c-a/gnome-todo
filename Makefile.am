@@ -22,7 +22,8 @@ libegglistbox_la_SOURCES = \
 libegglistbox_la_LIBADD = $(LISTBOX_LIBS)
 
 libeggflowbox_la_SOURCES = \
-	egg-flow-box.c egg-flow-box.h
+	egg-flow-box.c egg-flow-box.h \
+	egg-flow-box-accessible.c egg-flow-box-accessible.h
 
 libeggflowbox_la_LIBADD = $(LISTBOX_LIBS)
 

@@ -42,6 +42,8 @@
 
 #include <gtk/gtk.h>
 #include "egg-flow-box.h"
+#include "egg-flow-box-accessible.h"
+
 /* This already exists in gtk as _gtk_marshal_VOID__ENUM_INT, inline it here for now
    to avoid separate marshallers file */
 static void
@@ -2263,6 +2265,8 @@ egg_flow_box_update_cursor (EggFlowBox          *box,
                                  priv->cursor_child->area.y + allocation.y,
                                  priv->cursor_child->area.y + allocation.y + priv->cursor_child->area.height);
   }
+
+  _egg_flow_box_accessible_update_cursor (GTK_WIDGET (box), child_info ? child_info->widget : NULL);
 }
 
 static void
@@ -3123,6 +3127,7 @@ egg_flow_box_finalize (GObject *obj)
 static void
 egg_flow_box_real_selected_children_changed (EggFlowBox *box)
 {
+  _egg_flow_box_accessible_selection_changed (GTK_WIDGET (box));
 }
 
 static void
@@ -3393,6 +3398,8 @@ egg_flow_box_class_init (EggFlowBoxClass *class)
                                 "unselect-all", 0);
 
   g_type_class_add_private (class, sizeof (EggFlowBoxPrivate));
+
+  gtk_widget_class_set_accessible_type (widget_class, EGG_TYPE_FLOW_BOX_ACCESSIBLE);
 }
 
 static void
