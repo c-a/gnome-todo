@@ -3303,6 +3303,8 @@ egg_flow_box_class_init (EggFlowBoxClass *class)
 
   gtk_binding_entry_add_signal (binding_set, GDK_KEY_space, GDK_CONTROL_MASK,
                                 "toggle-cursor-child", 0, NULL);
+  gtk_binding_entry_add_signal (binding_set, GDK_KEY_KP_Space, GDK_CONTROL_MASK,
+                                "toggle-cursor-child", 0, NULL);
 
   g_type_class_add_private (class, sizeof (EggFlowBoxPrivate));
 }
