@@ -2725,12 +2725,12 @@ egg_flow_box_real_move_cursor (EggFlowBox     *box,
 
           while (count < 0  && iter != NULL)
             {
-              iter = egg_flow_box_get_previous_visible (box, iter);
+              iter = egg_flow_box_get_above_visible (box, iter);
               count = count + 1;
             }
           while (count > 0  && iter != NULL)
             {
-              iter = egg_flow_box_get_next_visible (box, iter);
+              iter = egg_flow_box_get_below_visible (box, iter);
               count = count - 1;
             }
 
