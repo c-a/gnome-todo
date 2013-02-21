@@ -3423,22 +3423,6 @@ egg_flow_box_new (void)
   return (GtkWidget *)g_object_new (EGG_TYPE_FLOW_BOX, NULL);
 }
 
-static void
-egg_flow_box_unselect_all (EggFlowBox *box)
-{
-  gboolean dirty = FALSE;
-
-  g_return_if_fail (EGG_IS_FLOW_BOX (box));
-
-  if (box->priv->selection_mode == GTK_SELECTION_BROWSE)
-    return;
-
-  dirty = egg_flow_box_unselect_all_internal (box);
-
-  if (dirty)
-    g_signal_emit (box, signals[SELECTED_CHILDREN_CHANGED], 0);
-}
-
 /**
  * egg_flow_box_get_selected_children:
  * @box: An #EggFlowBox.
