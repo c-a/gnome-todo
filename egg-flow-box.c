@@ -3472,6 +3472,7 @@ void
 egg_flow_box_set_selection_mode (EggFlowBox *box,
                                  GtkSelectionMode mode)
 {
+  gboolean dirty;
   g_return_if_fail (EGG_IS_FLOW_BOX (box));
 
   if (mode == box->priv->selection_mode)
@@ -3479,11 +3480,14 @@ egg_flow_box_set_selection_mode (EggFlowBox *box,
 
   if (mode == GTK_SELECTION_NONE ||
       box->priv->selection_mode == GTK_SELECTION_MULTIPLE)
-    egg_flow_box_unselect_all (box);
+    dirty = egg_flow_box_unselect_all_internal (box);
 
   box->priv->selection_mode = mode;
 
   g_object_notify (G_OBJECT (box), "selection-mode");
+
+  if (dirty)
+    g_signal_emit (box, signals[SELECTED_CHILDREN_CHANGED], 0);
 }
 
 GtkSelectionMode
