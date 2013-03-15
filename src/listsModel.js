@@ -77,7 +77,7 @@ const ListsModel = new Lang.Class({
         while(res) {
             let id = this.get_value(iter, Gd.MainColumns.ID);
 
-            if (source.getItemByID(id))
+            if (source.getItemById(id))
                 res = this.remove(iter);
             else
                 res = this.iter_next(iter);
