@@ -71,12 +71,14 @@ const ListsController = new Lang.Class({
 
     activate: function() {
         this.window.setToolbarWidget(this._toolbar);
-        this.window.setMainView(this._listsView);
     },
 
     deactivate: function() {
         this.window.setToolbarWidget(null);
-        this.window.setMainView(null);
+    },
+
+    getView: function() {
+        return this._listsView;
     },
 
     refresh: function() {

@@ -39,7 +39,10 @@ const Controller = new Lang.Class({
 
     deactivate: function() {
     },
-    
+
+    getView: function() {
+    },
+
     refresh: function() {
     }
 });
@@ -66,11 +69,14 @@ const MainController = new Lang.Class({
 
         this._currentController = controller;
         controller.activate();
+
+        this.window.pushView(controller.getView());
     },
 
     popController: function()
     {
         this._currentController.deactivate();
+        this.window.popView(this._currentController.getView());
 
         this._currentController = this._controllerStack.pop();
         this._currentController.activate();

@@ -93,10 +93,8 @@ const MainWindow = Lang.Class({
         this._toolbar = new MainToolbar();
         this._grid.add(this._toolbar);
 
-        this.contentView = new ContentView();
-        this._grid.add(this.contentView);
-
-        this.show_all();
+        this._contentView = new ContentView();
+        this._grid.add(this._contentView);
     },
 
     _onMapEvent: function(widget, event) {
@@ -185,10 +183,14 @@ const MainWindow = Lang.Class({
         this._toolbar.setWidget(widget);
     },
 
-    setMainView: function(view) {
-        this.contentView.setView(view);
+    pushView: function(view) {
+        this._contentView.pushView(view);
     },
 
+    popView: function(view) {
+        this._contentView.popView(view);
+    },
+    
     showAbout: function() {
         let aboutDialog = new Gtk.AboutDialog();
 
@@ -224,21 +226,32 @@ const ContentView = Lang.Class({
     _init: function() {
         this.parent();
 
+        this._stack = new Gd.Stack({ transition_duration: 500 });
+        this.add(this._stack);
+
         /* Add NotificationManager */
         this.add_overlay(Global.notificationManager);
 
+        /* Show everything but the overlays. */
+        this._stack.show();
         this.show();
     },
 
-    setView: function(view) {
-        if (this._view)
-            this.remove(this._view);
+    pushView: function(view) {
+        this._prevView = this._stack.get_visible_child();
 
-        this._view = view;
-        if (!view)
-            return;
+        this._stack.transition_type = Gd.StackTransitionType.SLIDE_LEFT;
+        this._stack.add(view);
+        this._stack.set_visible_child(view);   
+    },
 
-        this.add(this._view);
+    popView: function(view) {
+        if (this._prevView) {
+            this._stack.transition_type = Gd.StackTransitionType.SLIDE_RIGHT;
+            this._stack.set_visible_child(this._prevView);
+        }
+
+        this._stack.remove(view);
     },
 });
 

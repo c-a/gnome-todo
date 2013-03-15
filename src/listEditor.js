@@ -63,12 +63,14 @@ const ListEditorController = new Lang.Class({
 
     activate: function() {
         this.window.setToolbarWidget(this._toolbar);
-        this.window.setMainView(this._view);
     },
 
     deactivate: function() {
         this.window.setToolbarWidget(null);
-        this.window.setMainView(null);
+    },
+
+    getView: function() {
+        return this._view;
     },
 
     onCancel: function() {
@@ -419,6 +421,7 @@ const TaskEditor = new Lang.Class({
         builder.add_from_resource('/org/gnome/todo/ui/task_editor.glade');
         this._taskEditor = builder.get_object('task_editor');
         this.add(this._taskEditor);
+        this.show_all();
 
         this._noteTextBuffer = builder.get_object('note_textbuffer');
         this._listCombo = builder.get_object('list_combo');
