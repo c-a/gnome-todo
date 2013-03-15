@@ -19,11 +19,10 @@
  *
  */
 
-const Clutter = imports.gi.Clutter;
+const Gd = imports.gi.Gd;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
-const GtkClutter = imports.gi.GtkClutter;
 const GdPrivate = imports.gi.GdPrivate;
 
 const Lang = imports.lang;
@@ -31,7 +30,6 @@ const Mainloop = imports.mainloop;
 
 const Config = imports.config;
 const Global = imports.global;
-const SpinnerBox = imports.spinnerBox;
 const Utils = imports.utils;
 
 const _ = imports.gettext.gettext;
@@ -52,11 +50,7 @@ const MainWindow = Lang.Class({
 
         this._configureId = 0;
 
-        this._clutterEmbed = new GtkClutter.Embed();
-        this.add(this._clutterEmbed);
-        this._clutterEmbed.show();
-
-        let stage = this._clutterEmbed.get_stage();
+        this.set_size_request (640, 480);
 
         // apply the last saved window size and position
         let size = Global.settings.get_value('window-size');
@@ -91,23 +85,18 @@ const MainWindow = Lang.Class({
         this.connect('window-state-event',
                             Lang.bind(this, this._onWindowStateEvent));
 
-        // the base layout is a vertical ClutterBox
-        this._layout = new Clutter.BoxLayout({ vertical: true });
-        this._box = new Clutter.Box({ layout_manager: this._layout });
-        this._box.add_constraint(
-            new Clutter.BindConstraint({ coordinate: Clutter.BindCoordinate.SIZE,
-                                         source: stage }));
+        this._grid = new Gtk.Grid({ orientation: Gtk.Orientation.VERTICAL,
+            expand: true });
+        this.add(this._grid);
+        this._grid.show();
 
         this._toolbar = new MainToolbar();
-        let toolbarActor = new GtkClutter.Actor({ 'contents': this._toolbar });
-        this._box.add_child(toolbarActor);
-        this._layout.set_fill(toolbarActor, true, false);
+        this._grid.add(this._toolbar);
 
         this.contentView = new ContentView();
-        this._box.add_child(this.contentView);
-        this._layout.set_fill(this.contentView, true, true);
+        this._grid.add(this.contentView);
 
-        stage.add_actor(this._box);
+        this.show_all();
     },
 
     _onMapEvent: function(widget, event) {
@@ -196,8 +185,8 @@ const MainWindow = Lang.Class({
         this._toolbar.setWidget(widget);
     },
 
-    setContentActor: function(actor) {
-        this.contentView.setView(actor);
+    setMainView: function(view) {
+        this.contentView.setView(view);
     },
 
     showAbout: function() {
@@ -230,46 +219,35 @@ const MainWindow = Lang.Class({
 
 const ContentView = Lang.Class({
     Name: 'ContentView',
-    Extends: Clutter.Box,
+    Extends: Gtk.Overlay,
 
     _init: function() {
-        this._layout = new Clutter.BinLayout();
-        this.parent({ layout_manager: this._layout, x_expand: true, y_expand: true });
+        this.parent();
 
-        /* Add NotificationManager at the top.*/
-        this.add_child(Global.notificationManager);
+        /* Add NotificationManager */
+        this.add_overlay(Global.notificationManager);
 
-        /* Add SpinnerBox */
-        this._spinnerBox = new SpinnerBox.SpinnerBox();
-        this.insert_child_below(this._spinnerBox, Global.notificationManager);
+        this.show();
     },
 
     setView: function(view) {
         if (this._view)
-            this.remove_child(this._view);
+            this.remove(this._view);
 
         this._view = view;
         if (!view)
             return;
 
-        // Add view below notificationManager
-        this.insert_child_below(view, this._spinnerBox);
+        this.add(this._view);
     },
-
-    setLoading: function(loading) {
-        if (loading)
-            this._spinnerBox.moveInDelayed();
-        else
-            this._spinnerBox.moveOut();
-    }
 });
 
-const MainToolbar = new Lang.Class({
+const MainToolbar = Lang.Class({
     Name: 'MainToolbar',
     Extends: Gtk.Toolbar,
 
     _init: function(params) {
-        this.parent({ icon_size: Gtk.IconSize.MENU });
+        this.parent({ vexpand: false, icon_size: Gtk.IconSize.MENU });
         this.get_style_context().add_class(Gtk.STYLE_CLASS_MENUBAR);
 
         this._currentWidget = null;

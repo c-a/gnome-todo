@@ -22,7 +22,6 @@
 const Gd = imports.gi.Gd;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
-const GtkClutter = imports.gi.GtkClutter;
 const _ = imports.gettext.gettext;
 
 const Global = imports.global;
@@ -32,21 +31,15 @@ const Lang = imports.lang;
 
 const NotificationManager = Lang.Class({
     Name: 'NotificationManager',
-    Extends: GtkClutter.Actor,
+    Extends: Gd.Notification,
 
     _init: function() {
-        this.parent({ x_expand: true, y_expand: true });
-
-        this._notification = new Gd.Notification({ timeout: -1,
-            show_close_button: true });
+        this.parent({ timeout: -1, show_close_button: true,
+            halign: Gtk.Align.CENTER, valign: Gtk.Align.START });
 
         this._grid = new Gtk.Grid({ orientation: Gtk.Orientation.VERTICAL,
             row_spacing: 6 });
-        this._notification.add(this._grid);
-        this._notification.show_all();
-
-        this.contents = this._notification;
-        Utils.alphaGtkWidget(this.get_widget());
+        this.add(this._grid);
 
         this.hide();
     },
@@ -54,11 +47,10 @@ const NotificationManager = Lang.Class({
     addNotification: function(notification) {
         this._grid.add(notification);
 
-        notification.show_all();
         notification.connect('destroy',
             Lang.bind(this, this._onWidgetDestroy));
 
-        this.show();
+        this.show_all();
     },
 
     _onWidgetDestroy: function() {

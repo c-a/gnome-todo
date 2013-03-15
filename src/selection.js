@@ -22,7 +22,6 @@
 const Gd = imports.gi.Gd;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
-const GtkClutter = imports.gi.GtkClutter;
 
 const _ = imports.gettext.gettext;
 const Format = imports.format;
@@ -30,7 +29,7 @@ const Lang = imports.lang;
 const Signals = imports.signals;
 
 const Global = imports.global;
-const Tweener = imports.util.tweener;
+const Tweener = imports.tweener.tweener;
 const Utils = imports.utils;
 
 const SelectionController = new Lang.Class({
@@ -151,10 +150,11 @@ const SelectionController = new Lang.Class({
 
 const SelectionToolbar = new Lang.Class({
     Name: 'SelectionToolbar',
-    Extends: GtkClutter.Actor,
+    Extends: Gtk.Bin,
 
     _init: function() {
-        this.parent();
+        this.parent({ 'halign': Gtk.Align.CENTER, 'valign': Gtk.Align.END,
+            'margin-bottom': 40 });
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/selection_toolbar.glade');
@@ -168,23 +168,18 @@ const SelectionToolbar = new Lang.Class({
         this.deleteButton.connect('clicked',
             Lang.bind(this, function(button) { this.emit('delete-button-clicked'); }));
 
-        this.contents = this._toolbar;
-        Utils.alphaGtkWidget(this.get_widget());
+        this.add(this._toolbar);
 
-        // Show all widgets but hide actor by default
+        // Show toolbar but hide this by default
         this._toolbar.show_all();
         this.hide();
     },
 
     fadeIn: function() {
-        if (this.opacity != 0)
-            return;
-
-        this.opacity = 0;
         this.show();
 
         Tweener.addTween(this,
-            { opacity: 255,
+            { opacity: 1,
               time: 0.30,
               transition: 'easeOutQuad' });
     },

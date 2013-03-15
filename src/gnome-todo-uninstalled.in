@@ -18,4 +18,9 @@ if test x"$GJS_DEBUG_TOPICS" = x ; then
     export GJS_DEBUG_TOPICS="JS ERROR;JS LOG"
 fi
 
-exec gdb -ex run --args @GJS_CONSOLE@ -I @abs_top_srcdir@/src -c "const Main = imports.main; Main.start();" "$@"
+DEBUG_COMMAND=""
+if test x"$DOCUMENTS_RUN_DEBUG" != x; then
+    DEBUG_COMMAND="gdb -ex run --args"
+fi
+
+exec $DEBUG_COMMAND @GJS_CONSOLE@ -I @abs_top_srcdir@/src -c "const Main = imports.main; Main.start();" "$@"

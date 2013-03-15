@@ -19,17 +19,15 @@
  *
  */
 
-const DBus = imports.dbus;
-const Lang = imports.lang;
-const Mainloop = imports.mainloop;
-const Gettext = imports.gettext;
-const _ = imports.gettext.gettext;
-
-const GtkClutter = imports.gi.GtkClutter;
 const Gdk = imports.gi.Gdk;
 const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
 const GLib = imports.gi.GLib;
+
+const Gettext = imports.gettext;
+const Lang = imports.lang;
+const Mainloop = imports.mainloop;
+const _ = imports.gettext.gettext;
 
 const Error = imports.error;
 const Format = imports.format;
@@ -42,7 +40,6 @@ const Notifications = imports.notifications;
 const Path = imports.path;
 const Sources = imports.sources;
 const Utils = imports.utils;
-const Tweener = imports.util.tweener;
 
 const Application = new Lang.Class({
     Name: 'Application',
@@ -93,9 +90,6 @@ const Application = new Lang.Class({
         this.parent();
 
         String.prototype.format = Format.format;
-
-        GtkClutter.init(null, null);
-        Tweener.init();
 
         Global.application = this;
 

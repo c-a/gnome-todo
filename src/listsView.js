@@ -19,13 +19,11 @@
  *
  */
 
-const Clutter = imports.gi.Clutter;
 const Gd = imports.gi.Gd;
 const Gdk = imports.gi.Gdk;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
-const GtkClutter = imports.gi.GtkClutter;
 
 const _ = imports.gettext.gettext;
 const Lang = imports.lang;
@@ -42,8 +40,7 @@ const EmptyResultsBox = new Lang.Class({
     _init: function(noAccounts) {
         this.parent({ orientation: Gtk.Orientation.HORIZONTAL,
                                      column_spacing: 12,
-                                     hexpand: true,
-                                     vexpand: true,
+                                     expand: true,
                                      halign: Gtk.Align.CENTER,
                                      valign: Gtk.Align.CENTER });
 
@@ -121,58 +118,93 @@ const EmptyResultsBox = new Lang.Class({
 
 const ListsView = Lang.Class({
     Name: 'ListsView',
-    Extends: Clutter.Box,
+    Extends: Gtk.Overlay,
 
-    _init: function(contentView) {
-        this._layout = new Clutter.BinLayout();
-        this.parent({ layout_manager: this._layout, x_expand: true, y_expand: true });
+    _init: function() {
+        this.parent();
 
-        this._contentView = contentView;
+        this._delayedShowId = 0;
+        
+        this._stack = new Gd.Stack({ transition_type: Gd.StackTransitionType.CROSSFADE });
+        this.add(this._stack);
 
+        /* Add SpinnerBox */
+        this._spinnerBox = new SpinnerBox();
+        this._stack.add(this._spinnerBox);
+        
         /* Add the MainView. */
-        this.mainView = new Gd.MainView({'view-type': Gd.MainViewType.ICON });
-
-        this.mainView.show_all();
-        this._mainViewActor = new GtkClutter.Actor({ contents: this.mainView,
-            x_expand: true, y_expand: true });
-        this.add_child(this._mainViewActor);
+        this.mainView = new Gd.MainView({ view_type: Gd.MainViewType.ICON, expand: true });
+        this._stack.add(this.mainView);
 
         /* Add selectionToolbar. */
         this.selectionToolbar = new Selection.SelectionToolbar();
-        this.selectionToolbar.add_constraint(
-            new Clutter.AlignConstraint({ align_axis: Clutter.AlignAxis.X_AXIS,
-                source: this, factor: 0.50 }));
-        this.selectionToolbar.add_constraint(
-            new Clutter.AlignConstraint({ align_axis: Clutter.AlignAxis.Y_AXIS,
-                source: this, factor: 0.95 }));
-        this.insert_child_above(this.selectionToolbar, this._mainViewActor);
+        this.add_overlay(this.selectionToolbar);
+
+        /* Show everything but the overlays */
+        this._stack.show_all();
+        this.show();
     },
 
     _removeNoResults: function() {
         if (this._noResults)
         {
-            this._noResultsActor.destroy();
-            delete this._noResultsActor;
+            this._noResults.destroy();
             delete this._noResults;
         }
     },
 
     showMainView: function(loading) {
-        if (this._noResults)
-            this._removeNoResults();
-
-        this._contentView.setLoading(loading);
+        this._removeNoResults();
+        this._setLoading(loading);
     },
     
     showNoResults: function(noAccounts) {
-        if (this._noResultsActor)
-            this._noResultsActor.destroy();
-
-        this._contentView.setLoading(false);
+        this._removeNoResults();
 
         this._noResults = new EmptyResultsBox(noAccounts);
-        this._noResultsActor = new GtkClutter.Actor({ contents: this._noResults,
-            x_expand: true, y_expand: true });
-        this.insert_child_above(this._noResultsActor, this._mainViewActor);
+        this._stack.add(this._noResults);
+        this._stack.set_visible_child(this._noResults);
+    },
+
+    _setLoading: function(loading) {
+        if (loading)
+            this._showSpinnerBoxDelayed();
+        else
+            this._stack.set_visible_child(this.mainView);
+    },
+
+    _showSpinnerBoxDelayed: function(delay) {
+        this._clearDelayId();
+
+        this._delayedShowId = Mainloop.timeout_add(delay, Lang.bind(this, function() {
+            this._delayedMoveId = 0;
+
+            this._stack.set_visible_child(this._spinnerBox);
+            return false;
+        }));
+    },
+
+    _clearDelayId: function() {
+        if (this._delayedShowId != 0) {
+            Mainloop.source_remove(this._delayedShowId);
+            this._delayedShowId = 0;
+        }
+    }
+});
+
+const SpinnerBox = Lang.Class({
+    Name: 'SpinnerBox',
+    Extends: Gtk.Bin,
+
+    _init: function() {
+        this.parent();
+
+        let builder = new Gtk.Builder();
+        builder.add_from_resource('/org/gnome/todo/ui/spinner_box.glade');
+
+        this._grid = builder.get_object('grid');
+        this.add(this._grid);
+
+        this.show_all();
     }
 });

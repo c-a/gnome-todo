@@ -22,7 +22,6 @@
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
-const GtkClutter = imports.gi.GtkClutter;
 const Pango = imports.gi.Pango;
 
 const Gettext = imports.gettext;

@@ -57,11 +57,9 @@ GLIB_MIN_VERSION=2.31.6
 GTK_MIN_VERSION=3.3.6
 GOBJECT_INTROSPECTION_MIN_VERSION=1.31.6
 GOA_MIN_VERSION=3.2.0
-CLUTTER_GTK_MIN_VERSION=1.0.2
 SOUP_MIN_VERSION=2.40.0
 
 PKG_CHECK_MODULES(TODO,
-                  clutter-gtk-1.0 >= $CLUTTER_GTK_MIN_VERSION
                   gjs-1.0
                   glib-2.0 >= $GLIB_MIN_VERSION
                   gobject-introspection-1.0 >= $GOBJECT_INTROSPECTION_MIN_VERSION
@@ -77,6 +75,7 @@ LIBGD_INIT([
     main-icon-view
     main-toolbar
     notification
+    stack
 ])
 
 # egg-list-box

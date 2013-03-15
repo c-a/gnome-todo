@@ -22,7 +22,6 @@ const EggListBox = imports.gi.EggListBox;
 const GObject = imports.gi.GObject;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
-const GtkClutter = imports.gi.GtkClutter;
 const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
@@ -64,12 +63,12 @@ const ListEditorController = new Lang.Class({
 
     activate: function() {
         this.window.setToolbarWidget(this._toolbar);
-        this.window.setContentActor(this._view);
+        this.window.setMainView(this._view);
     },
 
     deactivate: function() {
         this.window.setToolbarWidget(null);
-        this.window.setContentActor(null);
+        this.window.setMainView(null);
     },
 
     onCancel: function() {
@@ -121,29 +120,27 @@ const ListEditorController = new Lang.Class({
 
 const ListEditorView = new Lang.Class({
     Name: 'ListEditorView',
-    Extends: GtkClutter.Actor,
+    Extends: Gtk.Grid,
 
     Signals: { 'save': { param_types: [ GObject.TYPE_OBJECT ] },
         'delete': { param_types: [GObject.TYPE_OBJECT ] },
     },
 
     _init: function(source, list) {
-        this.parent({ x_expand: true, y_expand: true });
+        this.parent();
 
         this._source = source;
         this._list = list;
 
-        let grid = new Gtk.Grid({ margin: 6 });
-        grid.show();
-        this.contents = grid;
-
+        this.show();
+        
         this.listBox = new EggListBox.ListBox();
         this.listBox.show();
-        grid.attach(this.listBox, 0, 0, 1, 1);
+        this.attach(this.listBox, 0, 0, 1, 1);
 
         this.taskEditor = new TaskEditor(source);
         this.taskEditor.hide();
-        grid.attach(this.taskEditor, 1, 0, 1, 1);
+        this.attach(this.taskEditor, 1, 0, 1, 1);
 
         this.taskEditor.connect('cancelled',
             Lang.bind(this, this._taskEditorCancelled));
