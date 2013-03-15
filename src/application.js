@@ -24,13 +24,12 @@ const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
 const GLib = imports.gi.GLib;
 
+const Format = imports.format;
 const Gettext = imports.gettext;
 const Lang = imports.lang;
 const Mainloop = imports.mainloop;
 const _ = imports.gettext.gettext;
 
-const Error = imports.error;
-const Format = imports.format;
 const Global = imports.global;
 const ListsController = imports.listsController;
 const Main = imports.main;
@@ -94,7 +93,6 @@ const Application = new Lang.Class({
         Global.application = this;
 
         Global.sourceManager = new Sources.SourceManager();
-        Global.errorHandler = new Error.ErrorHandler();
         Global.notificationManager = new Notifications.NotificationManager();
 
         this._initMenus();

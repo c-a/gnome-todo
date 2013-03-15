@@ -24,7 +24,6 @@ const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 
 const _ = imports.gettext.gettext;
-const Format = imports.format;
 const Lang = imports.lang;
 const Signals = imports.signals;
 
