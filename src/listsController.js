@@ -38,15 +38,16 @@ const ListsController = new Lang.Class({
     _init: function(mainController) {
         this.parent(mainController);
 
-        this._toolbar = new ListsToolbar.ListsToolbar();
         this._listsView = new ListsView.ListsView(this.window.contentView);
-
-        this._model = new ListsModel.ListsModel();
-        this._listsView.mainView.set_model(this._model);
 
         // Create SelectionController handling selections
         this._selectionController = new Selection.SelectionController(this, this._listsView);
         this._selectionModeActive = false;
+        
+        this._toolbar = new ListsToolbar.ListsToolbar();
+
+        this._model = new ListsModel.ListsModel();
+        this._listsView.mainView.set_model(this._model);
 
         this._outstandingLoads = 0;
         this._updateContentView();

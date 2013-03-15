@@ -4,12 +4,12 @@
   <menu id="selection-menu">
     <section>
       <item>
-        <attribute name="action">lists.select-all</attribute>
+        <attribute name="action">win.select-all</attribute>
         <attribute name="label" translatable="yes">Select All</attribute>
         <attribute name="accel">&lt;Primary&gt;a</attribute>
       </item>
       <item>
-        <attribute name="action">lists.select-none</attribute>
+        <attribute name="action">win.select-none</attribute>
         <attribute name="label" translatable="yes">Select None</attribute>
       </item>
     </section>
@@ -17,8 +17,11 @@
   <object class="GdHeaderMenuButton" id="selection-menu-button">
     <property name="visible">True</property>
     <property name="can_focus">True</property>
-    <property name="label">Click on items to select them</property>
-    <property name="menu_model">menu</property>
+    <property name="label">Click on lists to select them</property>
+    <property name="menu_model">selection-menu</property>
+    <style>
+      <class name="selection-menu"/>
+    </style>
   </object>
 
   <object class="GtkButtonBox" id="button-box">

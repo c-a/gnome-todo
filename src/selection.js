@@ -20,6 +20,7 @@
  */
 
 const Gd = imports.gi.Gd;
+const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 
@@ -47,6 +48,20 @@ const SelectionController = new Lang.Class({
             Lang.bind(this, this._deleteButtonClicked));
         this._selectionToolbar.connect('rename-button-clicked',
             Lang.bind(this, this._renameButtonClicked));
+
+        let actionEntries = [
+            { name: 'select-all', callback: this._selectAll },
+            { name: 'select-none', callback: this._selectNone }];
+
+        actionEntries.forEach(Lang.bind(this, function(entry) {
+            let action = new Gio.SimpleAction({ name: entry.name });
+
+            if (entry.callback)
+                action.connect('activate', Lang.bind(this, entry.callback));
+
+            listsController.window.add_action(action);
+        }));
+            
     },
 
     setActive: function(active) {
@@ -90,7 +105,7 @@ const SelectionController = new Lang.Class({
                 if (error)
                 {
                     let notification = new Gtk.Label({
-                        label: Format.format('Failed to delete list (%s)', error.message) });
+                        label: 'Failed to delete list (%s)'.format(error.message) });
                     Global.notificationManager.addNotification(notification);
                 }
             }));
@@ -145,6 +160,14 @@ const SelectionController = new Lang.Class({
 
         dialog.show();
     },
+
+    _selectAll: function() {
+        this._mainView.select_all();
+    },
+
+    _selectNone: function() {
+        this._mainView.unselect_all();
+    }
 });
 
 const SelectionToolbar = new Lang.Class({
