@@ -122,14 +122,14 @@ const ListEditorController = new Lang.Class({
 
 const ListEditorView = new Lang.Class({
     Name: 'ListEditorView',
-    Extends: Gtk.Grid,
+    Extends: Gtk.Paned,
 
     Signals: { 'save': { param_types: [ GObject.TYPE_OBJECT ] },
         'delete': { param_types: [GObject.TYPE_OBJECT ] },
     },
 
     _init: function(source, list) {
-        this.parent();
+        this.parent({ orientation: Gtk.Orientation.HORIZONTAL });
 
         this._source = source;
         this._list = list;
@@ -138,11 +138,11 @@ const ListEditorView = new Lang.Class({
         
         this.listBox = new EggListBox.ListBox();
         this.listBox.show();
-        this.attach(this.listBox, 0, 0, 1, 1);
+        this.pack1(this.listBox, true, false);
 
         this.taskEditor = new TaskEditor(source);
+        this.pack2(this.taskEditor, false, false);
         this.taskEditor.hide();
-        this.attach(this.taskEditor, 1, 0, 1, 1);
 
         this.taskEditor.connect('cancelled',
             Lang.bind(this, this._taskEditorCancelled));
