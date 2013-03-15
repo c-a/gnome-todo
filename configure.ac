@@ -71,6 +71,7 @@ PKG_CHECK_MODULES(TODO,
 LIBGD_INIT([
     gtk-hacks
     gir
+    header-bar
     main-view
     main-icon-view
     main-toolbar

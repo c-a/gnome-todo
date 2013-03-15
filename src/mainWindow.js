@@ -257,29 +257,23 @@ const ContentView = Lang.Class({
 
 const MainToolbar = Lang.Class({
     Name: 'MainToolbar',
-    Extends: Gtk.Toolbar,
+    Extends: Gtk.Bin,
 
     _init: function(params) {
-        this.parent({ vexpand: false, icon_size: Gtk.IconSize.MENU });
-        this.get_style_context().add_class(Gtk.STYLE_CLASS_MENUBAR);
-
-        this._currentWidget = null;
-        this._item = new Gtk.ToolItem({ expand: true });
-        this._item.set_expand(true);
-        this.add(this._item);
-
-        this.show_all();
+        this.parent();
+        
+        this.show();
     },
 
     setWidget: function(widget) {
         if (this._currentWidget) {
             this._currentWidget.setToolbar(null);
-            this._item.remove(this._currentWidget);
+            this.remove(this._currentWidget);
         }
 
         this._currentWidget = widget;
         if (widget) {
-            this._item.add(widget);
+            this.add(widget);
             widget.setToolbar(this);
         }
     }

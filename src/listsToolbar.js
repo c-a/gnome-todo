@@ -48,29 +48,29 @@ const ListsToolbar = new Lang.Class({
         this._notebook = builder.get_object('notebook');
         this.add(this._notebook);
 
-        this._newButton = builder.get_object('new_button');
+        this._newButton = builder.get_object('new-button');
         this._newButton.connect('clicked',
             Lang.bind(this, this._newButtonClicked));
 
         // Selection button
-        let selectButton = builder.get_object('select_button');
+        let selectButton = builder.get_object('select-button');
         selectButton.connect('clicked',
             Lang.bind(this, this._selectButtonClicked));
         
         // Selection done button
-        let doneButton = builder.get_object('done_button');
+        let doneButton = builder.get_object('done-button');
         doneButton.connect('clicked',
             Lang.bind(this, this._doneButtonClicked));
 
-        this._listsButton = builder.get_object('lists_button');
+        this._listsButton = builder.get_object('lists-button');
         this._listsButton.connect('toggled',
             Lang.bind(this, this._listsButtonToggled));
 
-        this._todayButton = builder.get_object('today_button');
+        this._todayButton = builder.get_object('today-button');
         this._todayButton.connect('toggled',
             Lang.bind(this, this._todayButtonToggled));
 
-        this._scheduledButton = builder.get_object('scheduled_button');
+        this._scheduledButton = builder.get_object('scheduled-button');
         this._scheduledButton.connect('toggled',
             Lang.bind(this, this._scheduledButtonToggled));
 
@@ -117,19 +117,9 @@ const ListsToolbar = new Lang.Class({
     setSelectionMode: function(active) {
         if (active) {
             this._notebook.set_current_page(_SELECTION_PAGE);
-
-            if (this._toolbar) {
-                this._toolbar.get_style_context().add_class('selection-mode');
-                this._toolbar.reset_style();
-            }
         }
         else {
             this._notebook.set_current_page(_MAIN_PAGE);
-
-            if (this._toolbar) {
-                this._toolbar.get_style_context().remove_class('selection-mode');
-                this._toolbar.reset_style();
-            }
         }
     },
     

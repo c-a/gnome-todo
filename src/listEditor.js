@@ -519,27 +519,27 @@ const ListEditorToolbar = new Lang.Class({
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/list_editor_toolbar.glade');
-        this.add(builder.get_object('grid'));
+        this._headerBar = builder.get_object('header-bar');
+        this.add(this._headerBar);
         this.show();
 
-        let backButton = builder.get_object('back_button');
+        let backButton = builder.get_object('back-button');
         backButton.connect('clicked',
             Lang.bind(this, function(button) {
                 this.emit('back-button-clicked')
             }));
 
-        let sendButton = builder.get_object('send_button');
+        let sendButton = builder.get_object('send-button');
         sendButton.connect('clicked',
             Lang.bind(this, function(button) {
                 this.emit('send-button-clicked')
             }));
 
-        this._titleLabel = builder.get_object('title_label');
-        this.setTitle(title);
+        this._headerBar.title = title;
     },
 
     setTitle: function(title) {
-        this._titleLabel.label = title;
+        this._headerBar.title = title;
     },
 
     setToolbar: function(mainToolbar) {
