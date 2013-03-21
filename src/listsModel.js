@@ -62,6 +62,7 @@ const ListsModel = new Lang.Class({
         source.connect('item-updated', Lang.bind(this, this._listUpdated));
         source.connect('item-replaced', Lang.bind(this, this._listReplaced));
         source.connect('item-removed', Lang.bind(this, this._listRemoved));
+        source.connect('clear', Lang.bind(this, this._sourceCleared));
 
         this._sources[source.id] = source;
     },
@@ -72,17 +73,7 @@ const ListsModel = new Lang.Class({
         // FIXME: Kind of bad to use disconnectAll.
         source.disconnectAll();
 
-        // Remove all TaskLists belonging to this source.
-        let [res, iter] = this.get_iter_first();
-        while(res) {
-            let id = this.get_value(iter, Gd.MainColumns.ID);
-
-            if (source.getItemById(id))
-                res = this.remove(iter);
-            else
-                res = this.iter_next(iter);
-        }
-
+        this._removeListsBySourceID(sourceID);
         delete this._sources[sourceID];
     },
 
@@ -131,6 +122,10 @@ const ListsModel = new Lang.Class({
         delete this._lists[list.id];
     },
 
+    _sourceCleared: function(source) {
+        this._removeListsBySourceID(source.id);
+    },
+
     _updateModel: function(list, iter)
     {
         this.set_value(iter, Gd.MainColumns.ID, list.id);
@@ -156,4 +151,17 @@ const ListsModel = new Lang.Class({
 
         return null;
     },
+
+    _removeListsBySourceID: function(sourceID) {
+        // Remove all TaskLists belonging to this source.
+        let [res, iter] = this.get_iter_first();
+        while(res) {
+            let id = this.get_value(iter, Gd.MainColumns.ID);
+
+            if (source.getItemById(id))
+                res = this.remove(iter);
+            else
+                res = this.iter_next(iter);
+        }
+    }
 });

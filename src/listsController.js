@@ -115,7 +115,7 @@ const ListsController = new Lang.Class({
         if (this._outstandingLoads++ == 0)
             this._listsView.showMainView(true);
 
-        source.refresh(Lang.bind(this, function(error) {
+        source.sync(Lang.bind(this, function(error) {
             if (error) {
                 let notification = new Gtk.Label({ label: error.message });
                 Global.notificationManager.addNotification(notification);

@@ -20,6 +20,7 @@
  */
 
 const Gio = imports.gi.Gio;
+const GLib = imports.gi.GLib;
 
 const Lang = imports.lang;
 const Signals = imports.signals;
@@ -33,28 +34,23 @@ const Source = new Lang.Class({
     Name: 'Source',
     Extends: Utils.BaseManager,
 
-    _init: function() {
-        let path = GLib.build_filename([GLib.get_user_data_dir(), 'gnome-todo', this.id. null]);
+    _init: function(id) {
+        this.parent();
+
+        this.id = id;
+
+        let path = GLib.build_filenamev([GLib.get_user_data_dir(), 'gnome-todo', id]);
         this._file = Gio.File.new_for_path(path);
 
         this._load();
     },
 
     sync: function(callback) {
+        this._sync(callback);
     },
 
     createTaskList: function(title) {
-        let id;
-        while (true) {
-            id = Utils.generateID('task');
-            if (!this.getItemById(id))
-                break;
-        }
-
-        let taskList = this._newTaskList(id, title);
-        taskList.id = id;
-        taskList.title = title;
-
+        let taskList = this._newTaskList({ title: title });
         this.addItem(taskList);
     },
 
@@ -62,8 +58,28 @@ const Source = new Lang.Class({
         this.removeItemById(id);
     },
 
+    addItem: function(item) {
+        if (!item.id) {
+            while (true) {
+                item.id = Utils.generateID('task-list');
+                if (!this.getItemById(item.id))
+                    break;
+            }
+        }
+
+        Utils.BaseManager.prototype.addItem.call(this, item);
+    },
+
     _load: function() {
-        let [res, data] = this._file.load_contents(null);
+        let res, data;
+
+        try {
+            [res, data] = this._file.load_contents(null);
+        }
+        catch(err) {
+            return;
+        }
+
         let object = JSON.parse(data);
 
         for (let i = 0; i < object.taskLists; i++) {
@@ -99,14 +115,17 @@ const Source = new Lang.Class({
 
     // Functions that subclasses should implement
 
+    _sync: function(callback) {
+    },
+
     _serialize: function(object) {
     },
 
     _deserialize: function(object) {
     },
 
-    _newTaskList: function() {
-        return new TaskList();
+    _newTaskList: function(props) {
+        return new TaskList(this, props);
     }
 });
 
@@ -114,16 +133,21 @@ const TaskList = new Lang.Class({
     Name: 'TaskList',
     Extends: Utils.BaseManager,
 
-    _init: function(id, title) {
-        this.id = id;
-        this._title = title;
-    }
+    _init: function(source, props) {
+        this.parent();
+
+        this.source = source;
+
+        if (props) {
+            this._title = props.title;
+        }
+    },
 
     get title() {
         return this._title;
     },
 
-    set title() {
+    set title(title) {
         this._title = title;
         this.emit('changed', 'title');
     },
@@ -151,26 +175,27 @@ const TaskList = new Lang.Class({
         this._deserialize(object);
     },
 
-    createTask: function(title, completed, due, note) {
-        let id;
-        while (true) {
-            id = Utils.generateID('task');
-            if (!this.getItemById(id))
-                break;
-        }
-
-        let task = this._newTask();
-        task.id = id;
-        task.title = title;
-        task.completed = completed;
-        task.due = due;
-        task.note = note;
+    createTask: function(title, completedDate, dueDate, note) {
+        let task = this._newTask({ title: title,
+            completedDate: completedDate, dueDate: dueDate, note: note });
 
         this.addItem(task);
     },
 
     deleteTask: function(id) {
         this.removeItemById(id);
+    },
+
+    addItem: function(item) {
+        if (!item.id) {
+            while (true) {
+                item.id = Utils.generateID('task');
+                if (!this.getItemById(item.id))
+                    break;
+            }
+        }
+
+        Utils.BaseManager.prototype.addItem.call(this, item);
     },
 
     // Functions that subclasses should implement
@@ -181,42 +206,80 @@ const TaskList = new Lang.Class({
     _deserialize: function(object) {
     },
     
-    _newTask: function() {
-        return new Task();
+    _newTask: function(props) {
+        return new Task(props);
     }
 });
 
 const Task = new Lang.Class({
     Name: 'Task',
 
-    _init: function() {
+    _init: function(props) {
+        this.parent();
+
+        if (props) {
+            this.id = props.id;
+            this._title = props.title;
+            this._completedDate = props.completedDate;
+            this._dueDate = dueDate;
+            this._note = note;
+        }
+        else {
+            // Initialize optional properties
+            this._completedDate = null;
+            this._dueDate = null;
+            this._notes = null;
+        }
     },
 
     get title() {
         return this._title;
-    }
+    },
 
     set title(title) {
         this._title = title;
-        this.emit('changed', 'title');
+        this._updated('title');
+    },
+
+    get updatedDate() {
+        return this._updatedDate;
     },
 
     get completedDate() {
         return this._completedDate;
     },
 
-    set completedDate() {
-        this._completedDate = completedDate;
-        this.emit('changed', 'completedDate');
-    }
+    set completedDate(completedDate) {
+        if (this._completedDate.equal(completedDate))
+            return;
 
-    get dueDate() {
+        this._completedDate = completedDate;
+        this._updated('completedDate');
     },
 
-    set dueDate() {
+    get dueDate() {
+        return this._dueDate;
+    },
+
+    set dueDate(dueDate) {
+        if (this._dueDate.equal(dueDate))
+            return;
+
         this._dueDate = dueDate;
-        this.emit('changed', 'dueDate');
-    }
+        this._updated('dueDate');
+    },
+
+    get notes() {
+        return this._notes;
+    },
+
+    set notes(notes) {
+        if (this._notes == notes)
+            return;
+
+        this._notes = notes;
+        this._updated('notes');
+    },
 
     serialize: function() {
         let object = {
@@ -239,6 +302,11 @@ const Task = new Lang.Class({
             this._dueDate = Utils.dateTimeFromISO8601(object.due);
     },
 
+    _updated: function(property) {
+        this._updatedDate = GLib.DateTime.new_now_utc();
+        this.emit('changed', [property]);
+    },
+    
     // Functions that subclasses should implement
 
     _serialize: function(object) {
@@ -247,3 +315,4 @@ const Task = new Lang.Class({
     _deserialize: function(object) {
     },
 });
+Signals.addSignalMethods(Task.prototype)

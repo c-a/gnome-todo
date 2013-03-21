@@ -99,9 +99,7 @@ const SelectionController = new Lang.Class({
         for (let i = 0; i < lists.length; i++)
         {
             let list = lists[i];
-            let source = Global.sourceManager.getItemById(list.sourceID);
-
-            source.deleteTaskList(list.id);
+            list.source.deleteTaskList(list.id);
         }
 
         // No lists may still be selected so notify that the selection has changed

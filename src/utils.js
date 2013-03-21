@@ -68,7 +68,7 @@ function generateID(type) {
         randomCharacters.push(possible.charAt(Math.floor(Math.random() * possible.length)));
 
     return type + '-' + randomCharacters.join();
-},
+}
 
 const BaseManager = new Lang.Class({
     Name: 'BaseManager',
@@ -89,13 +89,8 @@ const BaseManager = new Lang.Class({
     addItem: function(item) {
         item._manager = this;
 
-        let oldItem = this._items[item.id];
-
         this._items[item.id] = item;
-        if (oldItem)
-            this.emit('item-updated', item);
-        else
-            this.emit('item-added', item);
+        this.emit('item-added', item);
     },
 
     replaceItem: function(item, newItem) {
