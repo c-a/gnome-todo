@@ -39,6 +39,11 @@ const SelectionController = new Lang.Class({
         this._listsController = listsController;
         this._listsView = listsView;
 
+        this._initActions();
+
+        listsController.window.connect('action-state-changed::selection',
+            Lang.bind(this, this._selectionStateChanged));
+
         this._mainView = listsView.mainView;
         this._mainView.connect('view-selection-changed',
             Lang.bind(this, this._viewSelectionChanged));
@@ -48,24 +53,28 @@ const SelectionController = new Lang.Class({
             Lang.bind(this, this._deleteButtonClicked));
         this._selectionToolbar.connect('rename-button-clicked',
             Lang.bind(this, this._renameButtonClicked));
-
-        let actionEntries = [
-            { name: 'select-all', callback: this._selectAll },
-            { name: 'select-none', callback: this._selectNone }];
-
-        actionEntries.forEach(Lang.bind(this, function(entry) {
-            let action = new Gio.SimpleAction({ name: entry.name });
-
-            if (entry.callback)
-                action.connect('activate', Lang.bind(this, entry.callback));
-
-            listsController.window.add_action(action);
-        }));
-            
     },
 
-    setActive: function(active) {
-        this._mainView.set_selection_mode(active);
+    _initActions: function() {
+        let actionEntries = [
+            {
+                name: 'select-all',
+                callback: this._selectAll
+            },
+            {
+                name: 'select-none',
+                callback: this._selectNone
+            }];
+        this._actions = Utils.createActions(this, actionEntries);
+    },
+
+    _selectionStateChanged: function(actionGroup, actionName, state) {
+        this._mainView.set_selection_mode(state.get_boolean());
+
+        if (state.get_boolean())
+            Utils.addActions(this._listsController.window, this._actions);
+        else
+            Utils.removeActions(this._listsController.window, this._actions);
     },
 
     _viewSelectionChanged: function(mainView) {

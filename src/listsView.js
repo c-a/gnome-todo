@@ -118,17 +118,23 @@ const EmptyResultsBox = new Lang.Class({
     }
 });
 
-const ListsView = Lang.Class({
+const ListsView = new Lang.Class({
     Name: 'ListsView',
-    Extends: Gtk.Overlay,
+    Extends: Gtk.Grid,
 
-    _init: function() {
-        this.parent();
+    _init: function(actionGroup) {
+        this.parent({ orientation: Gtk.Orientation.VERTICAL });
 
         this._delayedShowId = 0;
-        
+
+        this._searchbar = new ListsSearchbar(actionGroup);
+        this.add(this._searchbar);
+
+        this._overlay = new Gtk.Overlay();
+        this.add(this._overlay);
+
         this._stack = new Gd.Stack({ transition_type: Gd.StackTransitionType.CROSSFADE });
-        this.add(this._stack);
+        this._overlay.add(this._stack);
 
         this._noResults = new EmptyResultsBox(false);
         this._stack.add(this._noResults);
@@ -146,10 +152,11 @@ const ListsView = Lang.Class({
 
         /* Add selectionToolbar. */
         this.selectionToolbar = new Selection.SelectionToolbar();
-        this.add_overlay(this.selectionToolbar);
+        this._overlay.add_overlay(this.selectionToolbar);
 
         /* Show everything but the overlays */
         this._stack.show_all();
+        this._overlay.show();
         this.show();
     },
 
@@ -167,6 +174,10 @@ const ListsView = Lang.Class({
 
     showLoading: function() {
         this._showSpinnerBoxDelayed();
+    },
+
+    handleEvent: function(event) {
+        this._searchbar.handleEvent(event);
     },
 
     _showSpinnerBoxDelayed: function(delay) {
@@ -202,5 +213,194 @@ const SpinnerBox = Lang.Class({
         this.add(this._grid);
 
         this.show_all();
+    }
+});
+
+const _SEARCH_ENTRY_TIMEOUT = 200;
+
+const Searchbar = new Lang.Class({
+    Name: 'Searchbar',
+    Extends: Gd.Revealer,
+
+    _init: function(actionGroup) {
+        this.parent();
+
+        this._actionGroup = actionGroup;
+
+        this._searchEntryTimeout = 0;
+        this._searchTypeId = 0;
+        this._searchMatchId = 0;
+        this.searchChangeBlocked = false;
+
+        this._in = false;
+
+        let toolbar = new Gtk.Toolbar();
+        toolbar.get_style_context().add_class(Gtk.STYLE_CLASS_PRIMARY_TOOLBAR);
+        this.add(toolbar);
+
+        // subclasses will create this._searchEntry and this._searchContainer
+        // GtkWidgets
+        this.createSearchWidgets();
+
+        let item = new Gtk.ToolItem();
+        item.set_expand(true);
+        item.add(this._searchContainer);
+        toolbar.insert(item, 0);
+
+        this._searchEntry.connect('key-press-event', Lang.bind(this,
+            function(widget, event) {
+                let keyval = event.get_keyval()[1];
+
+                if (keyval == Gdk.KEY_Escape) {
+                    actionGroup.change_action_state('search', GLib.Variant.new('b', false));
+                    return true;
+                }
+
+                return false;
+            }));
+
+        this._searchEntry.connect('changed', Lang.bind(this,
+            function() {
+                if (this._searchEntryTimeout != 0) {
+                    Mainloop.source_remove(this._searchEntryTimeout);
+                    this._searchEntryTimeout = 0;
+                }
+
+                if (this.searchChangeBlocked)
+                    return;
+
+                this._searchEntryTimeout = Mainloop.timeout_add(_SEARCH_ENTRY_TIMEOUT, Lang.bind(this,
+                    function() {
+                        this._searchEntryTimeout = 0;
+                        this.entryChanged();
+                    }));
+            }));
+
+        // connect to the search action state for visibility
+        let searchStateId = actionGroup.connect('action-state-changed::search',
+            Lang.bind(this, this._onActionStateChanged));
+        
+        this.show_all();
+    },
+
+    _onActionStateChanged: function(source, actionName, state) {
+        if (state.get_boolean())
+            this._show();
+        else
+            this._hide();
+    },
+
+    createSearchWidgets: function() {
+        log('Error: Searchbar implementations must override createSearchWidgets');
+    },
+
+    entryChanged: function() {
+        log('Error: Searchbar implementations must override entryChanged');
+    },
+
+    _isKeynavEvent: function(event) {
+        let keyval = event.get_keyval()[1];
+        let state = event.get_state()[1];
+
+        if (keyval == Gdk.KEY_Tab ||
+            keyval == Gdk.KEY_KP_Tab ||
+            keyval == Gdk.KEY_Up ||
+            keyval == Gdk.KEY_KP_Up ||
+            keyval == Gdk.KEY_Up ||
+            keyval == Gdk.KEY_Down ||
+            keyval == Gdk.KEY_KP_Down ||
+            keyval == Gdk.KEY_Left ||
+            keyval == Gdk.KEY_KP_Left ||
+            keyval == Gdk.KEY_Right ||
+            keyval == Gdk.KEY_KP_Right ||
+            keyval == Gdk.KEY_Home ||
+            keyval == Gdk.KEY_KP_Home ||
+            keyval == Gdk.KEY_End ||
+            keyval == Gdk.KEY_KP_End ||
+            keyval == Gdk.KEY_Page_Up ||
+            keyval == Gdk.KEY_KP_Page_Up ||
+            keyval == Gdk.KEY_Page_Down ||
+            keyval == Gdk.KEY_KP_Page_Down ||
+            (state & (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.MOD1_MASK) != 0))
+            return true;
+
+        return false;
+    },
+
+    _isSpaceEvent: function(event) {
+        let keyval = event.get_keyval()[1];
+        return (keyval == Gdk.KEY_space);
+    },
+
+    handleEvent: function(event) {
+        if (this._in)
+            return false;
+
+        if (this._isKeynavEvent(event))
+            return false;
+
+        if (this._isSpaceEvent(event))
+            return false;
+
+        if (!this._searchEntry.get_realized())
+            this._searchEntry.realize();
+
+        let handled = false;
+
+        let preeditChanged = false;
+        let preeditChangedId =
+            this._searchEntry.connect('preedit-changed', Lang.bind(this,
+                function() {
+                    preeditChanged = true;
+                }));
+
+        let oldText = this._searchEntry.get_text();
+        let res = this._searchEntry.event(event);
+        let newText = this._searchEntry.get_text();
+
+        this._searchEntry.disconnect(preeditChangedId);
+
+        if (((res && (newText != oldText)) || preeditChanged)) {
+            handled = true;
+
+            if (!this._in)
+                this._actionGroup.change_action_state('search', GLib.Variant.new('b', true));
+        }
+
+        return handled;
+    },
+
+    _show: function() {
+        let eventDevice = Gtk.get_current_event_device();
+        this.set_reveal_child(true);
+        this._in = true;
+
+        if (eventDevice)
+            Gd.entry_focus_hack(this._searchEntry, eventDevice);
+    },
+
+    _hide: function() {
+        this._in = false;
+        this.set_reveal_child(false);
+        // clear all the search properties when hiding the entry
+        this._searchEntry.set_text('');
+    }
+});
+
+const ListsSearchbar = new Lang.Class({
+    Name: 'ListsSearchbar',
+    Extends: Searchbar,
+
+    _init: function(actionGroup) {
+        this.parent(actionGroup);
+    },
+
+    createSearchWidgets: function() {
+        this._searchEntry = new Gtk.SearchEntry({ width_request: 500 });
+        this._searchContainer = new Gtk.Box({ halign: Gtk.Align.CENTER });
+        this._searchContainer.add(this._searchEntry);
+    },
+
+    entryChanged: function() {
     }
 });

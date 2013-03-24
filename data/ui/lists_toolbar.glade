@@ -105,7 +105,7 @@
           </packing>
         </child>
         <child>
-          <object class="GdHeaderSimpleButton" id="search-button">
+          <object class="GdHeaderToggleButton" id="search-button">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="symbolic-icon-name">edit-find-symbolic</property>

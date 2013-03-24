@@ -71,6 +71,66 @@ function generateID(type) {
     return type + '-' + randomCharacters.join('');
 }
 
+function createActions(self, actionEntries) {
+    let actions = {};
+    actionEntries.forEach(function(entry) {
+        let action;
+
+        if (entry.state)
+            action = Gio.SimpleAction.new_stateful(entry.name, null, entry.state);
+        else
+            action = Gio.SimpleAction.new(entry.name, null);
+
+        if (entry.callback)
+            action.connect('activate', Lang.bind(self, entry.callback));
+
+        if (entry.hasOwnProperty('enabled'))
+            action.enabled = entry.enabled;
+
+        actions[entry.name] = action;
+    });
+
+    return actions;
+}
+
+function addActions(actionMap, actions) {
+    for (let i in actions) {
+        actionMap.add_action(actions[i]);
+    }
+}
+
+function removeActions(actionMap, actions) {
+    for (let i in actions) {
+        actionMap.remove_action(actions[i].name);
+    }
+}
+
+Gtk.Widget.prototype.connectSensitiveToAction = function(actionGroup, actionName) {
+    this.sensitive = actionGroup.get_action_enabled(actionName);
+
+    actionGroup.connect('action-enabled-changed::' + actionName,
+        Lang.bind(this, function(actionGroup, actionName, enabled) {
+            this.sensitive = enabled;
+        }));
+}
+
+Gtk.Button.prototype.connectClickedToAction = function(actionGroup, actionName) {
+    this.connect('clicked', Lang.bind(this, function(button) {
+        actionGroup.activate_action(actionName, null);
+    }));
+}
+
+Gtk.Button.prototype.connectToggledToAction = function(actionGroup, actionName) {
+    this.connect('toggled', Lang.bind(this, function(button) {
+        actionGroup.change_action_state('search', GLib.Variant.new('b', button.active));
+    }));
+
+    actionGroup.connect('action-state-changed::' + actionName,
+        Lang.bind(this, function(actionGroup, actionName, state) {
+            this.active = state.get_boolean();
+        }));
+}
+
 const BaseManager = new Lang.Class({
     Name: 'BaseManager',
 

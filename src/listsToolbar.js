@@ -40,20 +40,23 @@ const ListsToolbar = new Lang.Class({
     Name: 'ListsToolbar',
     Extends: Gtk.Bin,
 
-    _init: function(params) {
+    _init: function(actionGroup) {
         this.parent();
+
+        this._actionGroup = actionGroup;
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/lists_toolbar.glade');
         this._notebook = builder.get_object('notebook');
         this.add(this._notebook);
 
-        this._newButton = builder.get_object('new-button');
-        this._newButton.connect('clicked',
-            Lang.bind(this, this._newButtonClicked));
+        let newButton = builder.get_object('new-button');
+        newButton.connectSensitiveToAction(actionGroup, 'new-list');
+        newButton.connectClickedToAction(actionGroup, 'new-list');
 
         // Selection button
         let selectButton = builder.get_object('select-button');
+        selectButton.connectSensitiveToAction(actionGroup, 'selection');
         selectButton.connect('clicked',
             Lang.bind(this, this._selectButtonClicked));
         
@@ -61,6 +64,10 @@ const ListsToolbar = new Lang.Class({
         let doneButton = builder.get_object('done-button');
         doneButton.connect('clicked',
             Lang.bind(this, this._doneButtonClicked));
+
+        actionGroup.connect('action-state-changed::selection',
+            Lang.bind(this, this._selectionStateChanged));
+
 
         this._listsButton = builder.get_object('lists-button');
         this._listsButton.connect('toggled',
@@ -74,6 +81,10 @@ const ListsToolbar = new Lang.Class({
         this._scheduledButton.connect('toggled',
             Lang.bind(this, this._scheduledButtonToggled));
 
+        let searchButton = builder.get_object('search-button');
+        searchButton.connectSensitiveToAction(actionGroup, 'search');
+        searchButton.connectToggledToAction(actionGroup, 'search');
+        
         this.show_all();
     },
 
@@ -88,11 +99,11 @@ const ListsToolbar = new Lang.Class({
     },
 
     _selectButtonClicked: function(selectButton) {
-        this.emit('selection-mode-toggled', true);
+        this._actionGroup.change_action_state('selection',  GLib.Variant.new('b', true));
     },
 
     _doneButtonClicked: function(doneButton) {
-        this.emit('selection-mode-toggled', false);
+        this._actionGroup.change_action_state('selection',  GLib.Variant.new('b', false));
     },
 
     _listsButtonToggled: function(listsButton) {
@@ -110,25 +121,15 @@ const ListsToolbar = new Lang.Class({
             return;
     },
 
-    _newButtonClicked: function(newButton) {
-        this.emit('new-button-clicked');
-    },
-
-    setSelectionMode: function(active) {
-        if (active) {
+    _selectionStateChanged: function(actionGroup, actionName, state) {
+        if (state.get_boolean())
             this._notebook.set_current_page(_SELECTION_PAGE);
-        }
-        else {
+        else
             this._notebook.set_current_page(_MAIN_PAGE);
-        }
     },
     
     setToolbar: function(toolbar) {
         this._toolbar = toolbar;
-    },
-    
-    setNewButtonSensitive: function(sensitive) {
-        this._newButton.sensitive = sensitive;
     }
 });
 

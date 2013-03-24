@@ -47,6 +47,13 @@ const Controller = new Lang.Class({
     },
 
     shutdown: function() {
+    },
+
+    onCancel: function() {
+    },
+
+    keyPressEvent: function(event) {
+        return false;
     }
 });
 
@@ -59,8 +66,7 @@ const MainController = new Lang.Class({
         this._controllerStack = [];
         this._currentController = null;
 
-        mainWindow.connect('key-release-event',
-            Lang.bind(this, this._keyReleaseEvent));
+        mainWindow.connect_after('key-press-event', Lang.bind(this, this._keyPressEvent));
     },
 
     pushController: function(controller)
@@ -99,16 +105,19 @@ const MainController = new Lang.Class({
             this._controllerStack[i].shutdown();
     },
     
-    _keyReleaseEvent: function(mainWindow, event)
+    _keyPressEvent: function(mainWindow, event)
     {
+        if (!this._currentController)
+            return false;
+
         let [res, keyval] = event.get_keyval();
         
         if (keyval == Gdk.KEY_Escape) {
-            if (this._currentController.onCancel)
+            if (this._currentController)
                 this._currentController.onCancel();
             return true;
         }
 
-        return false;
+        return this._currentController.keyPressEvent(event);
     }
 });
