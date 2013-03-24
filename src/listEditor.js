@@ -1,25 +1,27 @@
 /*
- * Copyright (c) 2012 Carl-Anton Ingmarsson
+ * Copyright (c) 2013 Carl-Anton Ingmarsson <carlantoni@gnome.org>
  *
- * Gnome Todo is free software; you can redistribute it and/or modify
+ * Gnome To Do is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by the
  * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
- * Gnome Documents is distributed in the hope that it will be useful, but
+ * Gnome To Do is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * for more details.
  *
  * You should have received a copy of the GNU General Public License along
- * with Gnome Documents; if not, write to the Free Software Foundation,
+ * with Gnome To Do; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Author: Carl-Anton Ingmarsson <carlantoni@gnome.org>
+ *
  */
 
 const EggListBox = imports.gi.EggListBox;
 const GObject = imports.gi.GObject;
+const GdPrivate = imports.gi.GdPrivate;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
@@ -42,17 +44,14 @@ const ListEditorController = new Lang.Class({
 
         this._list = list;
 
+        this._initActions();
+
         this._toolbar = new ListEditorToolbar(list.title);
         this._toolbar.connect('back-button-clicked',
             Lang.bind(this, this._backButtonClicked));
 
         let source = Global.sourceManager.getItemById(list.source.id);
-        this._view = new ListEditorView(source, list);
-
-        this._view.connect('save',
-            Lang.bind(this, this._listEditorSave));
-        this._view.connect('delete',
-            Lang.bind(this, this._listEditorDelete));
+        this._view = new ListEditorView(source, list, this.window, this._actions);
 
         list.forEachItem(Lang.bind(this, function(task) {
             this._view.addItem(task);
@@ -61,12 +60,30 @@ const ListEditorController = new Lang.Class({
             Lang.bind(this, this._taskRemoved));
     },
 
+    _initActions: function() {
+        let actionEntries = [
+            {
+                name: 'save',
+                callback: this._save,
+                enabled: false
+            },
+            {
+                name: 'delete',
+                callback: this._delete,
+                enabled: true
+            }];
+
+        this._actions = Utils.createActions(this, actionEntries);
+    },
+
     activate: function() {
         this.window.setToolbarWidget(this._toolbar);
+        Utils.addActions(this.window, this._actions);
     },
 
     deactivate: function() {
         this.window.setToolbarWidget(null);
+        Utils.removeActions(this.window, this._actions);
     },
 
     getView: function() {
@@ -87,36 +104,35 @@ const ListEditorController = new Lang.Class({
             this._view.removeItem(item);
     },
 
-    _listEditorSave: function(view, listItem) {
-
+    _save: function(saveAction, parameter) {
+        let listItem = this._view.activeItem;
         // Create a new task if the listItem doesn't have a task yet.
-        if (!listItem.task) {
-            this._list.createTask(listItem.title, listItem.completed, null, null,
-                Lang.bind(this, function(error, task) {
-                    if (error) {
-                        let notification = new Gtk.Label({ label: error.message });
-                        Global.notificationManager.addNotification(notification);
-                        return;
-                    }
-
-                    listItem.setTask(task);
-                }));
+        if (!listItem.getTask()) {
+            let task = this._list.createTask(listItem.title,
+                listItem.completedDate, null, null);
+            listItem.setTask(task);
         }
         // Update the task otherwise
         else {
-            //TODO: Implement!!!
+            let task = listItem.getTask();
+
+            if (listItem.titleModified)
+                task.title = listItem.title;
+            if (listItem.completedDateModified)
+                task.completedDate = listItem.completedDate;
+
+            listItem.setTask(task);
         }
     },
 
-    _listEditorDelete: function(view, listItem) {
-        let task = listItem.task;
+    _delete: function(deleteAction, parameter) {
+        let listItem = this._view.activeItem;
+        let task = listItem.getTask();
 
-        this._list.deleteTask(task.id, Lang.bind(this, function(error) {
-            if (error) {
-                let notification = new Gtk.Label({ label: error.message });
-                Global.notificationManager.addNotification(notification);
-            }
-        }));
+        if (task)
+            this._list.deleteTask(task.id);
+        else
+            this._view.removeItem(listItem);
     }
 });
 
@@ -124,32 +140,26 @@ const ListEditorView = new Lang.Class({
     Name: 'ListEditorView',
     Extends: Gtk.Paned,
 
-    Signals: { 'save': { param_types: [ GObject.TYPE_OBJECT ] },
-        'delete': { param_types: [GObject.TYPE_OBJECT ] },
-    },
-
-    _init: function(source, list) {
+    _init: function(source, list, actionGroup, actions) {
         this.parent({ orientation: Gtk.Orientation.HORIZONTAL });
 
         this._source = source;
         this._list = list;
+        this._actionGroup = actionGroup;
+        this._actions = actions;
 
-        this.show();
-        
+        this._activatedItem = null;
+
         this.listBox = new EggListBox.ListBox();
         this.listBox.show();
         this.pack1(this.listBox, true, false);
 
-        this.taskEditor = new TaskEditor(source);
+        this.taskEditor = new TaskEditor(source, actionGroup);
         this.pack2(this.taskEditor, false, false);
         this.taskEditor.hide();
 
         this.taskEditor.connect('cancelled',
             Lang.bind(this, this._taskEditorCancelled));
-        this.taskEditor.connect('save',
-            Lang.bind(this, this._taskEditorSave));
-        this.taskEditor.connect('delete',
-            Lang.bind(this, this._taskEditorDelete));
 
         this.listBox.set_sort_func(
             Lang.bind(this, this._listBoxSortFunc));
@@ -160,19 +170,25 @@ const ListEditorView = new Lang.Class({
             Lang.bind(this, this._childActivated));
 
         this.listBox.add(new NewListItem());
+
+        this.show();
+    },
+
+    get activeItem() {
+        return this._activatedItem;
     },
 
     addItem: function(task) {
         let listItem = new ListItem(this._list.id, this, task);
         this.listBox.add(listItem);
 
-        listItem.connect('notify::titleModified',
+        listItem.connect('notify::modified',
             Lang.bind(this, function(item) {
                 if (item != this._activatedItem)
                     return;
 
-                let saveSensitive = item.title && item.titleModified;
-                this.taskEditor.setSaveSensitive(saveSensitive);
+                let saveEnabled = item.title && item.modified;
+                this._actions['save'].enabled = saveEnabled;
             }));
 
         return listItem;
@@ -215,7 +231,7 @@ const ListEditorView = new Lang.Class({
             if (listItem.isNewListItem)
                 continue;
 
-            if (listItem.task && listItem.task.id == task.id)
+            if (listItem.getTask() && listItem.getTask().id == task.id)
                 return listItem;
         }
         return null;
@@ -247,6 +263,9 @@ const ListEditorView = new Lang.Class({
             this._activatedItem.deactivate(this);
 
         this._activatedItem = listItem.activate(this);
+
+        let saveEnabled = this._activatedItem.title && this._activatedItem.modified;
+        this._actions['save'].enabled = saveEnabled;
     },
 
     _taskEditorCancelled: function(taskEditor) {
@@ -257,19 +276,6 @@ const ListEditorView = new Lang.Class({
         /* Set SelectionMode to NONE to unselect the item. */
         this.listBox.set_selection_mode(Gtk.SelectionMode.NONE);
         this.listBox.set_selection_mode(Gtk.SelectionMode.SINGLE);
-    },
-
-    _taskEditorSave: function(taskEditor) {
-        this.emit('save', this._activatedItem);
-    },
-
-    _taskEditorDelete: function(taskEditor) {
-        let listItem = this._activatedItem;
-
-        if (listItem.task)
-            this.emit('delete', listItem);
-        else
-            this.removeItem(listItem);
     }
 });
 
@@ -277,8 +283,8 @@ const ListItem = new Lang.Class({
     Name: 'ListItem',
     Extends: Gtk.Bin,
 
-    Properties: { 'titleModified': GObject.ParamSpec.boolean('titleModified',
-        'TitleModified', 'If the title has been modfied', GObject.ParamFlags.READABLE, false)
+    Properties: { 'modified': GObject.ParamSpec.boolean('modified',
+        'Modified', 'If item has been modified', GObject.ParamFlags.READABLE, false)
     },
 
     _init: function(listID, listEditor, task) {
@@ -286,16 +292,22 @@ const ListItem = new Lang.Class({
 
         this.isNewListItem = false;
         this.active = false;
+        this._modified = false;
         this._titleModified = false;
+        this._completedModified = false;
         this._listID = listID;
         this._listEditor = listEditor;
-        this.task = task;
+
+        this._completedDate = null;
+        this._task = null;
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/list_item.glade');
         this.add(builder.get_object('grid'));
 
         this._doneCheck = builder.get_object('done_check');
+        this._doneCheck.connect('toggled', Lang.bind(this, this._doneCheckToggled));
+
         this._titleNotebook = builder.get_object('title_notebook');
         this._titleLabel =  builder.get_object('title_label');
 
@@ -310,16 +322,22 @@ const ListItem = new Lang.Class({
     },
 
     setTask: function(task) {
-        this.task = task;
+        this._task = task;
 
-        this._doneCheck.active = task.completed;
+        this._doneCheck.active = task.completedDate ? true : false;
+        this._completedDate = task.completedDate;
+        this._completedDateChanged();
+
         this._titleLabel.label = task.title;
         this._titleEntry.text = task.title;
-        // titleModified may change even if the text of the entry haven't changed.
         this._titleEntryChanged(this._titleEntry);
 
         if (this.active)
-            this._listEditor.taskEditor.setTask(this.task, this._listID);
+            this._listEditor.taskEditor.setTask(this._task, this._listID);
+    },
+
+    getTask: function() {
+        return this._task;
     },
     
     activate: function(listEditor) {
@@ -327,7 +345,7 @@ const ListItem = new Lang.Class({
 
         this._titleNotebook.set_current_page(1);
 
-        listEditor.taskEditor.setTask(this.task, this._listID);
+        listEditor.taskEditor.setTask(this._task, this._listID);
         listEditor.taskEditor.show();
 
         listEditor.listBox.select_child(this);
@@ -343,35 +361,85 @@ const ListItem = new Lang.Class({
         listEditor.taskEditor.hide();
     },
 
+    get modified() {
+        return this._modified;
+    },
+
     get titleModified() {
         return this._titleModified;
     },
 
-    get title() {
-        if (this._titleEntry)
-            return this._titleEntry.text;
-        return null;
+    get completedDateModified() {
+        return this._completedModified;
     },
 
-    get completed() {
-        if (this._doneCheck)
-            return this._doneCheck.active;
-        return false;
+    get title() {
+        if (!this._titleEntry)
+            return null;
+
+        return this._titleEntry.text;
+    },
+
+    get completedDate() {
+        if (!this._doneCheck)
+            return null;
+
+        if (!this._doneCheck.active)
+            return null;
+
+        if (this._task && this._task.completedDate)
+            return this._task.completedDate;
+        else
+            return this._completedDate;
     },
 
     _titleEntryChanged: function(entry) {
 
         this._titleLabel.label = entry.text;
 
-        let titleModified = this._titleModified;
-
-        if (this.task)
-            this._titleModified = (entry.text != this.task.title);
+        let titleModified;
+        if (this._task)
+            titleModified = (entry.text != this._task.title);
         else
-            this._titleModified = !!entry.text;
+            titleModified = true;
 
-        if (this._titleModified != titleModified)
-            this.notify('titleModified');
+        if (titleModified !== this._titleModified) {
+            this._titleModified = titleModified;
+            this._checkModified();
+        }
+    },
+
+    _doneCheckToggled: function(doneCheck) {
+        if (doneCheck.active) {
+            let taskCompletedDate = this._task ? this._task.completedDate : null;
+            if (taskCompletedDate)
+                this._completedDate = taskCompletedDate;
+            else
+                this._completedDate = GLib.DateTime.new_now_utc();
+        }
+        else
+            this._completedDate = null;
+
+        this._completedDateChanged();
+    },
+
+    _completedDateChanged: function() {
+        let taskCompletedDate = this._task ? this._task.completedDate : null;
+
+        let modified = !GdPrivate.date_time_equal(this._completedDate, taskCompletedDate);
+        if (modified != this._completedModifed) {
+            this._completedModified = modified;
+            this._checkModified();
+        }
+    },
+
+    _checkModified: function() {
+        let modified = this._titleModified || this._completedModified;
+
+        if (modified != this._modified) {
+            this._modified = modified;
+            this.notify('modified');
+        }
     }
 });
 
@@ -409,12 +477,10 @@ const TaskEditor = new Lang.Class({
     Extends: Gtk.Bin,
 
     Signals: {
-        'cancelled': {},
-        'save': {},
-        'delete': {}
+        'cancelled': {}
     },
 
-    _init: function(source) {
+    _init: function(source, actionGroup) {
         this.parent();
 
         let builder = new Gtk.Builder();
@@ -432,19 +498,16 @@ const TaskEditor = new Lang.Class({
         dueDatePlaceholder.add(this._dueDatePicker);
 
         let deleteButton = builder.get_object('delete_button');
-        deleteButton.connect('clicked', Lang.bind(this, function(button) {
-            this.emit('delete');
-        }));
+        deleteButton.connectClickedToAction(actionGroup, 'delete');
 
         let cancelButton = builder.get_object('cancel_button');
         cancelButton.connect('clicked', Lang.bind(this, function(button) {
             this.emit('cancelled');
         }));
 
-        this._saveButton = builder.get_object('save_button');
-        this._saveButton.connect('clicked', Lang.bind(this, function(button) {
-            this.emit('save');
-        }));
+        let saveButton = builder.get_object('save_button');
+        saveButton.connectSensitiveToAction(actionGroup, 'save');
+        saveButton.connectClickedToAction(actionGroup, 'save');
 
         this._setSource(source);
     },
@@ -462,10 +525,6 @@ const TaskEditor = new Lang.Class({
 
         let iter = this._getIterFromListID(listID);
         this._listCombo.set_active_iter(iter);
-    },
-
-    setSaveSensitive: function(sensitive) {
-        this._saveButton.set_sensitive(sensitive);
     },
 
     _setSource: function(source) {

@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 2012 Carl-Anton Ingmarsson
+ * Copyright (c) 2013 Carl-Anton Ingmarsson <carlantoni@gnome.org>
  *
- * Gnome Documents is free software; you can redistribute it and/or modify
+ * Gnome To Do is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by the
  * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
- * Gnome Documents is distributed in the hope that it will be useful, but
+ * Gnome To Do is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * for more details.
  *
  * You should have received a copy of the GNU General Public License along
- * with Gnome Documents; if not, write to the Free Software Foundation,
+ * with Gnome To Do; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Author: Carl-Anton Ingmarsson <carlantoni@gnome.org>
@@ -393,6 +393,12 @@ const ListsSearchbar = new Lang.Class({
 
     _init: function(actionGroup) {
         this.parent(actionGroup);
+
+        this._searchString = '';
+    },
+
+    get searchString() {
+        return this._searchString;
     },
 
     createSearchWidgets: function() {
@@ -402,5 +408,8 @@ const ListsSearchbar = new Lang.Class({
     },
 
     entryChanged: function() {
+        if (this._searchEntry.text !== this._searchString) {
+            this._searchString = this._searchEntry.text;
+        }
     }
 });

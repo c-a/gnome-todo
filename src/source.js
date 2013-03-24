@@ -1,24 +1,25 @@
 /*
  * Copyright (c) 2013 Carl-Anton Ingmarsson <carlantoni@gnome.org>
  *
- * Gnome Documents is free software; you can redistribute it and/or modify
+ * Gnome To Do is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by the
  * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
- * Gnome Documents is distributed in the hope that it will be useful, but
+ * Gnome To Do is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * for more details.
  *
  * You should have received a copy of the GNU General Public License along
- * with Gnome Documents; if not, write to the Free Software Foundation,
+ * with Gnome To Do; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Author: Carl-Anton Ingmarsson <carlantoni@gnome.org>
  *
  */
 
+const GdPrivate = imports.gi.GdPrivate;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 
@@ -249,7 +250,7 @@ const TaskList = new Lang.Class({
         this.id = object.id;
         this._title = object.title;
 
-        for (let i = 0; i < object.tasks; i++) {
+        for (let i in object.tasks) {
             let task = this._newTask();
             task.deserialize(object.tasks[i]);
             this.addItem(task);
@@ -263,6 +264,7 @@ const TaskList = new Lang.Class({
             completedDate: completedDate, dueDate: dueDate, note: note });
 
         this.addItem(task);
+        return task;
     },
 
     deleteTask: function(id) {
@@ -343,7 +345,7 @@ const Task = new Lang.Class({
     },
 
     set completedDate(completedDate) {
-        if (this._completedDate.equal(completedDate))
+        if (GdPrivate.date_time_equal(this._completedDate, completedDate))
             return;
 
         this._completedDate = completedDate;
@@ -355,7 +357,7 @@ const Task = new Lang.Class({
     },
 
     set dueDate(dueDate) {
-        if (this._dueDate.equal(dueDate))
+        if (GdPrivate.date_time_equal(this._dueDate, dueDate))
             return;
 
         this._dueDate = dueDate;
@@ -398,7 +400,7 @@ const Task = new Lang.Class({
         if (object.due)
             this._dueDate = Utils.dateTimeFromISO8601(object.due);
 
-        this._deserialize();
+        this._deserialize(object);
     },
 
     _updated: function(property) {
