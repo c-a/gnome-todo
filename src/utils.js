@@ -47,6 +47,9 @@ function loadCssProviderFromResource(path)
 }
 
 function dateTimeFromISO8601(string) {
+    if (!string)
+        return null;
+
     let [res, timeval] = GLib.TimeVal.from_iso8601(string);
     if (!res)
         return null;

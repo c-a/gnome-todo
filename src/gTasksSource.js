@@ -396,7 +396,12 @@ const GTasksSyncer = new Lang.Class({
         if (!task.gTasksID)
             return;
 
-        // TODO: Patch the task 
+        this._patchTask(task);
+    },
+
+    _patchTask: function(task) {
+
+        let patchObject = task.getPatchObject();
     }
 });
 Signals.addSignalMethods(GTasksSyncer.prototype)
@@ -583,5 +588,23 @@ const GTasksTask = new Lang.Class({
 
     get gTasksID() {
         return this._taskObject ? this._taskObject.id : null;
+    },
+
+    getPatchObject: function() {
+        let patchObject = {};
+
+        if (this._title !== this._taskObject.title)
+            patchObject.title = this._title;
+
+        if (this._notes !== this._taskObject.notes)
+            patchObject.note = this._note;
+
+        if (!GdPrivate.date_time_equal(this._dueDate,
+            Utils.dateTimeFromISO8601(this._taskObject.updated)))
+            patchObject.dueDate = this._dueDate ? this._dueDate.toISO8601() : null;
+
+        if (!GdPrivate.date_time_equal(this._completedDate,
+            Utils.dateTimeFromISO8601(this._taskObject.completed)))
+            patchObject.completedDate = this._completedDate ? this._completedDate.toISO8601() : null;
     }
 });

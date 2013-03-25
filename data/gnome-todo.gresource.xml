@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/org/gnome/todo">
+    <file>gnome-todo.css</file>
+    <file>thumbnail-frame.png</file>
     <file>ui/app-menu.ui</file>
     <file>ui/lists_toolbar.glade</file>
     <file>ui/list_item.glade</file>
@@ -11,6 +13,5 @@
     <file>ui/task_editor.glade</file>
     <file>ui/new_list_dialog.glade</file>
     <file>ui/new_list_item.glade</file>
-    <file>gnome-todo.css</file>
   </gresource>
 </gresources>
