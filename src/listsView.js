@@ -19,10 +19,11 @@
  *
  */
 
+const GLib = imports.gi.GLib;
+const GObject = imports.gi.GObject;
 const Gd = imports.gi.Gd;
 const Gdk = imports.gi.Gdk;
 const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 
 const _ = imports.gettext.gettext;
@@ -127,8 +128,8 @@ const ListsView = new Lang.Class({
 
         this._delayedShowId = 0;
 
-        this._searchbar = new ListsSearchbar(actionGroup);
-        this.add(this._searchbar);
+        this.searchbar = new ListsSearchbar(actionGroup);
+        this.add(this.searchbar);
 
         this._overlay = new Gtk.Overlay();
         this.add(this._overlay);
@@ -177,7 +178,7 @@ const ListsView = new Lang.Class({
     },
 
     handleEvent: function(event) {
-        this._searchbar.handleEvent(event);
+        this.searchbar.handleEvent(event);
     },
 
     _showSpinnerBoxDelayed: function(delay) {
@@ -391,6 +392,10 @@ const ListsSearchbar = new Lang.Class({
     Name: 'ListsSearchbar',
     Extends: Searchbar,
 
+    Properties: { 'searchString': GObject.ParamSpec.string('searchString',
+        'SearchString', 'The current search string', GObject.ParamFlags.READABLE, '')
+    },
+    
     _init: function(actionGroup) {
         this.parent(actionGroup);
 
@@ -410,6 +415,7 @@ const ListsSearchbar = new Lang.Class({
     entryChanged: function() {
         if (this._searchEntry.text !== this._searchString) {
             this._searchString = this._searchEntry.text;
+            this.notify('searchString');
         }
     }
 });

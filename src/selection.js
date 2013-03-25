@@ -101,7 +101,7 @@ const SelectionController = new Lang.Class({
         for (let i = 0; i < selection.length; i++)
         {
             let path = selection[i];
-            let list = this._mainView.get_model().getListFromPath(path);
+            let list = this._listsController.getListFromPath(path);
             lists.push(list);
         }
 
@@ -121,7 +121,7 @@ const SelectionController = new Lang.Class({
         if (selection.length != 1)
             return;
 
-        let list = this._mainView.get_model().getListFromPath(selection[0]);
+        let list = this._listsController.getListFromPath(selection[0]);
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/rename_list_dialog.glade');

@@ -20,6 +20,7 @@
  */
 
 const GLib = imports.gi.GLib;
+const Gd = imports.gi.Gd;
 const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
@@ -52,9 +53,13 @@ const ListsController = new Lang.Class({
         this._toolbar = new ListsToolbar.ListsToolbar(this.window);
 
         this._model = new ListsModel.ListsModel();
+
         this._listsView.mainView.set_model(this._model);
         this._model.connect('row-inserted', Lang.bind(this, this._updateContentView));
         this._model.connect('row-deleted', Lang.bind(this, this._updateContentView));
+
+        this._listsView.searchbar.connect('notify::searchString',
+                                          Lang.bind(this, this._searchStringNotify));
 
         this._outstandingLoads = 0;
         this._outstandingSyncs = 0;
@@ -118,6 +123,22 @@ const ListsController = new Lang.Class({
         Global.sourceManager.forEachItem(Lang.bind(this, function(source) {
             source.save();
         }));
+    },
+
+    onCancel: function() {
+        if (this.window.get_action_state('search').get_boolean())
+            this.window.change_action_state('search', GLib.Variant.new('b', false));
+
+        else if (this.window.get_action_state('selection').get_boolean())
+            this.window.change_action_state('selection', GLib.Variant.new('b', false));
+    },
+
+    keyPressEvent: function(event) {
+        return this._listsView.handleEvent(event);
+    },
+
+    getListFromPath: function(path) {
+        return this._model.getListFromPath(path);
     },
 
     _sourceAdded: function(manager, source) {
@@ -241,20 +262,16 @@ const ListsController = new Lang.Class({
     },
 
     _itemActivated: function(mainView, id, path) {
-        let list = this._model.getListFromPath(path);
+        let list = this.getListFromPath(path);
         let listEditor = new ListEditor.ListEditorController(this.mainController, list);
         this.mainController.pushController(listEditor);
     },
 
-    onCancel: function() {
-        if (this.window.get_action_state('search').get_boolean())
-            this.window.change_action_state('search', GLib.Variant.new('b', false));
+    _searchStringNotify: function(searchbar) {
+        let filterRegex = null;
+        if (searchbar.searchString)
+            filterRegex = new RegExp('.*' + searchbar.searchString + '.*', 'i');
 
-        else if (this.window.get_action_state('selection').get_boolean())
-            this.window.change_action_state('selection', GLib.Variant.new('b', false));
-    },
-
-    keyPressEvent: function(event) {
-        return this._listsView.handleEvent(event);
-    },
+        this._model.setFilterRegex(filterRegex);
+    }
 });

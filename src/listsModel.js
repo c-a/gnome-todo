@@ -53,6 +53,8 @@ const ListsModel = new Lang.Class({
 
         this._sourceSignals = {};
         this._lists = {};
+        this._filteredLists = {};
+        this._filterRegex = null;
     },
 
     addSource: function(source)
@@ -94,28 +96,90 @@ const ListsModel = new Lang.Class({
         return Object.keys(this._lists).length;
     },
 
-    _listAdded: function(source, list)
-    {
+    setFilterRegex: function(filterRegex) {
+        this._filterRegex = filterRegex;
+
+        for (let i in this._filteredLists) {
+            let list = this._filteredLists[i];
+
+            if (this._listVisible(list)) {
+                delete this._filteredLists[i];
+                this._addList(list);
+            }
+        }
+
+        for (let i in this._lists) {
+            let list = this._lists[i];
+
+            if (!this._listVisible(list)) {
+                this._removeList(list);
+                this._filteredLists[list.id] = list;
+            }
+        }
+    },
+
+    _listVisible: function(list) {
+        if (!this._filterRegex)
+            return true;
+
+        return this._filterRegex.exec(list.title);
+    },
+
+    _addList: function(list) {
         this._lists[list.id] = list;
 
         let iter = this.append();
         this._updateModel(list, iter);
     },
 
-    _listChanged: function(source, list)
-    {
+    _updateList: function(list) {
         this._lists[list.id] = list;
 
         let iter = this._getIterFromID(list.id);
         this._updateModel(list, iter);
     },
 
-    _listRemoved: function(source, list)
-    {
+    _removeList: function(list) {
         delete this._lists[list.id];
 
         let iter = this._getIterFromID(list.id);
         this.remove(iter);
+    },
+    
+    _listAdded: function(source, list)
+    {
+        if (this._listVisible(list))
+            this._addList(list);
+        else
+            this._filteredLists[list.id] = list;
+    },
+
+    _listChanged: function(source, list)
+    {
+        // Check the filter again
+        if (this._listVisible(list)) {
+            if (this._filteredLists[list.id]) {
+                delete this._filteredLists[list.id];
+                this._addList(list);
+            }
+            else
+                this._updateList(list);
+        }
+        else {
+            this._filteredLists[list.id] = list;
+
+            if (this._lists[list.id]) {
+                this._removeList(list);
+            }
+        }
+    },
+
+    _listRemoved: function(source, list)
+    {
+        if (this._lists[list.id])
+            this._removeList(list);
+        else
+            delete this._filteredLists[list.id];
     },
 
     _sourceCleared: function(source) {

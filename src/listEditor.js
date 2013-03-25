@@ -182,14 +182,13 @@ const ListEditorView = new Lang.Class({
         let listItem = new ListItem(this._list.id, this, task);
         this.listBox.add(listItem);
 
-        listItem.connect('notify::modified',
-            Lang.bind(this, function(item) {
-                if (item != this._activatedItem)
-                    return;
+        listItem.connect('notify::modified', Lang.bind(this, function(item) {
+            if (item != this._activatedItem)
+                return;
 
-                let saveEnabled = item.title && item.modified;
-                this._actions['save'].enabled = saveEnabled;
-            }));
+            let saveEnabled = item.title && item.modified;
+            this._actions['save'].enabled = saveEnabled;
+        }));
 
         return listItem;
     },
