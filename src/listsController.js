@@ -34,6 +34,7 @@ const ListsToolbar = imports.listsToolbar;
 const MainController = imports.mainController;
 const Selection = imports.selection;
 const Utils = imports.utils;
+const _ = imports.gettext.gettext;
 
 const ListsController = new Lang.Class({
     Name: 'ListsController',
@@ -61,7 +62,6 @@ const ListsController = new Lang.Class({
         this._listsView.searchbar.connect('notify::searchString',
                                           Lang.bind(this, this._searchStringNotify));
 
-        this._outstandingLoads = 0;
         this._outstandingSyncs = 0;
 
         this._listsView.mainView.connect('item-activated',
@@ -112,14 +112,12 @@ const ListsController = new Lang.Class({
     },
 
     sync: function() {
-        // FIXME: Should only sync loaded sources
         Global.sourceManager.forEachItem(Lang.bind(this, function(source) {
             this._syncSource(source);
         }));
     },
 
     shutdown: function() {
-        // FIXME: Should only save loaded sources
         Global.sourceManager.forEachItem(Lang.bind(this, function(source) {
             source.save();
         }));
@@ -142,7 +140,11 @@ const ListsController = new Lang.Class({
     },
 
     _sourceAdded: function(manager, source) {
-        this._loadSource(source);
+        this._model.addSource(source);
+        source.connect('save-error', this._sourceSaveError);
+        this._syncSource(source);
+
+        this._updateContentView();
     },
 
     _sourceRemoved: function(manager, source) {
@@ -151,31 +153,11 @@ const ListsController = new Lang.Class({
     },
 
     _sourceSaveError: function(source, error) {
-        let notification = new Gtk.Label({ label: error.message });
+        let message = _('Unable to save task lists for %s source.').format(source.name);
+        log(message + ' The error was: ' + error.message);
+
+        let notification = new Gtk.Label({ label: message });
         Global.notificationManager.addNotification(notification);
-    },
-
-    _loadSource: function(source) {
-        this._outstandingLoads++;
-        this._updateContentView();
-
-        source.load(Lang.bind(this, function(error) {
-            this._outstandingLoads--;
-
-            if (error) {
-                let notification = new Gtk.Label({ label: error.message });
-                Global.notificationManager.addNotification(notification);
-
-                this._updateContentView();
-                return;
-            }
-
-            this._model.addSource(source);
-            source.connect('save-error', this._sourceSaveError);
-            this._syncSource(source);
-
-            this._updateContentView();
-        }));
     },
 
     _syncSource: function(source) {
@@ -185,7 +167,10 @@ const ListsController = new Lang.Class({
             this._outstandingSyncs--;
 
             if (error) {
-                let notification = new Gtk.Label({ label: error.message });
+                let message = _('Unable to sync %s source').format(source.name);
+                log(message + ' The error was: ' + error.message);
+
+                let notification = new Gtk.Label({ label: message });
                 Global.notificationManager.addNotification(notification);
                 return;
             }
@@ -193,34 +178,24 @@ const ListsController = new Lang.Class({
     },
 
     _updateContentView: function() {
-        if (this._outstandingLoads > 0)
-        {
+        if (Global.sourceManager.getItemsCount() == 0) {
             this._actions['new-list'].enabled = false;
             this._actions['search'].enabled = false;
             this._actions['selection'].enabled = false;
-            this._listsView.showLoading(true);
+            this._listsView.showNoAccounts();
         }
-
         else {
-            if (Global.sourceManager.getItemsCount() == 0) {
-                this._actions['new-list'].enabled = false;
+            this._actions['new-list'].enabled = true;
+
+            if (this._model.getListCount() == 0) {
                 this._actions['search'].enabled = false;
                 this._actions['selection'].enabled = false;
-                this._listsView.showNoAccounts();
+                this._listsView.showNoResults();
             }
             else {
-                this._actions['new-list'].enabled = true;
-
-                if (this._model.getListCount() == 0) {
-                    this._actions['search'].enabled = false;
-                    this._actions['selection'].enabled = false;
-                    this._listsView.showNoResults();
-                }
-                else {
-                    this._actions['search'].enabled = true;
-                    this._actions['selection'].enabled = true;
-                    this._listsView.showMainView();
-                }
+                this._actions['search'].enabled = true;
+                this._actions['selection'].enabled = true;
+                this._listsView.showMainView();
             }
         }
     },

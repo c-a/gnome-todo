@@ -46,7 +46,9 @@ const SourceManager = new Lang.Class({
         }
 
         this._defaultSource = null;
+    },
 
+    loadSources: function() {
         let accounts = this._goaClient.get_accounts();
         for (let i = 0; i < accounts.length; i++)
         {
@@ -58,11 +60,11 @@ const SourceManager = new Lang.Class({
         }
 
         this._goaClient.connect('account-added',
-            Lang.bind(this, this._accountAddedCb));
+                                Lang.bind(this, this._accountAddedCb));
         this._goaClient.connect('account-removed',
-            Lang.bind(this, this._accountRemovedCb));
+                                Lang.bind(this, this._accountRemovedCb));
         this._goaClient.connect('account-changed',
-            Lang.bind(this, this._accountChangedCb));
+                                Lang.bind(this, this._accountChangedCb))
     },
 
     getDefaultSource: function() {
@@ -75,10 +77,16 @@ const SourceManager = new Lang.Class({
 
     _addGTasksSource: function(object) {
         let source = new GTasksSource.GTasksSource(object);
-        this.addItem(source);
+        source.load(Lang.bind(this, function(error) {
+            if (error) {
+                this.emit('load-error', source, error);
+                return;
+            }
 
-        if (!this._defaultSource)
-            this._defaultSource = source;
+            this.addItem(source);
+            if (!this._defaultSource)
+                this._defaultSource = source;
+        }));
     },
 
     _validObject: function(object) {
@@ -121,3 +129,4 @@ const SourceManager = new Lang.Class({
         }
     }
 });
+Signals.addSignalMethods(SourceManager.prototype)

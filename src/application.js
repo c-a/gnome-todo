@@ -95,18 +95,29 @@ const Application = new Lang.Class({
 
         String.prototype.format = Format.format;
 
-        Global.application = this;
-
-        Global.sourceManager = new Sources.SourceManager();
-        Global.notificationManager = new Notifications.NotificationManager();
-
         this._initMenus();
+        
+        Global.application = this;
+        Global.notificationManager = new Notifications.NotificationManager();
+        Global.sourceManager = new Sources.SourceManager();
+        Global.sourceManager.connect('load-error', Lang.bind(this, this._sourceLoadError));
 
         this._mainWindow = new MainWindow.MainWindow(this);
         this._mainController = new MainController.MainController(this._mainWindow);
         // Add the initial controller
         let listsController = new ListsController.ListsController(this._mainController);
         this._mainController.pushController(listsController);
+
+        // Load the sources now when we've setup the UI
+        Global.sourceManager.loadSources();
+    },
+
+    _sourceLoadError: function(sourceManager, source, error) {
+        let message = _('Unable to load %s source.').format(source.name);
+        log(message + ' The error was: ' + error.message);
+
+        let notification = new Gtk.Label({ label: message });
+        Global.notificationManager.addNotification(notification);
     },
 
     vfunc_activate: function() {
