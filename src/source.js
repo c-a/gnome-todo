@@ -200,7 +200,7 @@ const TaskList = new Lang.Class({
     _init: function(source, props) {
         this.parent();
 
-        this.source = source;
+        this._source = source;
         this._updatedDate = GLib.DateTime.new_now_utc();
 
         if (props) {
@@ -210,6 +210,10 @@ const TaskList = new Lang.Class({
         this.connect('item-added', Lang.bind(this, this._tasksChanged));
         this.connect('item-removed', Lang.bind(this, this._tasksChanged));
         this.connect('item-changed', Lang.bind(this, this._tasksChanged));
+    },
+
+    get source() {
+        return this._source;
     },
 
     get updatedDate() {
@@ -259,9 +263,9 @@ const TaskList = new Lang.Class({
         this._deserialize(object);
     },
 
-    createTask: function(title, completedDate, dueDate, note) {
+    createTask: function(title, completedDate, dueDate, notes) {
         let task = this._newTask({ title: title,
-            completedDate: completedDate, dueDate: dueDate, note: note });
+            completedDate: completedDate, dueDate: dueDate, notes: notes });
 
         this.addItem(task);
         return task;
@@ -285,7 +289,7 @@ const TaskList = new Lang.Class({
 
     _tasksChanged: function() {
         this._updatedDate = GLib.DateTime.new_now_utc();
-        this.emit('changed', 'tasks');
+        this.emit('changed', ['tasks']);
     },
 
     // Functions that subclasses should implement
@@ -297,16 +301,18 @@ const TaskList = new Lang.Class({
     },
     
     _newTask: function(props) {
-        return new Task(props);
+        return new Task(this, props);
     }
 });
 
 const Task = new Lang.Class({
     Name: 'Task',
 
-    _init: function(props) {
+    _init: function(list, props) {
         this.parent();
 
+        this._list = list;
+        this._changedProperties = null;
         this._updatedDate = GLib.DateTime.new_now_utc();
 
         if (props) {
@@ -314,7 +320,7 @@ const Task = new Lang.Class({
             this._title = props.title;
             this._completedDate = props.completedDate;
             this._dueDate = props.dueDate;
-            this._note = props.note;
+            this._notes = props.notes;
         }
         else {
             // Initialize optional properties
@@ -322,6 +328,10 @@ const Task = new Lang.Class({
             this._dueDate = null;
             this._notes = null;
         }
+    },
+
+    get list() {
+        return this._list;
     },
 
     get updatedDate() {
@@ -376,6 +386,17 @@ const Task = new Lang.Class({
         this._updated('notes');
     },
 
+    freezeChanged: function() {
+        this._changedProperties = [];
+    },
+
+    thawChanged: function() {
+        if (this._changedProperties.length > 0)
+            this.emit('changed', this._changedProperties);
+
+        this._changedProperties = null;
+    },
+
     serialize: function() {
         let object = {
             kind:  'gnome-todo#task',
@@ -387,6 +408,8 @@ const Task = new Lang.Class({
             object.completed = this._completedDate.toISO8601();
         if (this._due)
             object.due = this._dueDate.toISO8601();
+        if (this._notes)
+            object.notes = this._notes;
 
         this._serialize(object);
         return object;
@@ -399,13 +422,21 @@ const Task = new Lang.Class({
             this._completedDate = Utils.dateTimeFromISO8601(object.completed);
         if (object.due)
             this._dueDate = Utils.dateTimeFromISO8601(object.due);
+        if (object.notes)
+            this._notes = object.notes;
 
         this._deserialize(object);
     },
 
     _updated: function(property) {
         this._updatedDate = GLib.DateTime.new_now_utc();
-        this.emit('changed', [property]);
+
+        // Existance of changedProperties means that change notifications are
+        // frozen.
+        if (this._changedProperties)
+            this._changedProperties.push(property);
+        else
+            this.emit('changed', [property]);
     },
     
     // Functions that subclasses should implement

@@ -109,17 +109,21 @@ const ListEditorController = new Lang.Class({
         // Create a new task if the listItem doesn't have a task yet.
         if (!listItem.getTask()) {
             let task = this._list.createTask(listItem.title,
-                listItem.completedDate, null, null);
+                listItem.completedDate, null, listItem.note);
             listItem.setTask(task);
         }
         // Update the task otherwise
         else {
             let task = listItem.getTask();
 
+            task.freezeChanged();
             if (listItem.titleModified)
                 task.title = listItem.title;
             if (listItem.completedDateModified)
                 task.completedDate = listItem.completedDate;
+            if (listItem.noteModified)
+                task.notes = listItem.note;
+            task.thawChanged();
 
             listItem.setTask(task);
         }
@@ -289,15 +293,18 @@ const ListItem = new Lang.Class({
     _init: function(listID, listEditor, task) {
         this.parent();
 
+        this._listID = listID;
+        this._listEditor = listEditor;
+
         this.isNewListItem = false;
         this.active = false;
         this._modified = false;
         this._titleModified = false;
         this._completedModified = false;
-        this._listID = listID;
-        this._listEditor = listEditor;
+        this._noteModified = false;
 
         this._completedDate = null;
+        this._note = '';
         this._task = null;
 
         let builder = new Gtk.Builder();
@@ -327,24 +334,30 @@ const ListItem = new Lang.Class({
         this._completedDate = task.completedDate;
         this._completedDateChanged();
 
+        this._note = task.notes ? task.notes : '';
+
         this._titleLabel.label = task.title;
         this._titleEntry.text = task.title;
         this._titleEntryChanged(this._titleEntry);
 
         if (this.active)
-            this._listEditor.taskEditor.setTask(this._task, this._listID);
+            this._listEditor.taskEditor.setListItem(this);
     },
 
     getTask: function() {
         return this._task;
     },
-    
+
+    getListID: function() {
+        return this._listID;
+    },
+
     activate: function(listEditor) {
         this.active = true;
 
         this._titleNotebook.set_current_page(1);
 
-        listEditor.taskEditor.setTask(this._task, this._listID);
+        listEditor.taskEditor.setListItem(this);
         listEditor.taskEditor.show();
 
         listEditor.listBox.select_child(this);
@@ -372,6 +385,10 @@ const ListItem = new Lang.Class({
         return this._completedModified;
     },
 
+    get noteModified() {
+        return this._noteModified;
+    },
+
     get title() {
         if (!this._titleEntry)
             return null;
@@ -390,6 +407,27 @@ const ListItem = new Lang.Class({
             return this._task.completedDate;
         else
             return this._completedDate;
+    },
+
+    get note() {
+        return this._note;
+    },
+
+    set note(note) {
+        if (this._note != note) {
+            this._note = note;
+
+            let noteModified;
+            if (this._task)
+                noteModified = (note != this._task.notes);
+            else
+                noteModified = note != '';
+
+            if (noteModified != this._noteModified) {
+                this._noteModified = noteModified;
+                this._checkModified();
+            }
+        }
     },
 
     _titleEntryChanged: function(entry) {
@@ -433,7 +471,10 @@ const ListItem = new Lang.Class({
     },
 
     _checkModified: function() {
-        let modified = this._titleModified || this._completedModified;
+        let modified =
+            this._titleModified ||
+            this._completedModified ||
+            this._noteModified;
 
         if (modified != this._modified) {
             this._modified = modified;
@@ -488,7 +529,9 @@ const TaskEditor = new Lang.Class({
         this.add(this._taskEditor);
         this.show_all();
 
-        this._noteTextBuffer = builder.get_object('note_textbuffer');
+        this._noteBuffer = builder.get_object('note_textbuffer');
+        this._noteBuffer.connect('changed', Lang.bind(this, this._noteBufferChanged));
+
         this._listCombo = builder.get_object('list_combo');
         this._listStore = builder.get_object('list_store');
 
@@ -511,18 +554,16 @@ const TaskEditor = new Lang.Class({
         this._setSource(source);
     },
 
-    setTask: function(task, listID) {
-        this._task = task;
+    setListItem: function(listItem) {
+        this._listItem = listItem;
 
-        if (task && task.notes)
-            this._noteTextBuffer.text = task.notes;
-        else
-            this._noteTextBuffer.text = '';
+        this._noteBuffer.text = listItem.note;
 
+        let task = listItem.getTask();
         let dueDate = task ? task.dueDate : null;
         this._dueDatePicker.setDateTime(dueDate);
 
-        let iter = this._getIterFromListID(listID);
+        let iter = this._getIterFromListID(listItem.getListID());
         this._listCombo.set_active_iter(iter);
     },
 
@@ -565,6 +606,10 @@ const TaskEditor = new Lang.Class({
                 return iter;
         }
         return null;
+    },
+
+    _noteBufferChanged: function(buffer) {
+        this._listItem.note = buffer.text;
     }
 });
 

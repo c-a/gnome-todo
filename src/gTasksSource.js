@@ -255,6 +255,35 @@ const GTasksService = new Lang.Class({
 
         this._deleteTaskCallback(null);
     },
+
+    patchTask: function(listID, taskID, patchTask, callback) {
+        this._authenticate(Lang.bind(this, function(error) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            let body = JSON.stringify(patchTask);
+
+            this._patchTaskCallback = callback;
+            this._service.call_function('PATCH',
+                'lists/' + listID + '/tasks/' + taskID, body, null,
+                Lang.bind(this, this._patchTaskCallCb));
+        }));
+    },
+
+    _patchTaskCallCb: function(service, res) {
+        let taskObject;
+        try {
+            let response = service.call_function_finish(res);
+            taskObject = JSON.parse(response.toArray());
+        } catch (err) {
+            this._patchTaskCallback(err);
+            return;
+        }
+
+        this._patchTaskCallback(null, taskObject);
+    }
 });
 
 const GTasksSyncer = new Lang.Class({
@@ -306,6 +335,10 @@ const GTasksSyncer = new Lang.Class({
         list.connect('item-added', Lang.bind(this, this._taskAdded));
         list.connect('item-removed', Lang.bind(this, this._taskRemoved));
 
+        list.forEachItem(Lang.bind(this, function(task) {
+            this._taskAdded(list, task);
+        }));
+
         if (list.gTasksID)
             return;
 
@@ -316,9 +349,8 @@ const GTasksSyncer = new Lang.Class({
             }
 
             list.setTaskListObject(listObject);
-
             list.forEachItem(Lang.bind(this, function(task) {
-                this._taskAdded(list, task);
+                this._createTask(task);
             }));
         }));
     },
@@ -356,17 +388,20 @@ const GTasksSyncer = new Lang.Class({
 
     _taskAdded: function(list, task) {
         task.connect('changed', Lang.bind(this, this._taskChanged));
+        this._createTask(task);
+    },
 
+    _createTask: function(task) {
         // Only create the task if the parent list is already created
         // and the task is not already created.
-        if (!list.gTasksID || task.gTasksID)
+        if (!task.list.gTasksID || task.gTasksID)
             return;
 
-        this._service.createTask(list.gTasksID,
+        this._service.createTask(task.list.gTasksID,
             task.title,
             task.completedDate ? task.completedDate.toISO8601() : null,
             task.dueDate ? task.dueDate.toISO8601() : null,
-            task.note,
+            task.notes,
             Lang.bind(this, function(error, taskObject) {
                 if (error) {
                     this.emit('error', error);
@@ -400,8 +435,17 @@ const GTasksSyncer = new Lang.Class({
     },
 
     _patchTask: function(task) {
-
         let patchObject = task.getPatchObject();
+
+        this._service.patchTask(task.list.gTasksID, task.gTasksID,
+            patchObject, Lang.bind(this, function(error, taskObject) {
+                if (error) {
+                    this.emit('error', error);
+                    return;
+                }
+
+                task.setTaskObject(taskObject);
+            }));
     }
 });
 Signals.addSignalMethods(GTasksSyncer.prototype)
@@ -512,7 +556,7 @@ const GTasksList = new Lang.Class({
     },
 
     _newTask: function(props) {
-        return new GTasksTask(props);
+        return new GTasksTask(this, props);
     },
 
     setTaskListObject: function(taskListObject) {
@@ -548,8 +592,8 @@ const GTasksTask = new Lang.Class({
     Name: 'GTasksTask',
     Extends: Source.Task,
 
-    _init: function(props) {
-        this.parent(props);
+    _init: function(list, props) {
+        this.parent(list, props);
 
         this._taskObject = null;
     },
@@ -575,15 +619,16 @@ const GTasksTask = new Lang.Class({
     setTaskObject: function(taskObject) {
         this._taskObject = taskObject;
 
-        this._title = taskObject.title;
+        this.freezeChanged();
 
+        this.title = taskObject.title;
         this._updatedDate = Utils.dateTimeFromISO8601(taskObject.updated);
 
-        this._notes = taskObject.notes;
-        this._dueDate = taskObject.due ? Utils.dateTimeFromISO8601(taskObject.due) : null;
-        this._completedDate = taskObject.completed ? Utils.dateTimeFromISO8601(taskObject.completed) : null;
+        this.notes = taskObject.notes;
+        this.dueDate = taskObject.due ? Utils.dateTimeFromISO8601(taskObject.due) : null;
+        this.completedDate = taskObject.completed ? Utils.dateTimeFromISO8601(taskObject.completed) : null;
 
-        this.emit('changed', ['title', 'updatedDate', 'notes', 'dueDate', 'completedDate']);
+        this.thawChanged();
     },
 
     get gTasksID() {
@@ -597,14 +642,18 @@ const GTasksTask = new Lang.Class({
             patchObject.title = this._title;
 
         if (this._notes !== this._taskObject.notes)
-            patchObject.note = this._note;
+            patchObject.notes = this._notes;
 
         if (!GdPrivate.date_time_equal(this._dueDate,
-            Utils.dateTimeFromISO8601(this._taskObject.updated)))
+            Utils.dateTimeFromISO8601(this._taskObject.due)))
             patchObject.dueDate = this._dueDate ? this._dueDate.toISO8601() : null;
 
         if (!GdPrivate.date_time_equal(this._completedDate,
-            Utils.dateTimeFromISO8601(this._taskObject.completed)))
+            Utils.dateTimeFromISO8601(this._taskObject.completed))) {
             patchObject.completedDate = this._completedDate ? this._completedDate.toISO8601() : null;
+            patchObject.status = this._completedDate ? 'completed' : 'needsAction';
+        }
+
+        return patchObject;
     }
 });
