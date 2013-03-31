@@ -21,6 +21,7 @@
 
 const EggListBox = imports.gi.EggListBox;
 const GObject = imports.gi.GObject;
+const Gd = imports.gi.Gd;
 const GdPrivate = imports.gi.GdPrivate;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
@@ -166,7 +167,7 @@ const ListEditorView = new Lang.Class({
 
         this.taskEditor = new TaskEditor(source, actionGroup);
         this.pack2(this.taskEditor, false, false);
-        this.taskEditor.hide();
+        this.taskEditor.reveal_child = false;
 
         this.taskEditor.connect('cancelled',
             Lang.bind(this, this._taskEditorCancelled));
@@ -404,7 +405,7 @@ const ListItem = new Lang.Class({
         this._titleNotebook.set_current_page(1);
 
         listEditor.taskEditor.setListItem(this);
-        listEditor.taskEditor.show();
+        listEditor.taskEditor.reveal_child = true;
 
         listEditor.listBox.select_child(this);
         this._titleEntry.grab_focus();
@@ -416,7 +417,7 @@ const ListItem = new Lang.Class({
         this.active = false;
 
         this._titleNotebook.set_current_page(0);
-        listEditor.taskEditor.hide();
+        listEditor.taskEditor.reveal_child = false;
     },
 
     get modified() {
@@ -597,14 +598,14 @@ const LIST_COMBO_COLUMN_ID    = 1;
 
 const TaskEditor = new Lang.Class({
     Name: 'TaskEditor',
-    Extends: Gtk.Bin,
+    Extends: Gd.Revealer,
 
     Signals: {
         'cancelled': {}
     },
 
     _init: function(source, actionGroup) {
-        this.parent();
+        this.parent({ orientation: Gtk.Orientation.VERTICAL });
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/task_editor.glade');
