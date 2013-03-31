@@ -205,6 +205,8 @@ const GTasksService = new Lang.Class({
 
                 let newTask = { 'title': title };
                 newTask.status = completed ? 'completed' : 'needsAction';
+                if (completed)
+                    newTask.completed = completed.toISO8601();
                 if (due)
                     newTask.due = due.toISO8601();
                 if (notes)

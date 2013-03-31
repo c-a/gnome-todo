@@ -113,25 +113,35 @@ const ListEditorController = new Lang.Class({
         // Create a new task if the listItem doesn't have a task yet.
         if (!listItem.getTask()) {
             let task = this._list.createTask(listItem.title,
-                listItem.completedDate, null, listItem.note);
+                listItem.completedDate, listItem.dueDate, listItem.note);
             listItem.setTask(task);
         }
         // Update the task otherwise
         else {
             let task = listItem.getTask();
 
-            task.freezeChanged();
-            if (listItem.titleModified)
-                task.title = listItem.title;
-            if (listItem.completedDateModified)
-                task.completedDate = listItem.completedDate;
-            if (listItem.noteModified)
-                task.notes = listItem.note;
-            if (listItem.dueDateModified)
-                task.dueDate = listItem.dueDate;
-            task.thawChanged();
+            if (listItem.listModified) {
+                // Remove task from old list
+                task.list.deleteTask(task.id);
 
-            listItem.setTask(task);
+                // Create a new task in the new list
+                listItem.list.createTask(listItem.title,
+                    listItem.completedDate, listItem.dueDate, listItem.note);
+            }
+            else {
+                task.freezeChanged();
+                if (listItem.titleModified)
+                    task.title = listItem.title;
+                if (listItem.completedDateModified)
+                    task.completedDate = listItem.completedDate;
+                if (listItem.noteModified)
+                    task.notes = listItem.note;
+                if (listItem.dueDateModified)
+                    task.dueDate = listItem.dueDate;
+                task.thawChanged();
+
+                listItem.setTask(task);
+            }
         }
     },
 
@@ -190,7 +200,7 @@ const ListEditorView = new Lang.Class({
     },
 
     addItem: function(task) {
-        let listItem = new ListItem(this._list.id, this, task);
+        let listItem = new ListItem(this._list, this, task);
         this.listBox.add(listItem);
 
         let saveCheck = function(item) {
@@ -316,10 +326,10 @@ const ListItem = new Lang.Class({
             'The title of the item', GObject.ParamFlags.READABLE, '')
     },
 
-    _init: function(listID, listEditor, task) {
+    _init: function(list, listEditor, task) {
         this.parent();
 
-        this._listID = listID;
+        this._list = list;
         this._listEditor = listEditor;
 
         this.isNewListItem = false;
@@ -330,6 +340,7 @@ const ListItem = new Lang.Class({
         this._completedModified = false;
         this._noteModified = false;
         this._dueDateModified = false;
+        this._listModified = false;
 
         this._completedDate = null;
         this._note = '';
@@ -379,6 +390,7 @@ const ListItem = new Lang.Class({
         this._completedModified = false;
         this._noteModified = false;
         this._dueDateModified = false;
+        this._listModified = false;
         if (this._modified) {
             this._modified = false;
             this.notify('modified');
@@ -402,10 +414,6 @@ const ListItem = new Lang.Class({
 
     getTask: function() {
         return this._task;
-    },
-
-    getListID: function() {
-        return this._listID;
     },
 
     activate: function(listEditor) {
@@ -447,6 +455,10 @@ const ListItem = new Lang.Class({
 
     get dueDateModified() {
         return this._dueDateModified;
+    },
+
+    get listModified() {
+        return this._listModified;
     },
 
     get title() {
@@ -502,8 +514,7 @@ const ListItem = new Lang.Class({
     },
 
     set dueDate(dueDate) {
-        if (!GdPrivate.date_time_equal(this._dueDate, dueDate))
-        {
+        if (!GdPrivate.date_time_equal(this._dueDate, dueDate)) {
             this._dueDate = dueDate;
 
             let taskDueDate = this._task ? this._task.dueDate : null;
@@ -518,6 +529,26 @@ const ListItem = new Lang.Class({
                     this._dueLabel.label = dueDate.formatForDisplay();
                 else
                     this._dueLabel.label = '';
+            }
+        }
+    },
+
+    get list() {
+        return this._list;
+    },
+
+    set list(list) {
+        if (this._list != list) {
+            this._list = list;
+
+            let modified;
+            if (this._task)
+                modified = this._task.list != list;
+            else
+                modified = list != null;
+            if (modified != this._listModified) {
+                this._listModified = modified;
+                this._checkModified();
             }
         }
     },
@@ -569,7 +600,8 @@ const ListItem = new Lang.Class({
             this._titleModified ||
             this._completedModified ||
             this._noteModified ||
-            this._dueDateModified;
+            this._dueDateModified ||
+            this._listModified;
 
         if (modified != this._modified) {
             this._modified = modified;
@@ -628,6 +660,7 @@ const TaskEditor = new Lang.Class({
         this._noteBuffer.connect('changed', Lang.bind(this, this._noteBufferChanged));
 
         this._listCombo = builder.get_object('list_combo');
+        this._listCombo.connect('changed', Lang.bind(this, this._listComboChanged));
         this._listStore = builder.get_object('list_store');
 
         let dueDatePlaceholder = builder.get_object('due_date_placeholder');
@@ -656,7 +689,7 @@ const TaskEditor = new Lang.Class({
         this._noteBuffer.text = listItem.note;
         this._dueDatePicker.setDate(listItem.dueDate);
 
-        let iter = this._getIterFromListID(listItem.getListID());
+        let iter = this._getIterFromListID(listItem.list.id);
         this._listCombo.set_active_iter(iter);
     },
 
@@ -679,14 +712,21 @@ const TaskEditor = new Lang.Class({
 
     _listUpdated: function(source, list) {
         let iter = this._getIterFromListID(list.id);
-        if (iter)
-            this._listStore.set_value(iter, LIST_COMBO_COLUMN_TITLE, list.title);
+        this._listStore.set_value(iter, LIST_COMBO_COLUMN_TITLE, list.title);
     },
 
     _listRemoved: function(source, list) {
         let iter = this._getIterFromListID(list.id);
-        if (iter)
-            this._listStore.remove(iter);
+        this._listStore.remove(iter);
+    },
+
+    _listComboChanged: function(listCombo) {
+        if (!this._listItem)
+            return;
+
+        let activeListID = listCombo.get_active_id();
+        let activeList = this._source.getItemById(activeListID);
+        this._listItem.list = activeList;
     },
 
     _getIterFromListID: function(listID) {
