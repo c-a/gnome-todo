@@ -257,6 +257,9 @@ const GTasksService = new Lang.Class({
     },
 
     patchTask: function(listID, taskID, patchTask, callback) {
+        if (Object.keys(patchTask) == 0)
+            return;
+
         this._authenticate(Lang.bind(this, function(error) {
             if (error) {
                 callback(error);
@@ -646,11 +649,11 @@ const GTasksTask = new Lang.Class({
 
         if (!GdPrivate.date_time_equal(this._dueDate,
             Utils.dateTimeFromISO8601(this._taskObject.due)))
-            patchObject.dueDate = this._dueDate ? this._dueDate.toISO8601() : null;
+            patchObject.due = this._dueDate ? this._dueDate.toISO8601() : null;
 
         if (!GdPrivate.date_time_equal(this._completedDate,
             Utils.dateTimeFromISO8601(this._taskObject.completed))) {
-            patchObject.completedDate = this._completedDate ? this._completedDate.toISO8601() : null;
+            patchObject.completed = this._completedDate ? this._completedDate.toISO8601() : null;
             patchObject.status = this._completedDate ? 'completed' : 'needsAction';
         }
 

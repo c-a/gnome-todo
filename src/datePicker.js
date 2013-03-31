@@ -20,6 +20,7 @@
  */
 
 const GObject = imports.gi.GObject;
+const GdPrivate = imports.gi.GdPrivate;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
@@ -30,8 +31,14 @@ const DatePicker = new Lang.Class({
     Name: 'DatePicker',
     Extends: Gtk.Bin,
 
+    Signals: {
+        'date-changed': {}
+    },
+
     _init: function() {
         this.parent();
+
+        this._date = null;
 
         this._entry = new Gtk.Entry({ 'editable': false });
         this.add(this._entry);
@@ -57,22 +64,33 @@ const DatePicker = new Lang.Class({
             Lang.bind(this, this._entryBackspace));
     },
 
-    setDateTime: function(dateTime) {
+    getDate: function() {
+        return this._date;
+    },
+
+    setDate: function(date) {
+        if (GdPrivate.date_time_equal(this._date, date))
+            return;
+
+        this._date = date;
+
         let text;
-        if (dateTime)
-            text = dateTime.format('%x');
+        if (date)
+            text = date.format('%x');
         else
         {
-            dateTime = GLib.DateTime.new_now_local();
+            date = GLib.DateTime.new_now_local();
             text = '';
         }
 
         this._entry.text = text;
 
         this._blockDaySelected = true;
-        this._calendar.select_month(dateTime.get_month(), dateTime.get_year());
-        this._calendar.select_day(dateTime.get_day_of_month());
+        this._calendar.select_month(date.get_month(), date.get_year());
+        this._calendar.select_day(date.get_day_of_month());
         this._blockDaySelected = false;
+
+        this.emit('date-changed');
     },
 
     _daySelected: function(calendar)
@@ -81,9 +99,9 @@ const DatePicker = new Lang.Class({
             return;
 
         let [year, month, day] = calendar.get_date();
-        let dateTime = GLib.DateTime.new(GLib.TimeZone.new_utc(), year, month, day,
+        let date = GLib.DateTime.new(GLib.TimeZone.new_utc(), year, month, day,
             0, 0, 0);
-        this.setDateTime(dateTime);
+        this.setDate(date);
     },
 
     _daySelectedDoubleClick: function(calendar)
@@ -108,7 +126,7 @@ const DatePicker = new Lang.Class({
     },
 
     _entryBackspace: function(entry, event) {
-        this.setDateTime(null);
+        this.setDate(null);
     },
 
     _popupCalendar: function(event)

@@ -123,6 +123,8 @@ const ListEditorController = new Lang.Class({
                 task.completedDate = listItem.completedDate;
             if (listItem.noteModified)
                 task.notes = listItem.note;
+            if (listItem.dueDateModified)
+                task.dueDate = listItem.dueDate;
             task.thawChanged();
 
             listItem.setTask(task);
@@ -298,13 +300,16 @@ const ListItem = new Lang.Class({
 
         this.isNewListItem = false;
         this.active = false;
+
         this._modified = false;
         this._titleModified = false;
         this._completedModified = false;
         this._noteModified = false;
+        this._dueDateModified = false;
 
         this._completedDate = null;
         this._note = '';
+        this._dueDate = null;
         this._task = null;
 
         let builder = new Gtk.Builder();
@@ -328,13 +333,32 @@ const ListItem = new Lang.Class({
     },
 
     setTask: function(task) {
+        if (this._task)
+            this._task.disconnect(this._taskChangedID);
+
         this._task = task;
+        this._taskChangedID = this._task.connect('changed',
+            Lang.bind(this, this._taskChanged));
+
+        this._taskChanged(task);
+    },
+
+    _taskChanged: function(task) {
+        this._titleModified = false;
+        this._completedModified = false;
+        this._noteModified = false;
+        this._dueDateModified = false;
+        if (this._modified) {
+            this._modified = false;
+            this.notify('modified');
+        }
 
         this._doneCheck.active = task.completedDate ? true : false;
         this._completedDate = task.completedDate;
         this._completedDateChanged();
 
         this._note = task.notes ? task.notes : '';
+        this._dueDate = task.dueDate;
 
         this._titleLabel.label = task.title;
         this._titleEntry.text = task.title;
@@ -389,6 +413,10 @@ const ListItem = new Lang.Class({
         return this._noteModified;
     },
 
+    get dueDateModified() {
+        return this._dueDateModified;
+    },
+
     get title() {
         if (!this._titleEntry)
             return null;
@@ -425,6 +453,24 @@ const ListItem = new Lang.Class({
 
             if (noteModified != this._noteModified) {
                 this._noteModified = noteModified;
+                this._checkModified();
+            }
+        }
+    },
+
+    get dueDate() {
+        return this._dueDate;
+    },
+
+    set dueDate(dueDate) {
+        if (!GdPrivate.date_time_equal(this._dueDate, dueDate))
+        {
+            this._dueDate = dueDate;
+
+            let taskDueDate = this._task ? this._task.dueDate : null;
+            let modified = !GdPrivate.date_time_equal(this._dueDate, taskDueDate);
+            if (modified != this._dueDateModified) {
+                this._dueDateModified = modified;
                 this._checkModified();
             }
         }
@@ -474,7 +520,8 @@ const ListItem = new Lang.Class({
         let modified =
             this._titleModified ||
             this._completedModified ||
-            this._noteModified;
+            this._noteModified ||
+            this._dueDateModified;
 
         if (modified != this._modified) {
             this._modified = modified;
@@ -538,6 +585,7 @@ const TaskEditor = new Lang.Class({
         let dueDatePlaceholder = builder.get_object('due_date_placeholder');
         this._dueDatePicker = new DatePicker.DatePicker();
         dueDatePlaceholder.add(this._dueDatePicker);
+        this._dueDatePicker.connect('date-changed', Lang.bind(this, this._dueDateChanged));
 
         let deleteButton = builder.get_object('delete_button');
         deleteButton.connectClickedToAction(actionGroup, 'delete');
@@ -558,10 +606,7 @@ const TaskEditor = new Lang.Class({
         this._listItem = listItem;
 
         this._noteBuffer.text = listItem.note;
-
-        let task = listItem.getTask();
-        let dueDate = task ? task.dueDate : null;
-        this._dueDatePicker.setDateTime(dueDate);
+        this._dueDatePicker.setDate(listItem.dueDate);
 
         let iter = this._getIterFromListID(listItem.getListID());
         this._listCombo.set_active_iter(iter);
@@ -610,6 +655,10 @@ const TaskEditor = new Lang.Class({
 
     _noteBufferChanged: function(buffer) {
         this._listItem.note = buffer.text;
+    },
+
+    _dueDateChanged: function(datePicker) {
+        this._listItem.dueDate = datePicker.getDate();
     }
 });
 
