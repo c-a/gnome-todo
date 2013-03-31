@@ -86,7 +86,7 @@ const DatePicker = new Lang.Class({
         this._entry.text = text;
 
         this._blockDaySelected = true;
-        this._calendar.select_month(date.get_month(), date.get_year());
+        this._calendar.select_month(date.get_month() - 1, date.get_year());
         this._calendar.select_day(date.get_day_of_month());
         this._blockDaySelected = false;
 
@@ -99,8 +99,8 @@ const DatePicker = new Lang.Class({
             return;
 
         let [year, month, day] = calendar.get_date();
-        let date = GLib.DateTime.new(GLib.TimeZone.new_utc(), year, month, day,
-            0, 0, 0);
+        let date = GLib.DateTime.new(GLib.TimeZone.new_utc(), year, month + 1,
+            day, 0, 0, 0);
         this.setDate(date);
     },
 

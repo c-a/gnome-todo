@@ -91,6 +91,9 @@ const ListEditorController = new Lang.Class({
     },
 
     onCancel: function() {
+        if (this._view.deactivateItem())
+            return;
+
         this.mainController.popController();
     },
 
@@ -157,6 +160,7 @@ const ListEditorView = new Lang.Class({
         this._activatedItem = null;
 
         this.listBox = new EggListBox.ListBox();
+        this.listBox.set_selection_mode(Gtk.SelectionMode.NONE);
         this.listBox.show();
         this.pack1(this.listBox, true, false);
 
@@ -242,6 +246,7 @@ const ListEditorView = new Lang.Class({
         return null;
     },
 
+    
     _listBoxSortFunc: function(item1, item2) {
         if (item1.isNewListItem)
             return 1;
@@ -256,7 +261,16 @@ const ListEditorView = new Lang.Class({
         return 0;
     },
 
-    
+    deactivateItem: function() {
+        if (!this._activatedItem)
+            return false;
+
+        this.listBox.select_child(null);
+        this._activatedItem.deactivate(this);
+        this._activatedItem = null;
+        return true;
+    },
+
     _listBoxSeparatorFunc: function(child, before) {
 
         return new Gtk.Separator({ 'orientation': Gtk.Orientation.HORIZONTAL });
@@ -274,13 +288,13 @@ const ListEditorView = new Lang.Class({
     },
 
     _taskEditorCancelled: function(taskEditor) {
+        let task = this._activatedItem.getTask();
+        if (task)
+            this._activatedItem.setTask(task);
+        else
+            this.removeItem(this._activatedItem);
 
-        this._activatedItem.deactivate(this);
-        this._activatedItem = null;
-
-        /* Set SelectionMode to NONE to unselect the item. */
-        this.listBox.set_selection_mode(Gtk.SelectionMode.NONE);
-        this.listBox.set_selection_mode(Gtk.SelectionMode.SINGLE);
+        this.deactivateItem();
     }
 });
 
@@ -321,10 +335,17 @@ const ListItem = new Lang.Class({
 
         this._titleNotebook = builder.get_object('title_notebook');
         this._titleLabel =  builder.get_object('title_label');
+        this._titleLabel.label = '';
 
         this._titleEntry = builder.get_object('title_entry');
         this._titleEntry.connect('changed',
             Lang.bind(this, this._titleEntryChanged));
+
+        this._dueLabel = builder.get_object('due_label');
+        this._dueLabel.label = '';
+
+        this._noteNotebook = builder.get_object('note_notebook');
+        this._noteNotebook.page = 1;
 
         if (task)
             this.setTask(task);
@@ -357,8 +378,9 @@ const ListItem = new Lang.Class({
         this._completedDate = task.completedDate;
         this._completedDateChanged();
 
-        this._note = task.notes ? task.notes : '';
-        this._dueDate = task.dueDate;
+        this.note = task.notes ? task.notes : '';
+
+        this.dueDate = task.dueDate;
 
         this._titleLabel.label = task.title;
         this._titleEntry.text = task.title;
@@ -455,6 +477,13 @@ const ListItem = new Lang.Class({
                 this._noteModified = noteModified;
                 this._checkModified();
             }
+
+            if (this._noteNotebook) {
+                if (note)
+                    this._noteNotebook.page = 0;
+                else
+                    this._noteNotebook.page = 1;
+            }
         }
     },
 
@@ -473,6 +502,13 @@ const ListItem = new Lang.Class({
                 this._dueDateModified = modified;
                 this._checkModified();
             }
+
+            if (this._dueLabel) {
+                if (dueDate)
+                    this._dueLabel.label = dueDate.formatForDisplay();
+                else
+                    this._dueLabel.label = '';
+            }
         }
     },
 
@@ -482,11 +518,11 @@ const ListItem = new Lang.Class({
 
         let titleModified;
         if (this._task)
-            titleModified = (entry.text != this._task.title);
+            titleModified = (entry.text && entry.text != this._task.title);
         else
-            titleModified = true;
+            titleModified = !!entry.text;
 
-        if (titleModified !== this._titleModified) {
+        if (titleModified != this._titleModified) {
             this._titleModified = titleModified;
             this._checkModified();
         }

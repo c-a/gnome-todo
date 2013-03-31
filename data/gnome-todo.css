@@ -6,3 +6,8 @@
     border-image-slice: 3 3 6 4;
     border-image-width: 3px 3px 6px 4px;
 }
+
+.todo-task-due-label {
+    color: shade(@theme_text_color, 2.0);
+    font-size: 11pt;
+}

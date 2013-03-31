@@ -6,7 +6,7 @@ const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
 const Signals = imports.signals;
-
+const _ = imports.gettext.gettext;
 
 function loadResource()
 {
@@ -63,6 +63,25 @@ GLib.DateTime.prototype.toISO8601 = function() {
         throw 'Failed to convert DateTime into iso8601';
 
     return res;
+}
+
+GLib.DateTime.prototype.formatForDisplay = function() {
+    let today = GLib.DateTime.new_now_utc();
+    today = today.add_hours(-today.get_hour());
+    today = today.add_minutes(-today.get_minute());
+    today = today.add_seconds(-today.get_seconds());
+
+    let diff = this.difference(today) / GLib.TIME_SPAN_DAY;
+    if (diff > -2 && diff < 2) {
+        if (diff <= -1)
+            return _('Yesterday');
+        else if (diff <= 1)
+            return _('Today');
+        else
+            return _('Tomorrow');
+    }
+    else
+        return this.format(_('%b %d, %Y'));
 }
 
 function generateID(type) {
