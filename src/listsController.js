@@ -190,7 +190,16 @@ const ListsController = new Lang.Class({
             if (this._model.getListCount() == 0) {
                 this._actions['search'].enabled = false;
                 this._actions['selection'].enabled = false;
-                this._listsView.showNoResults();
+
+                // Check if we have an online source
+                let hasOnlineSource = false
+                Global.sourceManager.forEachItem(function(source) {
+                   hasOnlineSource |= source.onlineSource; 
+                });
+                if (hasOnlineSource)
+                    this._listsView.showNoResults();
+                else
+                    this._listsView.showNoAccounts();
             }
             else {
                 this._actions['search'].enabled = true;
@@ -201,6 +210,8 @@ const ListsController = new Lang.Class({
     },
 
     _newList: function(action) {
+        const SOURCE_STORE_NAME_COLUMN = 0;
+        const SOURCE_STORE_ID_COLUMN = 1;
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/new_list_dialog.glade');
@@ -219,12 +230,24 @@ const ListsController = new Lang.Class({
                 dialog.response(Gtk.ResponseType.ACCEPT);
         });
 
+        // Fill the combo box with sources
+        let sourceStore = builder.get_object('source_store');
+        Global.sourceManager.forEachItem(function(source) {
+            let iter = sourceStore.append();
+            sourceStore.set_value(iter, SOURCE_STORE_ID_COLUMN, source.id);
+            sourceStore.set_value(iter, SOURCE_STORE_NAME_COLUMN, source.name);
+        });
+
+        let sourceCombo = builder.get_object('source_combo');
+        sourceCombo.set_active(0);
+
         dialog.connect('response',
             Lang.bind(this, function(dialog, response_id) {
 
                 if (response_id == Gtk.ResponseType.ACCEPT)
                 {
-                    let source = Global.sourceManager.getDefaultSource();
+                    let sourceID = sourceCombo.get_active_id();
+                    let source = Global.sourceManager.getItemById(sourceID);
 
                     let entry = builder.get_object('entry');
                     source.createTaskList(entry.text);

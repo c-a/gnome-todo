@@ -27,9 +27,23 @@ const Signals = imports.signals;
 
 const Config = imports.config;
 const GTasksSource = imports.gTasksSource;
+const Source = imports.source;
 const Utils = imports.utils;
 
 const _ = imports.gettext.gettext;
+
+const LocalSource = new Lang.Class({
+    Name: 'LocalSource',
+    Extends: Source.Source,
+
+    _init: function() {
+        this.parent('local');
+
+        this.name = _('Local');
+        this.icon = Gio.icon_new_for_string('folder');
+        this.onlineSource = false;
+    }
+});
 
 const SourceManager = new Lang.Class({
     Name: 'SourceManager',
@@ -49,6 +63,36 @@ const SourceManager = new Lang.Class({
     },
 
     loadSources: function() {
+        // Add local source
+        let source = new LocalSource();
+        this._loadSource(source);
+
+        // Load GTasks sources
+        this._loadGTasksSources();
+    },
+
+    getDefaultSource: function() {
+        return this._defaultSource;
+    },
+
+    setDefaultSource: function(source) {
+        this._defaultSource = source;
+    },
+
+    _loadSource: function(source) {
+        source.load(Lang.bind(this, function(error) {
+            if (error) {
+                this.emit('load-error', source, error);
+                return;
+            }
+
+            this.addItem(source);
+            if (!this._defaultSource)
+                this._defaultSource = source;
+        }));
+    },
+
+    _loadGTasksSources: function() {
         let accounts = this._goaClient.get_accounts();
         for (let i = 0; i < accounts.length; i++)
         {
@@ -60,33 +104,16 @@ const SourceManager = new Lang.Class({
         }
 
         this._goaClient.connect('account-added',
-                                Lang.bind(this, this._accountAddedCb));
+            Lang.bind(this, this._accountAddedCb));
         this._goaClient.connect('account-removed',
-                                Lang.bind(this, this._accountRemovedCb));
+            Lang.bind(this, this._accountRemovedCb));
         this._goaClient.connect('account-changed',
-                                Lang.bind(this, this._accountChangedCb))
-    },
-
-    getDefaultSource: function() {
-        return this._defaultSource;
-    },
-
-    setDefaultSource: function(source) {
-        this._defaultSource = source;
+            Lang.bind(this, this._accountChangedCb))
     },
 
     _addGTasksSource: function(object) {
         let source = new GTasksSource.GTasksSource(object);
-        source.load(Lang.bind(this, function(error) {
-            if (error) {
-                this.emit('load-error', source, error);
-                return;
-            }
-
-            this.addItem(source);
-            if (!this._defaultSource)
-                this._defaultSource = source;
-        }));
+        this._loadSource(source);
     },
 
     _validObject: function(object) {
@@ -110,7 +137,7 @@ const SourceManager = new Lang.Class({
         if (!account)
             return;
 
-        this.removeItemById(account.id);
+        this.removeItemById(GTasksSource.getIDFromGoaAccount(account));
     },
 
     _accountChangedCb: function(goaClient, object) {

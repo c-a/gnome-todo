@@ -41,7 +41,7 @@ const Source = new Lang.Class({
 
         this.id = id;
 
-        let path = GLib.build_filenamev([GLib.get_user_data_dir(), 'gnome-todo', id]);
+        let path = GLib.build_filenamev([GLib.get_user_data_dir(), 'gnome-todo', id + '.json']);
         this._file = Gio.File.new_for_path(path);
 
         this._saveTimeout = 0;
@@ -180,6 +180,7 @@ const Source = new Lang.Class({
     // Functions that subclasses should implement
 
     _sync: function(callback) {
+        callback(null);
     },
 
     _serialize: function(object) {

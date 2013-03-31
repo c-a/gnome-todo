@@ -453,12 +453,16 @@ const GTasksSyncer = new Lang.Class({
 });
 Signals.addSignalMethods(GTasksSyncer.prototype)
 
+function getIDFromGoaAccount(account) {
+    return 'gtasks-' + account.id;
+}
+
 const GTasksSource = new Lang.Class({
     Name: 'GTasksSource',
     Extends: Source.Source,
 
     _init: function(object) {
-        this.parent('gtasks-' + object.account.id);
+        this.parent(getIDFromGoaAccount(object.account));
 
         this._object = object
         this._authenticated = false;
