@@ -208,8 +208,10 @@ const ListEditorView = new Lang.Class({
     },
 
     removeItem: function(listItem) {
-        if (listItem.active)
+        if (listItem.active) {
+            this._actions['save'].enabled = false;
             this._activatedItem = listItem.deactivate(this);
+        }
 
         // Find the next and previous items.
         let prevItem = null, nextItem = null;
@@ -272,6 +274,7 @@ const ListEditorView = new Lang.Class({
         this.listBox.select_child(null);
         this._activatedItem.deactivate(this);
         this._activatedItem = null;
+        this._actions['save'].enabled = false;
         return true;
     },
 
