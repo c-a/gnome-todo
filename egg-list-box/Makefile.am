@@ -10,34 +10,24 @@ AM_VALAFLAGS = \
 	--vapidir=. \
 	$(NULL)
 
-pkglib_LTLIBRARIES = libegglistbox.la
+pkglib_LTLIBRARIES = \
+	libegglistbox.la \
+	libeggflowbox.la \
+	$(NULL)
 
-libegglistbox_la_SOURCES = egg-list-box.c egg-list-box.h
+libegglistbox_la_SOURCES = \
+	egg-list-box.c egg-list-box.h \
+	egg-list-box-accessible.c egg-list-box-accessible.h
+
 libegglistbox_la_LIBADD = $(LISTBOX_LIBS)
 
-include $(INTROSPECTION_MAKEFILE)
-INTROSPECTION_GIRS = EggListBox-1.0.gir
+libeggflowbox_la_SOURCES = \
+	egg-flow-box.c egg-flow-box.h \
+	egg-flow-box-accessible.c egg-flow-box-accessible.h
 
-EggListBox-1.0.gir: libegglistbox.la Makefile
-EggListBox_1_0_gir_NAMESPACE = EggListBox
-EggListBox_1_0_gir_VERSION = 1.0
-EggListBox_1_0_gir_LIBS = libegglistbox.la
-EggListBox_1_0_gir_CFLAGS = $(LISTBOX_CPPFLAGS)
-EggListBox_1_0_gir_SCANNERFLAGS = --warn-all --symbol-prefix=egg --identifier-prefix=Egg
-EggListBox_1_0_gir_INCLUDES = \
-   Gtk-3.0
+libeggflowbox_la_LIBADD = $(LISTBOX_LIBS)
 
-EggListBox_1_0_gir_FILES = \
-    $(addprefix $(srcdir)/,$(libegglistbox_la_SOURCES))
-
-girdir = $(pkgdatadir)/gir-1.0
-typelibdir = $(pkglibdir)/girepository-1.0
-
-gir_DATA = $(INTROSPECTION_GIRS)
-typelib_DATA = $(gir_DATA:.gir=.typelib)
-
-
-noinst_PROGRAMS = test-list test-scrolled test-focus test-sel
+noinst_PROGRAMS = test-list test-scrolled test-focus test-sel test-flow-box
 
 test_sel_SOURCES = \
 	test-sel.c \
@@ -85,6 +75,15 @@ test_focus_LDADD = \
 	libegglistbox.la \
 	$(NULL)
 
+test_flow_box_SOURCES = \
+	test-flow-box.c \
+	$(NULL)
+
+test_flow_box_LDADD = \
+	$(LISTBOX_LIBS) \
+	libeggflowbox.la \
+	$(NULL)
+
 CLEANFILES = \
 	$(test_list_SOURCES:.vala=.c) \
 	$(test_scrolled_SOURCES:.vala=.c) \
@@ -92,3 +91,31 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	$(NULL)
+
+include $(INTROSPECTION_MAKEFILE)
+INTROSPECTION_GIRS =
+INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir) --warn-all
+INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir)
+
+if HAVE_INTROSPECTION
+
+Egg-1.0.gir: libegglistbox.la Makefile
+Egg_1_0_gir_NAMESPACE = Egg
+Egg_1_0_gir_VERSION = 1.0
+Egg_1_0_gir_LIBS = libegglistbox.la libeggflowbox.la
+Egg_1_0_gir_CFLAGS = $(LISTBOX_CFLAGS)
+Egg_1_0_gir_SCANNERFLAGS =			\
+       --warn-all				\
+       --symbol-prefix=egg			\
+       --identifier-prefix=Egg			\
+       $(NULL)
+Egg_1_0_gir_INCLUDES = GObject-2.0 Gtk-3.0
+Egg_1_0_gir_FILES = $(libegglistbox_la_SOURCES) $(libeggflowbox_la_SOURCES)
+INTROSPECTION_GIRS += Egg-1.0.gir
+
+noinst_DATA = $(INTROSPECTION_GIRS)
+
+CLEANFILES += $(gir_DATA) $(typelib_DATA)
+DISTCLEANFILES = $(builddir)/Egg-1.0.gir
+
+endif

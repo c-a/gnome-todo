@@ -9,6 +9,7 @@
 .libs
 Makefile
 Makefile.in
+/ar-lib
 /aclocal.m4
 /autom4te.cache
 /autoscan.log
@@ -44,6 +45,12 @@ test-list
 test-list.c
 test-scrolled
 test-scrolled.c
+test-flow-box
+test-focus
+test-sel
+/egg-flow-box-uninstalled.pc
 /egg-list-box-uninstalled.pc
 /omf.make
 /xmldocs.make
+Egg-1.0.gir
+Egg-1.0.typelib
