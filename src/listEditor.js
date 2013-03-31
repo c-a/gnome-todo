@@ -193,13 +193,16 @@ const ListEditorView = new Lang.Class({
         let listItem = new ListItem(this._list.id, this, task);
         this.listBox.add(listItem);
 
-        listItem.connect('notify::modified', Lang.bind(this, function(item) {
+        let saveCheck = function(item) {
             if (item != this._activatedItem)
                 return;
 
             let saveEnabled = item.title && item.modified;
             this._actions['save'].enabled = saveEnabled;
-        }));
+        };
+
+        listItem.connect('notify::modified', Lang.bind(this, saveCheck));
+        listItem.connect('notify::title', Lang.bind(this, saveCheck));
 
         return listItem;
     },
@@ -303,8 +306,11 @@ const ListItem = new Lang.Class({
     Name: 'ListItem',
     Extends: Gtk.Bin,
 
-    Properties: { 'modified': GObject.ParamSpec.boolean('modified',
-        'Modified', 'If item has been modified', GObject.ParamFlags.READABLE, false)
+    Properties: {
+        'modified': GObject.ParamSpec.boolean('modified', 'Modified',
+            'If item has been modified', GObject.ParamFlags.READABLE, false),
+        'title': GObject.ParamSpec.string('title', 'Title',
+            'The title of the item', GObject.ParamFlags.READABLE, '')
     },
 
     _init: function(listID, listEditor, task) {
@@ -519,14 +525,16 @@ const ListItem = new Lang.Class({
 
         let titleModified;
         if (this._task)
-            titleModified = (entry.text && entry.text != this._task.title);
+            titleModified = (entry.text != this._task.title);
         else
-            titleModified = !!entry.text;
+            titleModified = entry.text != '';
 
         if (titleModified != this._titleModified) {
             this._titleModified = titleModified;
             this._checkModified();
         }
+
+        this.notify('title');
     },
 
     _doneCheckToggled: function(doneCheck) {
