@@ -421,6 +421,11 @@ egg_list_box_get_child_at_y (EggListBox *list_box, gint y)
 }
 
 
+/**
+ * egg_list_box_select_child:
+ * @self: a #EggListBox
+ * @child: (allow-none): The child to select or %NULL
+ */
 void
 egg_list_box_select_child (EggListBox *list_box, GtkWidget *child)
 {
