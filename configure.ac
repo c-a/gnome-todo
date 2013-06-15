@@ -74,7 +74,6 @@ LIBGD_INIT([
     header-bar
     main-view
     main-icon-view
-    main-toolbar
     notification
 ])
 
