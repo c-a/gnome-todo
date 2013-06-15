@@ -20,7 +20,6 @@
  */
 
 const GObject = imports.gi.GObject;
-const Gd = imports.gi.Gd;
 const GdPrivate = imports.gi.GdPrivate;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
@@ -633,14 +632,14 @@ const LIST_COMBO_COLUMN_ID    = 1;
 
 const TaskEditor = new Lang.Class({
     Name: 'TaskEditor',
-    Extends: Gd.Revealer,
+    Extends: Gtk.Revealer,
 
     Signals: {
         'cancelled': {}
     },
 
     _init: function(source, actionGroup) {
-        this.parent({ orientation: Gtk.Orientation.VERTICAL });
+        this.parent({ transition_type: Gtk.RevealerTransitionType.SLIDE_LEFT });
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/task_editor.glade');

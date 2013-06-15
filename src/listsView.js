@@ -221,7 +221,7 @@ const _SEARCH_ENTRY_TIMEOUT = 200;
 
 const Searchbar = new Lang.Class({
     Name: 'Searchbar',
-    Extends: Gd.Revealer,
+    Extends: Gtk.Revealer,
 
     _init: function(actionGroup) {
         this.parent();
@@ -373,7 +373,7 @@ const Searchbar = new Lang.Class({
 
     _show: function() {
         let eventDevice = Gtk.get_current_event_device();
-        this.set_reveal_child(true);
+        this.reveal_child = true;
         this._in = true;
 
         if (eventDevice)
@@ -382,7 +382,7 @@ const Searchbar = new Lang.Class({
 
     _hide: function() {
         this._in = false;
-        this.set_reveal_child(false);
+        this.reveal_child = false;
         // clear all the search properties when hiding the entry
         this._searchEntry.set_text('');
     }
