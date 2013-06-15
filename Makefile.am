@@ -2,7 +2,6 @@ ACLOCAL_AMFLAGS = -I m4 -I libgd ${ACLOCAL_FLAGS}
 
 SUBDIRS = \
     libgd \
-    egg-list-box \
     src \
     data \
     po

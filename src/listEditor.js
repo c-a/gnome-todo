@@ -19,7 +19,6 @@
  *
  */
 
-const EggListBox = imports.gi.EggListBox;
 const GObject = imports.gi.GObject;
 const Gd = imports.gi.Gd;
 const GdPrivate = imports.gi.GdPrivate;
@@ -170,7 +169,7 @@ const ListEditorView = new Lang.Class({
 
         this._activatedItem = null;
 
-        this.listBox = new EggListBox.ListBox();
+        this.listBox = new Gtk.ListBox();
         this.listBox.set_selection_mode(Gtk.SelectionMode.NONE);
         this.listBox.show();
         this.pack1(this.listBox, true, false);
@@ -184,11 +183,9 @@ const ListEditorView = new Lang.Class({
 
         this.listBox.set_sort_func(
             Lang.bind(this, this._listBoxSortFunc));
-        this.listBox.set_separator_funcs(
-            Lang.bind(this, this._listBoxSeparatorFunc));
 
-        this.listBox.connect('child-activated',
-            Lang.bind(this, this._childActivated));
+        this.listBox.connect('row-activated',
+            Lang.bind(this, this._rowActivated));
 
         this.listBox.add(new NewListItem());
 
@@ -281,19 +278,14 @@ const ListEditorView = new Lang.Class({
         if (!this._activatedItem)
             return false;
 
-        this.listBox.select_child(null);
+        this.listBox.select_row(null);
         this._activatedItem.deactivate(this);
         this._activatedItem = null;
         this._actions['save'].enabled = false;
         return true;
     },
 
-    _listBoxSeparatorFunc: function(child, before) {
-
-        return new Gtk.Separator({ 'orientation': Gtk.Orientation.HORIZONTAL });
-    },
-
-    _childActivated: function(listBox, listItem) {
+    _rowActivated: function(listBox, listItem) {
 
         if (this._activatedItem)
             this._activatedItem.deactivate(this);
@@ -317,7 +309,7 @@ const ListEditorView = new Lang.Class({
 
 const ListItem = new Lang.Class({
     Name: 'ListItem',
-    Extends: Gtk.Bin,
+    Extends: Gtk.ListBoxRow,
 
     Properties: {
         'modified': GObject.ParamSpec.boolean('modified', 'Modified',
@@ -424,7 +416,7 @@ const ListItem = new Lang.Class({
         listEditor.taskEditor.setListItem(this);
         listEditor.taskEditor.reveal_child = true;
 
-        listEditor.listBox.select_child(this);
+        listEditor.listBox.select_row(this);
         this._titleEntry.grab_focus();
 
         return this;
@@ -612,7 +604,7 @@ const ListItem = new Lang.Class({
 
 const NewListItem = new Lang.Class({
     Name: 'NewListItem',
-    Extends: Gtk.Bin,
+    Extends: Gtk.ListBoxRow,
 
     _init: function(task) {
         this.parent();
@@ -629,7 +621,7 @@ const NewListItem = new Lang.Class({
 
     activate: function(listEditor) {
         let newItem = listEditor.addItem(null);
-        listEditor.listBox.select_child(newItem);
+        listEditor.listBox.select_row(newItem);
 
         newItem.activate(listEditor);
         return newItem;

@@ -54,7 +54,7 @@ AC_SUBST(LIBM)
 
 EVINCE_MIN_VERSION=3.3.0
 GLIB_MIN_VERSION=2.31.6
-GTK_MIN_VERSION=3.3.6
+GTK_MIN_VERSION=3.9.3
 GOBJECT_INTROSPECTION_MIN_VERSION=1.31.6
 GOA_MIN_VERSION=3.2.0
 SOUP_MIN_VERSION=2.40.0
@@ -80,14 +80,6 @@ LIBGD_INIT([
     stack
 ])
 
-# egg-list-box
-pkg_modules="gtk+-3.0 >= 3.4.0
-	     glib-2.0 >= 2.31.10"
-PKG_CHECK_MODULES(LISTBOX, [$pkg_modules])
-
-LISTBOX_PACKAGES="--pkg gtk+-3.0"
-AC_SUBST(LISTBOX_PACKAGES)
-
 
 GJS_CONSOLE=`$PKG_CONFIG --variable=gjs_console gjs-1.0`
 AC_SUBST(GJS_CONSOLE)
@@ -95,7 +87,6 @@ AC_SUBST(GJS_CONSOLE)
 AC_CONFIG_FILES([
     Makefile
     libgd/Makefile
-    egg-list-box/Makefile
     src/Makefile
     data/Makefile
     data/icons/Makefile
