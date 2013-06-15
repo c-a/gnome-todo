@@ -211,7 +211,7 @@ const BaseManager = new Lang.Class({
     },
 
     forEachItem: function(func) {
-        for (idx in this._items)
+        for (let idx in this._items)
             func(this._items[idx]);
     },
 
