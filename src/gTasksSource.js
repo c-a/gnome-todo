@@ -305,6 +305,7 @@ const GTasksSyncer = new Lang.Class({
 
     sync: function(callback) {
 
+        let listObjects = {};
         this._service.listTaskLists(Lang.bind(this, function(error, listObject) {
             if (error) {
                 callback(error);
@@ -313,9 +314,22 @@ const GTasksSyncer = new Lang.Class({
 
             // Received all TaskLists
             if (!listObject) {
+                // Remove all lists that previously existed remotely but doesn't
+                // anymore.
+                this._source.forEachItem(Lang.bind(this, function(list) {
+                    if (!list.gTasksID)
+                        return;
+
+                    // Check if it still exists remotely
+                    if (!listObjects[list.gTasksID])
+                        this._source.removeItem(list);
+                }));
+
                 callback(null);
                 return;
             }
+
+            listObjects[listObject.id] = listObject;
 
             // Check if the task list was removed locally
             if (this._source.taskListIsDeleted(listObject.id))
@@ -361,6 +375,7 @@ const GTasksSyncer = new Lang.Class({
     },
 
     _listRemoved: function(source, list) {
+        // Don't need to do anything if it doesn't exist remotely
         if (!list.gTasksID)
             return;
 
@@ -376,6 +391,7 @@ const GTasksSyncer = new Lang.Class({
     },
 
     _listChanged: function(list, props) {
+        // Don't need to do anything if it doesn't exist remotely
         if (!list.gTasksID)
             return;
 

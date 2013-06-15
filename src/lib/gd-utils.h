@@ -33,4 +33,3 @@ char* gd_date_time_to_iso8601(GDateTime* datetime);
 gboolean gd_date_time_equal(GDateTime* dt1, GDateTime* dt2);
 
 #endif /* __GD_UTILS_H__ */
-                                  
