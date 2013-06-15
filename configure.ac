@@ -77,7 +77,6 @@ LIBGD_INIT([
     main-toolbar
     notification
     revealer
-    stack
 ])
 
 

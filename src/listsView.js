@@ -134,7 +134,7 @@ const ListsView = new Lang.Class({
         this._overlay = new Gtk.Overlay();
         this.add(this._overlay);
 
-        this._stack = new Gd.Stack({ transition_type: Gd.StackTransitionType.CROSSFADE });
+        this._stack = new Gtk.Stack({ transition_type: Gtk.StackTransitionType.CROSSFADE });
         this._overlay.add(this._stack);
 
         this._noResults = new EmptyResultsBox(false);

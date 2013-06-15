@@ -19,7 +19,6 @@
  *
  */
 
-const Gd = imports.gi.Gd;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
@@ -226,7 +225,7 @@ const ContentView = Lang.Class({
     _init: function() {
         this.parent();
 
-        this._stack = new Gd.Stack({ transition_duration: 500 });
+        this._stack = new Gtk.Stack({ transition_duration: 500 });
         this.add(this._stack);
 
         /* Add NotificationManager */
@@ -240,14 +239,14 @@ const ContentView = Lang.Class({
     pushView: function(view) {
         this._prevView = this._stack.get_visible_child();
 
-        this._stack.transition_type = Gd.StackTransitionType.SLIDE_LEFT;
+        this._stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT;
         this._stack.add(view);
         this._stack.set_visible_child(view);   
     },
 
     popView: function(view) {
         if (this._prevView) {
-            this._stack.transition_type = Gd.StackTransitionType.SLIDE_RIGHT;
+            this._stack.transition_type = Gtk.StackTransitionType.SLIDE_RIGHT;
             this._stack.set_visible_child(this._prevView);
         }
 
