@@ -178,7 +178,7 @@ const ListsView = new Lang.Class({
     },
 
     handleEvent: function(event) {
-        this.searchbar.handleEvent(event);
+        this.searchbar.handle_event(event);
     },
 
     _showSpinnerBoxDelayed: function(delay) {
@@ -217,205 +217,52 @@ const SpinnerBox = Lang.Class({
     }
 });
 
-const _SEARCH_ENTRY_TIMEOUT = 200;
-
-const Searchbar = new Lang.Class({
-    Name: 'Searchbar',
-    Extends: Gtk.Revealer,
-
-    _init: function(actionGroup) {
-        this.parent();
-
-        this._actionGroup = actionGroup;
-
-        this._searchEntryTimeout = 0;
-        this._searchTypeId = 0;
-        this._searchMatchId = 0;
-        this.searchChangeBlocked = false;
-
-        this._in = false;
-
-        let toolbar = new Gtk.Toolbar();
-        toolbar.get_style_context().add_class(Gtk.STYLE_CLASS_PRIMARY_TOOLBAR);
-        this.add(toolbar);
-
-        // subclasses will create this._searchEntry and this._searchContainer
-        // GtkWidgets
-        this.createSearchWidgets();
-
-        let item = new Gtk.ToolItem();
-        item.set_expand(true);
-        item.add(this._searchContainer);
-        toolbar.insert(item, 0);
-
-        this._searchEntry.connect('key-press-event', Lang.bind(this,
-            function(widget, event) {
-                let keyval = event.get_keyval()[1];
-
-                if (keyval == Gdk.KEY_Escape) {
-                    actionGroup.change_action_state('search', GLib.Variant.new('b', false));
-                    return true;
-                }
-
-                return false;
-            }));
-
-        this._searchEntry.connect('changed', Lang.bind(this,
-            function() {
-                if (this._searchEntryTimeout != 0) {
-                    Mainloop.source_remove(this._searchEntryTimeout);
-                    this._searchEntryTimeout = 0;
-                }
-
-                if (this.searchChangeBlocked)
-                    return;
-
-                this._searchEntryTimeout = Mainloop.timeout_add(_SEARCH_ENTRY_TIMEOUT, Lang.bind(this,
-                    function() {
-                        this._searchEntryTimeout = 0;
-                        this.entryChanged();
-                    }));
-            }));
-
-        // connect to the search action state for visibility
-        let searchStateId = actionGroup.connect('action-state-changed::search',
-            Lang.bind(this, this._onActionStateChanged));
-        
-        this.show_all();
-    },
-
-    _onActionStateChanged: function(source, actionName, state) {
-        if (state.get_boolean())
-            this._show();
-        else
-            this._hide();
-    },
-
-    createSearchWidgets: function() {
-        log('Error: Searchbar implementations must override createSearchWidgets');
-    },
-
-    entryChanged: function() {
-        log('Error: Searchbar implementations must override entryChanged');
-    },
-
-    _isKeynavEvent: function(event) {
-        let keyval = event.get_keyval()[1];
-        let state = event.get_state()[1];
-
-        if (keyval == Gdk.KEY_Tab ||
-            keyval == Gdk.KEY_KP_Tab ||
-            keyval == Gdk.KEY_Up ||
-            keyval == Gdk.KEY_KP_Up ||
-            keyval == Gdk.KEY_Up ||
-            keyval == Gdk.KEY_Down ||
-            keyval == Gdk.KEY_KP_Down ||
-            keyval == Gdk.KEY_Left ||
-            keyval == Gdk.KEY_KP_Left ||
-            keyval == Gdk.KEY_Right ||
-            keyval == Gdk.KEY_KP_Right ||
-            keyval == Gdk.KEY_Home ||
-            keyval == Gdk.KEY_KP_Home ||
-            keyval == Gdk.KEY_End ||
-            keyval == Gdk.KEY_KP_End ||
-            keyval == Gdk.KEY_Page_Up ||
-            keyval == Gdk.KEY_KP_Page_Up ||
-            keyval == Gdk.KEY_Page_Down ||
-            keyval == Gdk.KEY_KP_Page_Down ||
-            (state & (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.MOD1_MASK) != 0))
-            return true;
-
-        return false;
-    },
-
-    _isSpaceEvent: function(event) {
-        let keyval = event.get_keyval()[1];
-        return (keyval == Gdk.KEY_space);
-    },
-
-    handleEvent: function(event) {
-        if (this._in)
-            return false;
-
-        if (this._isKeynavEvent(event))
-            return false;
-
-        if (this._isSpaceEvent(event))
-            return false;
-
-        if (!this._searchEntry.get_realized())
-            this._searchEntry.realize();
-
-        let handled = false;
-
-        let preeditChanged = false;
-        let preeditChangedId =
-            this._searchEntry.connect('preedit-changed', Lang.bind(this,
-                function() {
-                    preeditChanged = true;
-                }));
-
-        let oldText = this._searchEntry.get_text();
-        let res = this._searchEntry.event(event);
-        let newText = this._searchEntry.get_text();
-
-        this._searchEntry.disconnect(preeditChangedId);
-
-        if (((res && (newText != oldText)) || preeditChanged)) {
-            handled = true;
-
-            if (!this._in)
-                this._actionGroup.change_action_state('search', GLib.Variant.new('b', true));
-        }
-
-        return handled;
-    },
-
-    _show: function() {
-        let eventDevice = Gtk.get_current_event_device();
-        this.reveal_child = true;
-        this._in = true;
-
-        if (eventDevice)
-            Gd.entry_focus_hack(this._searchEntry, eventDevice);
-    },
-
-    _hide: function() {
-        this._in = false;
-        this.reveal_child = false;
-        // clear all the search properties when hiding the entry
-        this._searchEntry.set_text('');
-    }
-});
-
 const ListsSearchbar = new Lang.Class({
     Name: 'ListsSearchbar',
-    Extends: Searchbar,
+    Extends: Gtk.SearchBar,
 
     Properties: { 'searchString': GObject.ParamSpec.string('searchString',
         'SearchString', 'The current search string', GObject.ParamFlags.READABLE, '')
     },
     
     _init: function(actionGroup) {
-        this.parent(actionGroup);
+        this.parent();
 
+        this._actionGroup = actionGroup;
         this._searchString = '';
+
+        // connect to the search action state for visibility
+        let searchStateId = actionGroup.connect('action-state-changed::search',
+            Lang.bind(this, this._onActionStateChanged));
+
+        this._searchEntry = new Gtk.SearchEntry({ width_request: 500 });
+        this._searchEntry.connect('changed', Lang.bind(this, this._entryChanged));
+        this.add(this._searchEntry);
+        this.connect_entry(this._searchEntry);
+
+        this.connect('notify::search-mode-enabled',
+                     Lang.bind(this, this._searchModeEnabled));
+
+        this.show_all();
     },
 
     get searchString() {
         return this._searchString;
     },
 
-    createSearchWidgets: function() {
-        this._searchEntry = new Gtk.SearchEntry({ width_request: 500 });
-        this._searchContainer = new Gtk.Box({ halign: Gtk.Align.CENTER });
-        this._searchContainer.add(this._searchEntry);
+    _onActionStateChanged: function(source, actionName, state) {
+        this.search_mode_enabled = state.get_boolean();
     },
 
-    entryChanged: function() {
+    _entryChanged: function() {
         if (this._searchEntry.text !== this._searchString) {
             this._searchString = this._searchEntry.text;
             this.notify('searchString');
         }
+    },
+
+    _searchModeEnabled: function() {
+        this._actionGroup.change_action_state('search',
+            GLib.Variant.new('b', this.search_mode_enabled));
     }
 });
