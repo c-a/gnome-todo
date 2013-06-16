@@ -146,10 +146,13 @@ const ListsView = new Lang.Class({
         /* Add SpinnerBox */
         this._spinnerBox = new SpinnerBox();
         this._stack.add(this._spinnerBox);
-        
-        /* Add the MainView. */
+
+        this._viewStack = new Gtk.Stack({ transition_type: Gtk.StackTransitionType.SLIDE_LEFT_RIGHT });
+        this._stack.add(this._viewStack);
+
+        /* Add the Lists MainView. */
         this.mainView = new Gd.MainView({ view_type: Gd.MainViewType.ICON, expand: true });
-        this._stack.add(this.mainView);
+        this._viewStack.add_titled(this.mainView, 'lists', _('Lists'));
 
         /* Add selectionToolbar. */
         this.selectionToolbar = new Selection.SelectionToolbar();
@@ -161,8 +164,12 @@ const ListsView = new Lang.Class({
         this.show();
     },
 
+    get viewStack() {
+        return this._viewStack;
+    },
+
     showMainView: function(loading) {
-        this._stack.set_visible_child(this.mainView);
+        this._stack.set_visible_child(this._viewStack);
     },
     
     showNoResults: function() {

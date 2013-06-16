@@ -40,7 +40,7 @@ const ListsToolbar = new Lang.Class({
     Name: 'ListsToolbar',
     Extends: Gtk.Bin,
 
-    _init: function(actionGroup) {
+    _init: function(actionGroup, listsView) {
         this.parent();
 
         this._actionGroup = actionGroup;
@@ -59,7 +59,7 @@ const ListsToolbar = new Lang.Class({
         selectButton.connectSensitiveToAction(actionGroup, 'selection');
         selectButton.connect('clicked',
             Lang.bind(this, this._selectButtonClicked));
-        
+
         // Selection done button
         let doneButton = builder.get_object('done-button');
         doneButton.connect('clicked',
@@ -68,23 +68,15 @@ const ListsToolbar = new Lang.Class({
         actionGroup.connect('action-state-changed::selection',
             Lang.bind(this, this._selectionStateChanged));
 
-
-        this._listsButton = builder.get_object('lists-button');
-        this._listsButton.connect('toggled',
-            Lang.bind(this, this._listsButtonToggled));
-
-        this._todayButton = builder.get_object('today-button');
-        this._todayButton.connect('toggled',
-            Lang.bind(this, this._todayButtonToggled));
-
-        this._scheduledButton = builder.get_object('scheduled-button');
-        this._scheduledButton.connect('toggled',
-            Lang.bind(this, this._scheduledButtonToggled));
-
+        // Search button
         let searchButton = builder.get_object('search-button');
         searchButton.connectSensitiveToAction(actionGroup, 'search');
         searchButton.connectToggledToAction(actionGroup, 'search');
-        
+
+        // Stack switcher
+        this._stackSwitcher = builder.get_object('stack-switcher');
+        this._stackSwitcher.stack = listsView.viewStack;
+
         this.show_all();
     },
 
@@ -104,21 +96,6 @@ const ListsToolbar = new Lang.Class({
 
     _doneButtonClicked: function(doneButton) {
         this._actionGroup.change_action_state('selection',  GLib.Variant.new('b', false));
-    },
-
-    _listsButtonToggled: function(listsButton) {
-        if (!listsButton.get_active())
-            return;
-    },
-
-    _todayButtonToggled: function(listsButton) {
-        if (!listsButton.get_active())
-            return;
-    },
-
-    _scheduledButtonToggled: function(listsButton) {
-        if (!listsButton.get_active())
-            return;
     },
 
     _selectionStateChanged: function(actionGroup, actionName, state) {

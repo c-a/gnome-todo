@@ -51,7 +51,7 @@ const ListsController = new Lang.Class({
         this._selectionController = new Selection.SelectionController(this, this._listsView);
         this._selectionModeActive = false;
         
-        this._toolbar = new ListsToolbar.ListsToolbar(this.window);
+        this._toolbar = new ListsToolbar.ListsToolbar(this.window, this._listsView);
 
         this._model = new ListsModel.ListsModel();
 
@@ -96,15 +96,15 @@ const ListsController = new Lang.Class({
     },
 
     activate: function() {
-        this.window.setToolbarWidget(this._toolbar);
-
         Utils.addActions(this.window, this._actions);
+
+        this.window.setToolbarWidget(this._toolbar);
     },
 
     deactivate: function() {
-        this.window.setToolbarWidget(null);
-
         Utils.removeActions(this.window, this._actions);
+
+        this.window.setToolbarWidget(null);
     },
 
     getView: function() {

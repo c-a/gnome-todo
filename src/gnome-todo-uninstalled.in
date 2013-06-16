@@ -19,7 +19,7 @@ if test x"$GJS_DEBUG_TOPICS" = x ; then
 fi
 
 DEBUG_COMMAND=""
-if test x"$DOCUMENTS_RUN_DEBUG" != x; then
+if test x"$TODO_RUN_DEBUG" != x; then
     DEBUG_COMMAND="gdb -ex run --args"
 fi
 

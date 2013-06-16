@@ -241,7 +241,7 @@ const ContentView = Lang.Class({
 
         this._stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT;
         this._stack.add(view);
-        this._stack.set_visible_child(view);   
+        this._stack.set_visible_child(view);
     },
 
     popView: function(view) {
