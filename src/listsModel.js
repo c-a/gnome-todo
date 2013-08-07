@@ -49,7 +49,7 @@ const ListsModel = new Lang.Class({
         this.set_column_types([GObject.TYPE_STRING, GObject.TYPE_STRING,
                                GObject.TYPE_STRING, GObject.TYPE_STRING,
                                GdkPixbuf.Pixbuf, GObject.TYPE_INT64,
-                               GObject.TYPE_BOOLEAN]);
+                               GObject.TYPE_BOOLEAN, GObject.TYPE_UINT]);
 
         this._sourceSignals = {};
         this._lists = {};
