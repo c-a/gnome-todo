@@ -62,14 +62,10 @@ const Application = new Lang.Class({
             { name: 'about', callback: this._showAbout },
             { name: 'quit', callback: this._quit }];
 
-        actionEntries.forEach(Lang.bind(this, function(entry) {
-            let action = new Gio.SimpleAction({ name: entry.name });
-
-            if (entry.callback)
-                action.connect('activate', Lang.bind(this, entry.callback));
-
-            this.add_action(action);
-        }));
+        let actions = Utils.createActions(this, actionEntries);
+        for (let name in actions) {
+            this.add_action(actions[name]);
+        }
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/app-menu.ui');
