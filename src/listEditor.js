@@ -184,6 +184,8 @@ const ListEditorView = new Lang.Class({
 
         this.listBox.set_sort_func(
             Lang.bind(this, this._listBoxSortFunc));
+        this.listBox.set_header_func(
+            Lang.bind(this, this._listBoxSetHeaderFunc));
 
         this.listBox.connect('row-activated',
             Lang.bind(this, this._rowActivated));
@@ -260,7 +262,6 @@ const ListEditorView = new Lang.Class({
         return null;
     },
 
-    
     _listBoxSortFunc: function(item1, item2) {
         if (item1.isNewListItem)
             return 1;
@@ -273,6 +274,11 @@ const ListEditorView = new Lang.Class({
             return 1;
 
         return 0;
+    },
+
+    _listBoxSetHeaderFunc: function(row, before) {
+        if (before != null)
+            row.set_header(new Gtk.Separator());
     },
 
     deactivateItem: function() {
