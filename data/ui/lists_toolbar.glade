@@ -35,6 +35,7 @@
       <object class="GtkHeaderBar" id="header-bar">
         <property name="visible">True</property>
         <property name="custom-title">stack-switcher</property>
+        <property name="show-close-button">True</property>
         <child>
           <object class="GtkButton" id="new-button">
             <property name="visible">True</property>
@@ -74,6 +75,7 @@
       <object class="GtkHeaderBar" id="selection-header-bar">
         <property name="visible">True</property>
         <property name="custom-title">selection-menu-button</property>
+        <property name="show-close-button">True</property>
         <style>
           <class name="selection-mode"/>
         </style>

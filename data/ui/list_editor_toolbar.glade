@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
-  <object class="GdHeaderBar" id="header-bar">
+  <object class="GtkHeaderBar" id="header-bar">
     <property name="visible">True</property>
-    <property name="vexpand">False</property>
+    <property name="show-close-button">True</property>
     <child>
       <object class="GdHeaderSimpleButton" id="back-button">
         <property name="visible">True</property>

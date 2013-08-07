@@ -43,7 +43,6 @@ const MainWindow = Lang.Class({
         this.parent({
             application: app,
             window_position: Gtk.WindowPosition.CENTER,
-            hide_titlebar_when_maximized: true,
             title: _('To Do')
         });
 
@@ -90,7 +89,7 @@ const MainWindow = Lang.Class({
         this._grid.show();
 
         this._toolbar = new MainToolbar();
-        this._grid.add(this._toolbar);
+        this.set_titlebar(this._toolbar);
 
         this._contentView = new ContentView();
         this._grid.add(this._contentView);
