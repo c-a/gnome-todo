@@ -35,9 +35,6 @@ AC_PROG_CXX
 AC_ISC_POSIX
 AC_HEADER_STDC
 
-# enable valac
-AM_PROG_VALAC([0.16.0])
-
 # no stupid static libraries
 AM_DISABLE_STATIC
 # enable libtool
