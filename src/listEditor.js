@@ -290,11 +290,14 @@ const ListEditorView = new Lang.Class({
     },
 
     _taskEditorCancelled: function(taskEditor) {
-        let task = this._selectedRow.getTask();
-        if (task)
-            this._selectedRow.setTask(task);
-        else
-            this.removeItem(this._selectedRow);
+        if (this._selectedRow != null) {
+            let task = this._selectedRow.getTask();
+            if (task)
+                this._selectedRow.setTask(task);
+            else
+                this.removeItem(this._selectedRow);
+        }
+        this.listBox.select_row(null);
     }
 });
 
