@@ -65,23 +65,16 @@ const MainWindow = Lang.Class({
             let x = position.get_child_value(0);
             let y = position.get_child_value(1);
 
-            this.move(x.get_int32(),
-                             y.get_int32());
+            this.move(x.get_int32(), y.get_int32());
         }
 
         if (Global.settings.get_boolean('window-maximized'))
             this.maximize();
 
-        this.connect('delete-event',
-                            Lang.bind(this, this._quit));
-        this.connect('key-press-event',
-                            Lang.bind(this, this._onKeyPressEvent));
-        this.connect('map-event',
-                            Lang.bind(this, this._onMapEvent));
-        this.connect('configure-event',
-                            Lang.bind(this, this._onConfigureEvent));
-        this.connect('window-state-event',
-                            Lang.bind(this, this._onWindowStateEvent));
+        this.connect('delete-event', Lang.bind(this, this._quit));
+        this.connect('map', Lang.bind(this, this._onMap));
+        this.connect('configure-event', Lang.bind(this, this._onConfigureEvent));
+        this.connect('window-state-event', Lang.bind(this, this._onWindowStateEvent));
 
         this._grid = new Gtk.Grid({ orientation: Gtk.Orientation.VERTICAL,
             expand: true });
@@ -95,11 +88,11 @@ const MainWindow = Lang.Class({
         this._grid.add(this._contentView);
     },
 
-    _onMapEvent: function(widget, event) {
+    _onMap: function(widget, event) {
         /* Add our custom css */
         Gtk.StyleContext.add_provider_for_screen(this.get_screen(),
             GdPrivate.load_css_provider_from_resource('/org/gnome/todo/gnome-todo.css'),
-            Gtk.StyleProvider.PRIORITY_APPLICATION);
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         this.reset_style();
     },
@@ -150,18 +143,6 @@ const MainWindow = Lang.Class({
             this.fullscreen();
         else
             this.unfullscreen();
-    },
-
-    _onKeyPressEvent: function(widget, event) {
-        let keyval = event.get_keyval()[1];
-        let state = event.get_state()[1];
-
-        if ((keyval == Gdk.KEY_q) &&
-            ((state & Gdk.ModifierType.CONTROL_MASK) != 0)) {
-            this.destroy();
-            return true;
-        }
-        return false;
     },
 
     _quit: function() {

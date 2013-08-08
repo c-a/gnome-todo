@@ -74,6 +74,17 @@ const Application = new Lang.Class({
         this.set_app_menu(menu);
     },
 
+    _initAccelerators: function() {
+        let accelerators = [
+            { accelerator: '<Primary>n', action: 'win.lists.new' },
+            { accelerator: '<Primary>n', action: 'win.list-editor.new'},
+            { accelerator: '<Primary>d', action: 'win.list-editor.delete'}];
+
+        accelerators.forEach(Lang.bind(this, function(accel) {
+            this.add_accelerator(accel.accelerator, accel.action, null);
+        }));
+    },
+
     _sync: function(action) {
         this._mainController.sync();
     },
@@ -92,7 +103,8 @@ const Application = new Lang.Class({
         String.prototype.format = Format.format;
 
         this._initMenus();
-        
+        this._initAccelerators();
+
         Global.application = this;
         Global.notificationManager = new Notifications.NotificationManager();
         Global.sourceManager = new Sources.SourceManager();

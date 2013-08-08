@@ -41,7 +41,7 @@ const SelectionController = new Lang.Class({
 
         this._initActions();
 
-        listsController.window.connect('action-state-changed::selection',
+        listsController.window.connect('action-state-changed::lists.selection',
             Lang.bind(this, this._selectionStateChanged));
 
         this._mainView = listsView.mainView;

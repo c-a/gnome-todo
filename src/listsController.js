@@ -79,16 +79,18 @@ const ListsController = new Lang.Class({
     _initActions: function() {
         let actionEntries = [
             {
-                name: 'new-list',
+                name: 'lists.new',
                 callback: this._newList,
                 enabled: false
             },
             {
-                name: 'selection',
+                name: 'lists.selection',
+                enabled: false,
                 state: GLib.Variant.new('b', false)
             },
             {
-                name: 'search',
+                name: 'lists.search',
+                enabled: false,
                 state: GLib.Variant.new('b', false)
             }];
 
@@ -124,11 +126,11 @@ const ListsController = new Lang.Class({
     },
 
     onCancel: function() {
-        if (this.window.get_action_state('search').get_boolean())
-            this.window.change_action_state('search', GLib.Variant.new('b', false));
+        if (this.window.get_action_state('lists.search').get_boolean())
+            this.window.change_action_state('lists.search', GLib.Variant.new('b', false));
 
-        else if (this.window.get_action_state('selection').get_boolean())
-            this.window.change_action_state('selection', GLib.Variant.new('b', false));
+        else if (this.window.get_action_state('lists.selection').get_boolean())
+            this.window.change_action_state('lists.selection', GLib.Variant.new('b', false));
     },
 
     keyPressEvent: function(event) {
@@ -179,17 +181,17 @@ const ListsController = new Lang.Class({
 
     _updateContentView: function() {
         if (Global.sourceManager.getItemsCount() == 0) {
-            this._actions['new-list'].enabled = false;
-            this._actions['search'].enabled = false;
-            this._actions['selection'].enabled = false;
+            this._actions['lists.new'].enabled = false;
+            this._actions['lists.search'].enabled = false;
+            this._actions['lists.selection'].enabled = false;
             this._listsView.showNoAccounts();
         }
         else {
-            this._actions['new-list'].enabled = true;
+            this._actions['lists.new'].enabled = true;
 
             if (this._model.getListCount() == 0) {
-                this._actions['search'].enabled = false;
-                this._actions['selection'].enabled = false;
+                this._actions['lists.search'].enabled = false;
+                this._actions['lists.selection'].enabled = false;
 
                 // Check if we have an online source
                 let hasOnlineSource = false
@@ -202,8 +204,8 @@ const ListsController = new Lang.Class({
                     this._listsView.showNoAccounts();
             }
             else {
-                this._actions['search'].enabled = true;
-                this._actions['selection'].enabled = true;
+                this._actions['lists.search'].enabled = true;
+                this._actions['lists.selection'].enabled = true;
                 this._listsView.showMainView();
             }
         }

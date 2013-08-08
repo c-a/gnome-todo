@@ -20,6 +20,7 @@
  */
 
 const GObject = imports.gi.GObject;
+const Gd = imports.gi.Gd;
 const GdPrivate = imports.gi.GdPrivate;
 const Gdk = imports.gi.Gdk;
 const GLib = imports.gi.GLib;
@@ -62,13 +63,18 @@ const ListEditorController = new Lang.Class({
     _initActions: function() {
         let actionEntries = [
             {
-                name: 'save',
+                name: 'list-editor.save',
                 callback: this._save,
                 enabled: false
             },
             {
-                name: 'delete',
+                name: 'list-editor.delete',
                 callback: this._delete,
+                enabled: true
+            },
+            {
+                name: 'list-editor.new',
+                callback: this._new,
                 enabled: true
             }];
 
@@ -92,8 +98,10 @@ const ListEditorController = new Lang.Class({
     },
 
     onCancel: function() {
-        if (this._view.deactivateItem())
+        if (this._view.activeItem != null) {
+            this._view.listBox.select_row(null);
             return;
+        }
 
         this.mainController.popController();
     },
@@ -153,6 +161,11 @@ const ListEditorController = new Lang.Class({
             this._list.deleteTask(task.id);
         else
             this._view.removeItem(listItem);
+    },
+
+    _new: function(newAction, parameter) {
+        let newItem = this._view.addItem(null);
+        this._view.listBox.select_row(newItem);
     }
 });
 
@@ -168,10 +181,9 @@ const ListEditorView = new Lang.Class({
         this._actionGroup = actionGroup;
         this._actions = actions;
 
-        this._activatedItem = null;
+        this._selectedRow = null;
 
         this.listBox = new Gtk.ListBox();
-        this.listBox.set_selection_mode(Gtk.SelectionMode.NONE);
         this.listBox.show();
         this.pack1(this.listBox, true, false);
 
@@ -187,16 +199,16 @@ const ListEditorView = new Lang.Class({
         this.listBox.set_header_func(
             Lang.bind(this, this._listBoxSetHeaderFunc));
 
-        this.listBox.connect('row-activated',
-            Lang.bind(this, this._rowActivated));
+        this.listBox.connect('row-selected',
+            Lang.bind(this, this._rowSelected));
 
-        this.listBox.add(new NewListItem());
+        this.listBox.add(new NewListItem(actionGroup));
 
         this.show();
     },
 
     get activeItem() {
-        return this._activatedItem;
+        return this._selectedRow;
     },
 
     addItem: function(task) {
@@ -204,11 +216,11 @@ const ListEditorView = new Lang.Class({
         this.listBox.add(listItem);
 
         let saveCheck = function(item) {
-            if (item != this._activatedItem)
+            if (item != this._selectedRow)
                 return;
 
             let saveEnabled = item.title && item.modified;
-            this._actions['save'].enabled = saveEnabled;
+            this._actions['list-editor.save'].enabled = saveEnabled;
         };
 
         listItem.connect('notify::modified', Lang.bind(this, saveCheck));
@@ -218,34 +230,15 @@ const ListEditorView = new Lang.Class({
     },
 
     removeItem: function(listItem) {
-        if (listItem.active) {
-            this._actions['save'].enabled = false;
-            this._activatedItem = listItem.deactivate(this);
-        }
-
-        // Find the next and previous items.
-        let prevItem = null, nextItem = null;
-        let listItems = this.listBox.get_children();
-        for (let i = 0; i < listItems.length; i++) {
-            let item = listItems[i];
-
-            if (item == listItem) {
-                if (i + 1 < listItems.length) {
-                    nextItem = listItems[i + 1];
-                    if (nextItem.isNewListItem)
-                        nextItem = null;
-                }
-                break;
-            }
-            prevItem = item;
-        }
+        let index = listItem.get_index(listItem);
+        if (index == -1)
+            return;
 
         this.listBox.remove(listItem);
 
-        if (prevItem)
-            this._activatedItem = prevItem.activate(this);
-        else if (nextItem)
-            this._activatedItem = nextItem.activate(this);
+        let row = this.listBox.get_row_at_index(index);
+        if (row != null && !row.isNewListItem)
+            this.listBox.select_row(row);
     },
 
     getItemForTask: function(task) {
@@ -281,36 +274,27 @@ const ListEditorView = new Lang.Class({
             row.set_header(new Gtk.Separator());
     },
 
-    deactivateItem: function() {
-        if (!this._activatedItem)
-            return false;
+    _rowSelected: function(listBox, row) {
+        if (this._selectedRow)
+            this._selectedRow.deactivate(this);
 
-        this.listBox.select_row(null);
-        this._activatedItem.deactivate(this);
-        this._activatedItem = null;
-        this._actions['save'].enabled = false;
-        return true;
-    },
+        let saveEnabled = false;
+        if (row != null && !row.isNewListItem) {
+            saveEnabled = row.title && row.modified;
+        }
+        this._actions['list-editor.save'].enabled = saveEnabled;
 
-    _rowActivated: function(listBox, listItem) {
-
-        if (this._activatedItem)
-            this._activatedItem.deactivate(this);
-
-        this._activatedItem = listItem.activate(this);
-
-        let saveEnabled = this._activatedItem.title && this._activatedItem.modified;
-        this._actions['save'].enabled = saveEnabled;
+        this._selectedRow = row;
+        if (row != null)
+            row.activate(this);
     },
 
     _taskEditorCancelled: function(taskEditor) {
-        let task = this._activatedItem.getTask();
+        let task = this._selectedRow.getTask();
         if (task)
-            this._activatedItem.setTask(task);
+            this._selectedRow.setTask(task);
         else
-            this.removeItem(this._activatedItem);
-
-        this.deactivateItem();
+            this.removeItem(this._selectedRow);
     }
 });
 
@@ -423,10 +407,9 @@ const ListItem = new Lang.Class({
         listEditor.taskEditor.setListItem(this);
         listEditor.taskEditor.reveal_child = true;
 
-        listEditor.listBox.select_row(this);
-        this._titleEntry.grab_focus();
-
-        return this;
+        //Gd.entry_focus_hack(this._titleEntry);
+        this.grab_focus();
+        //this._doneCheck.grab_focus();
     },
 
     deactivate: function(listEditor) {
@@ -434,6 +417,10 @@ const ListItem = new Lang.Class({
 
         this._titleNotebook.set_current_page(0);
         listEditor.taskEditor.reveal_child = false;
+
+        if (this._task == null && !this._modified) {
+            listEditor.listBox.remove(this);
+        }
     },
 
     get modified() {
@@ -613,11 +600,11 @@ const NewListItem = new Lang.Class({
     Name: 'NewListItem',
     Extends: Gtk.ListBoxRow,
 
-    _init: function(task) {
+    _init: function(actionGroup) {
         this.parent();
 
         this.isNewListItem = true;
-        this.task = task;
+        this._actionGroup = actionGroup;
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/new_list_item.glade');
@@ -627,11 +614,10 @@ const NewListItem = new Lang.Class({
     },
 
     activate: function(listEditor) {
-        let newItem = listEditor.addItem(null);
-        listEditor.listBox.select_row(newItem);
+        this._actionGroup.activate_action('list-editor.new', null);
+    },
 
-        newItem.activate(listEditor);
-        return newItem;
+    deactivate: function() {
     }
 });
 
@@ -668,7 +654,7 @@ const TaskEditor = new Lang.Class({
         this._dueDatePicker.connect('date-changed', Lang.bind(this, this._dueDateChanged));
 
         let deleteButton = builder.get_object('delete_button');
-        deleteButton.connectClickedToAction(actionGroup, 'delete');
+        deleteButton.connectClickedToAction(actionGroup, 'list-editor.delete');
 
         let cancelButton = builder.get_object('cancel_button');
         cancelButton.connect('clicked', Lang.bind(this, function(button) {
@@ -676,8 +662,8 @@ const TaskEditor = new Lang.Class({
         }));
 
         let saveButton = builder.get_object('save_button');
-        saveButton.connectSensitiveToAction(actionGroup, 'save');
-        saveButton.connectClickedToAction(actionGroup, 'save');
+        saveButton.connectSensitiveToAction(actionGroup, 'list-editor.save');
+        saveButton.connectClickedToAction(actionGroup, 'list-editor.save');
 
         this._setSource(source);
     },

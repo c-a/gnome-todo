@@ -51,12 +51,12 @@ const ListsToolbar = new Lang.Class({
         this.add(this._notebook);
 
         let newButton = builder.get_object('new-button');
-        newButton.connectSensitiveToAction(actionGroup, 'new-list');
-        newButton.connectClickedToAction(actionGroup, 'new-list');
+        newButton.connectSensitiveToAction(actionGroup, 'lists.new');
+        newButton.connectClickedToAction(actionGroup, 'lists.new');
 
         // Selection button
         let selectButton = builder.get_object('select-button');
-        selectButton.connectSensitiveToAction(actionGroup, 'selection');
+        selectButton.connectSensitiveToAction(actionGroup, 'lists.selection');
         selectButton.connect('clicked',
             Lang.bind(this, this._selectButtonClicked));
 
@@ -65,13 +65,13 @@ const ListsToolbar = new Lang.Class({
         doneButton.connect('clicked',
             Lang.bind(this, this._doneButtonClicked));
 
-        actionGroup.connect('action-state-changed::selection',
+        actionGroup.connect('action-state-changed::lists.selection',
             Lang.bind(this, this._selectionStateChanged));
 
         // Search button
         let searchButton = builder.get_object('search-button');
-        searchButton.connectSensitiveToAction(actionGroup, 'search');
-        searchButton.connectToggledToAction(actionGroup, 'search');
+        searchButton.connectSensitiveToAction(actionGroup, 'lists.search');
+        searchButton.connectToggledToAction(actionGroup, 'lists.search');
 
         // Stack switcher
         this._stackSwitcher = builder.get_object('stack-switcher');
@@ -91,11 +91,11 @@ const ListsToolbar = new Lang.Class({
     },
 
     _selectButtonClicked: function(selectButton) {
-        this._actionGroup.change_action_state('selection',  GLib.Variant.new('b', true));
+        this._actionGroup.change_action_state('lists.selection', GLib.Variant.new('b', true));
     },
 
     _doneButtonClicked: function(doneButton) {
-        this._actionGroup.change_action_state('selection',  GLib.Variant.new('b', false));
+        this._actionGroup.change_action_state('lists.selection', GLib.Variant.new('b', false));
     },
 
     _selectionStateChanged: function(actionGroup, actionName, state) {

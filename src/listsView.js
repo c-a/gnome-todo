@@ -152,6 +152,9 @@ const ListsView = new Lang.Class({
 
         /* Add the Lists MainView. */
         this.mainView = new Gd.MainView({ view_type: Gd.MainViewType.ICON, expand: true });
+        this.mainView.connect('selection-mode-request', Lang.bind(this, function() {
+            actionGroup.change_action_state('lists.selection', GLib.Variant.new('b', true));
+        }));
         this._viewStack.add_titled(this.mainView, 'lists', _('Lists'));
 
         /* Add selectionToolbar. */
@@ -239,7 +242,7 @@ const ListsSearchbar = new Lang.Class({
         this._searchString = '';
 
         // connect to the search action state for visibility
-        let searchStateId = actionGroup.connect('action-state-changed::search',
+        let searchStateId = actionGroup.connect('action-state-changed::lists.search',
             Lang.bind(this, this._onActionStateChanged));
 
         this._searchEntry = new Gtk.SearchEntry({ width_request: 500 });
@@ -269,7 +272,7 @@ const ListsSearchbar = new Lang.Class({
     },
 
     _searchModeEnabled: function() {
-        this._actionGroup.change_action_state('search',
+        this._actionGroup.change_action_state('lists.search',
             GLib.Variant.new('b', this.search_mode_enabled));
     }
 });

@@ -11,3 +11,7 @@
     color: shade(@theme_text_color, 2.0);
     font-size: 11pt;
 }
+
+.list-row:selected {
+    background-color: transparent;
+}

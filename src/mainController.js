@@ -112,7 +112,7 @@ const MainController = new Lang.Class({
             return false;
 
         let [res, keyval] = event.get_keyval();
-        
+
         if (keyval == Gdk.KEY_Escape) {
             if (this._currentController)
                 this._currentController.onCancel();

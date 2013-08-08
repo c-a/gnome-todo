@@ -144,7 +144,7 @@ Gtk.Button.prototype.connectClickedToAction = function(actionGroup, actionName) 
 
 Gtk.Button.prototype.connectToggledToAction = function(actionGroup, actionName) {
     this.connect('toggled', Lang.bind(this, function(button) {
-        actionGroup.change_action_state('search', GLib.Variant.new('b', button.active));
+        actionGroup.change_action_state(actionName, GLib.Variant.new('b', button.active));
     }));
 
     actionGroup.connect('action-state-changed::' + actionName,
