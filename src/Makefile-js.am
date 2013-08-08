@@ -13,7 +13,6 @@ dist_js_DATA = \
     mainController.js \
     mainWindow.js \
     notifications.js \
-    path.js \
     selection.js \
     source.js \
     sources.js \
@@ -23,9 +22,9 @@ BUILT_SOURCES += \
     path.js \
     config.js
 
-path.js: Makefile path.js.in
+path.js: path.js.in
 	$(AM_V_GEN) $(do_subst) $(srcdir)/path.js.in > $@
-config.js: Makefile config.js.in
+config.js: config.js.in
 	$(AM_V_GEN) $(do_subst) $(srcdir)/config.js.in > $@
 
 nodist_js_DATA = \
