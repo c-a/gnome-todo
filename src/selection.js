@@ -116,6 +116,10 @@ const SelectionController = new Lang.Class({
 
         // No lists may still be selected so notify that the selection has changed
         this._viewSelectionChanged(this._mainView);
+
+        // Close selection mode
+        this._listsController.window.change_action_state('lists.selection',
+            GLib.Variant.new('b', false));
     },
 
     _renameButtonClicked: function() {
@@ -148,6 +152,10 @@ const SelectionController = new Lang.Class({
             Lang.bind(this, function(dialog, response_id) {
                 if (response_id == Gtk.ResponseType.ACCEPT) {
                     list.title = entry.text;
+
+                    // Close selection mode
+                    this._listsController.window.change_action_state('lists.selection',
+                        GLib.Variant.new('b', false));
                 }
 
                 dialog.destroy();
