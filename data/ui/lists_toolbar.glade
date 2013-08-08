@@ -80,10 +80,20 @@
           <class name="selection-mode"/>
         </style>
         <child>
-          <object class="GtkButton" id="done-button">
+          <object class="GdHeaderToggleButton" id="select-search-button">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="label" translatable="yes">Done</property>
+            <property name="symbolic-icon-name">edit-find-symbolic</property>
+          </object>
+          <packing>
+            <property name="pack_type">end</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="cancel-button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="label" translatable="yes">Cancel</property>
           </object>
           <style>
             <class name="suggested-action"/>

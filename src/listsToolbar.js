@@ -61,15 +61,20 @@ const ListsToolbar = new Lang.Class({
             Lang.bind(this, this._selectButtonClicked));
 
         // Selection done button
-        let doneButton = builder.get_object('done-button');
-        doneButton.connect('clicked',
-            Lang.bind(this, this._doneButtonClicked));
+        let cancelButton = builder.get_object('cancel-button');
+        cancelButton.connect('clicked',
+            Lang.bind(this, this._cancelButtonClicked));
 
         actionGroup.connect('action-state-changed::lists.selection',
             Lang.bind(this, this._selectionStateChanged));
 
         // Search button
         let searchButton = builder.get_object('search-button');
+        searchButton.connectSensitiveToAction(actionGroup, 'lists.search');
+        searchButton.connectToggledToAction(actionGroup, 'lists.search');
+
+        // Select Search button
+        let searchButton = builder.get_object('select-search-button');
         searchButton.connectSensitiveToAction(actionGroup, 'lists.search');
         searchButton.connectToggledToAction(actionGroup, 'lists.search');
 
@@ -94,7 +99,7 @@ const ListsToolbar = new Lang.Class({
         this._actionGroup.change_action_state('lists.selection', GLib.Variant.new('b', true));
     },
 
-    _doneButtonClicked: function(doneButton) {
+    _cancelButtonClicked: function(doneButton) {
         this._actionGroup.change_action_state('lists.selection', GLib.Variant.new('b', false));
     },
 
