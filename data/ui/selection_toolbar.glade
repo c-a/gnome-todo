@@ -1,111 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
-  <object class="GtkImage" id="image1">
+  <object class="GtkHeaderBar" id="selection-bar">
     <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">user-trash-symbolic</property>
-  </object>
-  <object class="GtkImage" id="image2">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">send-to-symbolic</property>
-  </object>
-  <object class="GtkToolbar" id="toolbar">
-    <property name="width_request">200</property>
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="hexpand">True</property>
-    <style>
-      <class name="osd"/>
-    </style>
     <child>
-      <object class="GtkToolItem" id="left_item">
+      <object class="GtkButton" id="delete-button">
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <child>
-          <object class="GtkBox" id="box2">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <child>
-              <object class="GtkButton" id="rename_button">
-                <property name="label" translatable="yes">Rename</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-          </object>
-        </child>
+        <property name="can_focus">True</property>
+        <property name="label" translatable="yes">Delete</property>
       </object>
       <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
+        <property name="pack_type">start</property>
       </packing>
     </child>
     <child>
-      <object class="GtkSeparatorToolItem" id="separator">
+      <object class="GtkButton" id="rename-button">
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
+        <property name="can_focus">True</property>
+        <property name="label" translatable="yes">Rename</property>
       </object>
       <packing>
-        <property name="expand">True</property>
-        <property name="homogeneous">True</property>
+        <property name="pack_type">end</property>
       </packing>
     </child>
-    <child>
-      <object class="GtkToolItem" id="right_item">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <child>
-          <object class="GtkBox" id="box1">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="homogeneous">True</property>
-            <child>
-              <object class="GtkButton" id="send_to_button">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="image">image2</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="delete_button">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="image">image1</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-        </child>
-      </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
-    </child>
-  </object>
-  <object class="GtkSizeGroup" id="sizegroup1">
-    <widgets>
-      <widget name="left_item"/>
-      <widget name="right_item"/>
-    </widgets>
   </object>
 </interface>

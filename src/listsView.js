@@ -131,11 +131,8 @@ const ListsView = new Lang.Class({
         this.searchbar = new ListsSearchbar(actionGroup);
         this.add(this.searchbar);
 
-        this._overlay = new Gtk.Overlay();
-        this.add(this._overlay);
-
         this._stack = new Gtk.Stack({ transition_type: Gtk.StackTransitionType.CROSSFADE });
-        this._overlay.add(this._stack);
+        this.add(this._stack);
 
         this._noResults = new EmptyResultsBox(false);
         this._stack.add(this._noResults);
@@ -159,12 +156,9 @@ const ListsView = new Lang.Class({
 
         /* Add selectionToolbar. */
         this.selectionToolbar = new Selection.SelectionToolbar();
-        this._overlay.add_overlay(this.selectionToolbar);
+        this.add(this.selectionToolbar);
 
-        /* Show everything but the overlays */
-        this._stack.show_all();
-        this._overlay.show();
-        this.show();
+        this.show_all();
     },
 
     get viewStack() {

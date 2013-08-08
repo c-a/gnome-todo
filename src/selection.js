@@ -70,6 +70,7 @@ const SelectionController = new Lang.Class({
 
     _selectionStateChanged: function(actionGroup, actionName, state) {
         this._mainView.set_selection_mode(state.get_boolean());
+        this._selectionToolbar.reveal_child = state.get_boolean();
 
         if (state.get_boolean())
             Utils.addActions(this._listsController.window, this._actions);
@@ -81,15 +82,17 @@ const SelectionController = new Lang.Class({
         let selection = this._mainView.get_selection();
 
         if (selection.length > 0) {
-            this._selectionToolbar.fadeIn();
+            this._selectionToolbar.deleteButton.sensitive = true;
 
             if (selection.length == 1)
-                this._selectionToolbar.renameButton.show();
+                this._selectionToolbar.renameButton.sensitive = true;
             else
-                this._selectionToolbar.renameButton.hide();
+                this._selectionToolbar.renameButton.sensitive = false;
         }
-        else
-            this._selectionToolbar.fadeOut();
+        else {
+            this._selectionToolbar.deleteButton.sensitive = false;
+            this._selectionToolbar.renameButton.sensitive = false;
+        }
     },
 
     _deleteButtonClicked: function() {
@@ -164,49 +167,26 @@ const SelectionController = new Lang.Class({
 
 const SelectionToolbar = new Lang.Class({
     Name: 'SelectionToolbar',
-    Extends: Gtk.Bin,
+    Extends: Gtk.Revealer,
 
     _init: function() {
-        this.parent({ 'halign': Gtk.Align.CENTER, 'valign': Gtk.Align.END,
-            'margin-bottom': 40 });
+        this.parent({ halign: Gtk.Align.FILL, valign: Gtk.Align.END,
+            transition_type: Gtk.RevealerTransitionType.SLIDE_UP });
 
         let builder = new Gtk.Builder();
         builder.add_from_resource('/org/gnome/todo/ui/selection_toolbar.glade');
-        this._toolbar = builder.get_object('toolbar');
+        this._toolbar = builder.get_object('selection-bar');
 
-        this.renameButton = builder.get_object('rename_button');
+        this.renameButton = builder.get_object('rename-button');
         this.renameButton.connect('clicked',
             Lang.bind(this, function(button) { this.emit('rename-button-clicked'); }));
 
-        this.deleteButton = builder.get_object('delete_button');
+        this.deleteButton = builder.get_object('delete-button');
         this.deleteButton.connect('clicked',
             Lang.bind(this, function(button) { this.emit('delete-button-clicked'); }));
 
         this.add(this._toolbar);
-
-        // Show toolbar but hide this by default
-        this._toolbar.show_all();
-        this.hide();
-    },
-
-    fadeIn: function() {
         this.show();
-
-        Tweener.addTween(this,
-            { opacity: 1,
-              time: 0.30,
-              transition: 'easeOutQuad' });
-    },
-
-    fadeOut: function() {
-        Tweener.addTween(this,
-            { opacity: 0,
-                time: 0.30,
-                transition: 'easeOutQuad',
-                onComplete: function() {
-                    this.hide();
-                },
-                onCompleteScope: this });
     }
 });
 
